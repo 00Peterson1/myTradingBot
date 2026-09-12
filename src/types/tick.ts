@@ -73,6 +73,85 @@ export interface TickFeatures {
   readonly ema20: number | null;
   readonly ema50: number | null;
   readonly emaCrossover: number | null; // +1 = ema20>ema50, -1 = ema20<ema50, 0 = equal
+
+  // -------------------------------------------------------------------------
+  // Technical Analysis Indicators
+  // -------------------------------------------------------------------------
+
+  /** Relative Strength Index (14-period) — 0–100, >70 overbought, <30 oversold */
+  readonly rsi14: number | null;
+
+  /** MACD line (ema12 − ema26) */
+  readonly macdLine: number | null;
+  /** MACD signal line (9-period EMA of MACD line) */
+  readonly macdSignal: number | null;
+  /** MACD histogram (macdLine − macdSignal) */
+  readonly macdHistogram: number | null;
+
+  /** Bollinger Band upper (mean20 + 2×std20) */
+  readonly bollingerUpper: number | null;
+  /** Bollinger Band lower (mean20 − 2×std20) */
+  readonly bollingerLower: number | null;
+  /** Bollinger %B — position within bands: 0=lower, 0.5=middle, 1=upper */
+  readonly bollingerPct: number | null;
+  /** Bollinger Band width as fraction of midline price */
+  readonly bollingerWidth: number | null;
+
+  /** Average True Range (14-period) — measures volatility */
+  readonly atr14: number | null;
+
+  /** Average Directional Index (14-period) — 0–100 trend strength */
+  readonly adx14: number | null;
+  /** Plus Directional Indicator +DI */
+  readonly diPlus14: number | null;
+  /** Minus Directional Indicator −DI */
+  readonly diMinus14: number | null;
+
+  /** Stochastic %K (14-period) — 0–100 */
+  readonly stochasticK: number | null;
+  /** Stochastic %D (3-period SMA of %K) */
+  readonly stochasticD: number | null;
+
+  /** Commodity Channel Index (20-period) */
+  readonly cci20: number | null;
+
+  /** Williams %R (14-period) — −100 to 0 */
+  readonly williamsR14: number | null;
+
+  /** Ichimoku Tenkan-sen (9-period mid) */
+  readonly ichimokuTenkan: number | null;
+  /** Ichimoku Kijun-sen (26-period mid) */
+  readonly ichimokuKijun: number | null;
+  /** Ichimoku Senkou Span A ((tenkan+kijun)/2, projected 26 forward) */
+  readonly ichimokuSenkouA: number | null;
+  /** Ichimoku Senkou Span B (52-period mid, projected 26 forward) */
+  readonly ichimokuSenkouB: number | null;
+
+  // -------------------------------------------------------------------------
+  // Wavelet Features (Haar DWT decomposition)
+  // -------------------------------------------------------------------------
+
+  /** Level-1 detail coefficient — high-frequency noise */
+  readonly waveletDetail1: number | null;
+  /** Level-2 detail coefficient — medium-frequency component */
+  readonly waveletDetail2: number | null;
+  /** Level-2 approximation coefficient — underlying trend */
+  readonly waveletTrend: number | null;
+  /** Noise-to-signal ratio (|detail1| / |trend|) — low = trade, high = noisy */
+  readonly waveletNoiseRatio: number | null;
+
+  // -------------------------------------------------------------------------
+  // EWMS Features (Exponential Weighted Moving Statistics — LSTM approximation)
+  // -------------------------------------------------------------------------
+
+  /** Fast EWMS (α=0.2) — reacts quickly to price changes */
+  readonly ewmsFast: number | null;
+  /** Slow EWMS (α=0.05) — long-memory trend estimate */
+  readonly ewmsSlow: number | null;
+  /** EWMS momentum signal: (ewmsFast − ewmsSlow) / σ_price */
+  readonly ewmsMomentum: number | null;
+  /** EWMS acceleration: change in ewmsMomentum from prior tick */
+  readonly ewmsAcceleration: number | null;
 }
 
 /**

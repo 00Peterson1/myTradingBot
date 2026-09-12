@@ -57,6 +57,48 @@ const envSchema = z.object({
     .default(''),
   COLLECT_HISTORY_SECONDS: z.coerce.number().int().positive().default(86_400),
 
+  // Research daemon
+  SLOT_SECS_FAST: z.coerce.number().int().positive().default(60),
+  SLOT_SECS_SLOW: z.coerce.number().int().positive().default(300),
+  DAEMON_PARALLEL_FAST: z.coerce.number().int().positive().default(5),
+  DAEMON_CATEGORIES: z
+    .string()
+    .transform((v) =>
+      v.trim() === ''
+        ? ['synthetic', 'forex', 'crypto', 'stocks', 'commodities']
+        : v.split(',').map((s) => s.trim()),
+    )
+    .default('synthetic,forex,crypto,stocks,commodities'),
+
+  // Pairs trading
+  PAIRS_SPREAD_WINDOW: z.coerce.number().int().positive().default(200),
+  PAIRS_COINTEG_WINDOW: z.coerce.number().int().positive().default(500),
+  PAIRS_ENTRY_ZSCORE: z.coerce.number().positive().default(2.0),
+  PAIRS_EXIT_ZSCORE: z.coerce.number().positive().default(0.5),
+  PAIRS_MAX_ZSCORE: z.coerce.number().positive().default(4.5),
+
+  // RL strategies
+  RL_EPSILON: z.coerce.number().min(0).max(1).default(0.1),
+  RL_LEARNING_RATE: z.coerce.number().positive().default(0.01),
+  RL_DISCOUNT: z.coerce.number().min(0).max(1).default(0.95),
+
+  // LLM context filter (Gemini)
+  GEMINI_API_KEY: z.string().default(''),            // optional — filter degrades gracefully
+  LLM_CACHE_HOURS: z.coerce.number().positive().default(4),
+  LLM_DIVERGENCE_SUPPRESS_THRESHOLD: z.coerce.number().int().min(0).max(10).default(7),
+
+  // Economic calendar
+  ECON_BLACKOUT_HOURS_CRITICAL: z.coerce.number().positive().default(4),
+  ECON_BLACKOUT_HOURS_HIGH: z.coerce.number().positive().default(2),
+
+  // PyTorch sidecar
+  PYTORCH_SIDECAR_URL: z.string().default('http://localhost:8765'),
+  PYTORCH_SIDECAR_ENABLED: z
+    .string()
+    .transform((v) => v.toLowerCase() === 'true')
+    .default('false'),
+  ML_REVERSION_PROB_THRESHOLD: z.coerce.number().min(0).max(1).default(0.3),
+
   // Logging
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   LOG_PRETTY: z

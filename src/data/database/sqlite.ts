@@ -42,7 +42,7 @@ export function getDb(): Database.Database {
  */
 function initSchema(db: Database.Database): void {
   db.exec(`
-    -- Symbol registry
+    -- Symbol registry (extended with market metadata)
     CREATE TABLE IF NOT EXISTS symbols (
       symbol          TEXT PRIMARY KEY,
       display_name    TEXT NOT NULL DEFAULT '',
@@ -96,8 +96,96 @@ function initSchema(db: Database.Database): void {
       autocorr_lag1    REAL
     );
     CREATE INDEX IF NOT EXISTS idx_tick_features_symbol_ts ON tick_features (symbol, ts);
+
+    -- Market characteristics profile (updated after each research cycle)
+    CREATE TABLE IF NOT EXISTS market_profiles (
+      symbol             TEXT PRIMARY KEY,
+      market_category    TEXT NOT NULL DEFAULT '',
+      exchange_is_open   INTEGER NOT NULL DEFAULT 0,
+      spot               REAL,
+      tick_rate_estimate REAL,
+      trading_hours      TEXT,          -- JSON: {"always_open":true} or {"sessions":[...]}
+      tradability_score  INTEGER DEFAULT 0,
+      research_score     INTEGER DEFAULT 0,
+      last_profiled_at   TEXT,
+      last_seen_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- Pair spread state (persists across daemon restarts)
+    CREATE TABLE IF NOT EXISTS pair_spread_state (
+      pair_id          TEXT PRIMARY KEY,   -- e.g. 'frxEURGBP-frxAUDNZD'
+      symbol_a         TEXT NOT NULL,
+      symbol_b         TEXT NOT NULL,
+      beta_hedge_ratio REAL,
+      spread_mean      REAL,
+      spread_std       REAL,
+      cointegration_p  REAL,
+      last_z_score     REAL,
+      window_size      INTEGER DEFAULT 200,
+      updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- RL Q-table (persisted across restarts so agents accumulate experience)
+    CREATE TABLE IF NOT EXISTS rl_q_tables (
+      strategy_name TEXT    NOT NULL,
+      symbol        TEXT    NOT NULL,
+      state_key     TEXT    NOT NULL,  -- serialized discretized state e.g. "2_1_3"
+      action        TEXT    NOT NULL,  -- BUY | SELL | HOLD
+      q_value       REAL    NOT NULL DEFAULT 0.0,
+      update_count  INTEGER NOT NULL DEFAULT 0,
+      updated_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (strategy_name, symbol, state_key, action)
+    );
+
+    -- Economic calendar events
+    CREATE TABLE IF NOT EXISTS economic_events (
+      event_id       TEXT PRIMARY KEY,
+      country        TEXT NOT NULL,
+      currency       TEXT NOT NULL,
+      event_name     TEXT NOT NULL,
+      scheduled_at   TEXT NOT NULL,
+      impact         TEXT NOT NULL,  -- LOW | MEDIUM | HIGH | CRITICAL
+      previous       REAL,
+      forecast       REAL,
+      actual         REAL,
+      affected_pairs TEXT,           -- JSON array of symbol strings
+      fetched_at     TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_econ_events_scheduled ON economic_events (scheduled_at);
+    CREATE INDEX IF NOT EXISTS idx_econ_events_currency ON economic_events (currency);
+
+    -- Gemini context filter cache (4-hour TTL per pair)
+    CREATE TABLE IF NOT EXISTS gemini_context_cache (
+      pair_id          TEXT PRIMARY KEY,
+      divergence_score INTEGER NOT NULL DEFAULT 0,
+      suppress_trade   INTEGER NOT NULL DEFAULT 0,
+      rationale        TEXT,
+      key_risk         TEXT,
+      fetched_at       TEXT NOT NULL DEFAULT (datetime('now')),
+      expires_at       TEXT NOT NULL
+    );
   `);
+
+  // Extend symbols table with new columns (safe — catches if already exist)
+  const newSymbolCols: Array<[string, string]> = [
+    ['market_category', 'TEXT NOT NULL DEFAULT ""'],
+    ['exchange_is_open', 'INTEGER NOT NULL DEFAULT 0'],
+    ['spot', 'REAL'],
+    ['tick_rate_estimate', 'REAL'],
+    ['trading_hours', 'TEXT'],
+    ['tradability_score', 'INTEGER DEFAULT 0'],
+    ['research_score', 'INTEGER DEFAULT 0'],
+    ['last_profiled_at', 'TEXT'],
+  ];
+  for (const [col, def] of newSymbolCols) {
+    try {
+      db.exec(`ALTER TABLE symbols ADD COLUMN ${col} ${def}`);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+  }
 }
+
 
 /**
  * Closes the database connection.

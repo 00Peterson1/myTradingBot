@@ -5,26 +5,23 @@
  * Usage: npm run backtest
  *
  * What this does:
- *   1. Opens data/trading.db (created by `npm run research`)
- *   2. Loads historical tick data for each configured symbol
+ *   1. Opens data/trading.db — queries ALL symbols with enough ticks
+ *   2. Loads historical tick data for each symbol
  *   3. Replays ticks through FeatureEngine to reconstruct all features
- *   4. Runs all configured strategies through walk-forward validation
+ *   4. Runs ALL strategy candidates through walk-forward validation
  *   5. Reports rigorous performance metrics (Sharpe, DSR, PBO)
- *   6. Outputs a verdict: EDGE_DETECTED | EDGE_NOT_DETECTED | OVERFIT_RISK_HIGH
+ *   6. Outputs a ranked leaderboard + verdict per strategy/symbol pair
  *   7. Does NOT place any trades
  *
- * IMPORTANT: You must run `npm run research` first to collect data.
+ * Strategies tested:
+ *   Momentum, VolAdjMomentum, MeanReversion, Breakout (classical)
+ *   Wavelet (Haar DWT), EWMS (LSTM approximation)
+ *   TDQN (tabular deep Q-network), ActorCritic (linear function approximation)
  *
  * DATA REQUIREMENTS:
- *   - Minimum: 200 ticks per symbol (about 3–4 minutes of collection)
- *   - Recommended: 5,000+ ticks (COLLECTION_SECS=5000 npm run research)
- *   - For all 5 walk-forward folds to run: ~500+ ticks per symbol
- *
- * EMPIRICAL PHILOSOPHY:
- * The goal is NOT to find strategies that backtest well.
- * The goal is to TEST whether a strategy has a real edge
- * that is unlikely to be due to chance or overfitting.
- * A negative result (no edge) is a valid and valuable result.
+ *   - Minimum: 200 ticks per symbol
+ *   - Recommended: 5,000+ ticks
+ *   - Source: run `npm run research` or `npm run research:daemon`
  */
 
 import { configureLogger, createLogger } from '../monitoring/Logger.js';
@@ -34,6 +31,10 @@ import { MomentumStrategy } from '../strategies/momentum/MomentumStrategy.js';
 import { VolAdjMomentumStrategy } from '../strategies/volatility-momentum/VolAdjMomentumStrategy.js';
 import { MeanReversionStrategy } from '../strategies/mean-reversion/MeanReversionStrategy.js';
 import { BreakoutStrategy } from '../strategies/breakout/BreakoutStrategy.js';
+import { WaveletStrategy } from '../strategies/signal/WaveletStrategy.js';
+import { EWMSStrategy } from '../strategies/signal/EWMSStrategy.js';
+import { TDQNStrategy } from '../strategies/rl/TDQNStrategy.js';
+import { ActorCriticStrategy } from '../strategies/rl/ActorCriticStrategy.js';
 import { WalkForwardRunner } from '../backtest/WalkForwardRunner.js';
 import { getDb } from '../data/database/sqlite.js';
 import { getTickCount, getRecentTicks } from '../data/repository/TickRepository.js';
@@ -41,11 +42,21 @@ import { FeatureEngine } from '../features/FeatureEngine.js';
 import type { Strategy } from '../strategies/base/Strategy.js';
 import type { TickFeatures } from '../types/tick.js';
 
-// Maximum ticks to load per symbol for backtesting.
-// Higher = better statistical power, slower replay.
-// Override via env: BACKTEST_MAX_TICKS=50000 npm run backtest
 const MAX_TICKS = parseInt(process.env['BACKTEST_MAX_TICKS'] ?? '100000', 10);
 const MIN_TICKS_REQUIRED = 200;
+
+// ---------------------------------------------------------------------------
+// Leaderboard entry
+// ---------------------------------------------------------------------------
+interface LeaderboardEntry {
+  strategy: string;
+  symbol: string;
+  sharpe: number | null;
+  winRate: number | null;
+  passes: boolean;
+  pbo: number | null;
+  notes: string[];
+}
 
 async function main(): Promise<void> {
   const env = getEnv();
@@ -56,49 +67,48 @@ async function main(): Promise<void> {
   renderSafetyStatus(env.DEMO_TRADING, env.LIVE_TRADING);
 
   console.log('🔬 BACKTEST MODE — Walk-Forward Strategy Validation');
-  console.log('   No trades will be placed in this mode.\n');
+  console.log('   Tests ALL strategies across ALL symbols in the database.');
+  console.log('   No trades will be placed.\n');
 
   // ---------------------------------------------------------------------------
-  // Open SQLite database
+  // Open SQLite and discover symbols with sufficient data
   // ---------------------------------------------------------------------------
-  try {
-    getDb(); // auto-creates data/trading.db + schema if missing
-    log.info('SQLite database opened: data/trading.db');
-  } catch (err) {
-    console.error('\n❌ Could not open data/trading.db:', (err as Error).message);
-    console.error('   Run `npm run research` first to collect tick data.\n');
-    process.exit(1);
+  const db = (() => {
+    try {
+      return getDb();
+    } catch (err) {
+      console.error('\n❌ Could not open data/trading.db:', (err as Error).message);
+      console.error('   Run `npm run research` or `npm run research:daemon` first.\n');
+      process.exit(1);
+    }
+  })();
+
+  // Query all symbols from DB that have enough ticks
+  type SymbolRow = { symbol: string; cnt: number };
+  const dbSymbols = db
+    .prepare<[number], SymbolRow>(
+      'SELECT symbol, COUNT(*) as cnt FROM ticks GROUP BY symbol HAVING cnt >= ?',
+    )
+    .all(MIN_TICKS_REQUIRED);
+
+  const symbols: string[] =
+    dbSymbols.length > 0 ? dbSymbols.map((r) => r.symbol) : env.SYMBOLS;
+
+  if (symbols.length === 0) {
+    console.log('⚠️  No symbols with sufficient data found.');
+    console.log('   Run: npm run research:daemon   to start collecting data.');
+    console.log('   Run: npm run markets            to browse available markets.\n');
+    process.exit(0);
   }
 
-  const symbols = env.SYMBOLS;
-
-  // ---------------------------------------------------------------------------
-  // Define strategy candidates to evaluate
-  // ---------------------------------------------------------------------------
-  const strategies: Strategy[] = [
-    new MomentumStrategy({ lookback: 20, threshold: 0.001, momentumKey: 'mom20' }),
-    new MomentumStrategy({ lookback: 50, threshold: 0.002, momentumKey: 'mom50' }),
-    new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom20', zThreshold: 1.0 }),
-    new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom50', zThreshold: 1.5 }),
-    new MeanReversionStrategy({ zScoreKey: 'zScore20', entryThreshold: 1.5, exitThreshold: 0.5 }),
-    new MeanReversionStrategy({ zScoreKey: 'zScore50', entryThreshold: 2.0, exitThreshold: 0.5 }),
-    new BreakoutStrategy({
-      highKey: 'rollingHigh20',
-      lowKey: 'rollingLow20',
-      confirmationFraction: 0.001,
-    }),
-    new BreakoutStrategy({
-      highKey: 'rollingHigh50',
-      lowKey: 'rollingLow50',
-      confirmationFraction: 0.002,
-    }),
-  ];
-
-  const numStrategiesTried = strategies.length;
-  log.info(
-    { strategies: strategies.map((s) => s.name), count: numStrategiesTried },
-    'Strategies to evaluate',
+  console.log(
+    `📊 Symbols to backtest: ${symbols.length} (all with ≥${MIN_TICKS_REQUIRED} ticks in DB)`,
   );
+  symbols.forEach((s) => {
+    const cnt = dbSymbols.find((r) => r.symbol === s)?.cnt ?? getTickCount(s);
+    console.log(`   ${s.padEnd(16)} ${String(cnt).padStart(7)} ticks`);
+  });
+  console.log();
 
   const walkForwardConfig = {
     trainFraction: 0.6,
@@ -107,62 +117,49 @@ async function main(): Promise<void> {
     numFolds: 5,
     minTradesPerFold: 10,
   };
-
   const runner = new WalkForwardRunner(walkForwardConfig);
+  const leaderboard: LeaderboardEntry[] = [];
 
   // ---------------------------------------------------------------------------
-  // Results collection
+  // Per-symbol evaluation
   // ---------------------------------------------------------------------------
-  const results: Array<{
-    strategy: string;
-    symbol: string;
-    passes: boolean;
-    pbo: number | null;
-    notes: string[];
-  }> = [];
-
   for (const symbol of symbols) {
-    console.log(`\n${'='.repeat(70)}`);
+    console.log(`\n${'='.repeat(72)}`);
     console.log(`📊 Symbol: ${symbol}`);
-    console.log(`${'='.repeat(70)}`);
+    console.log(`${'='.repeat(72)}`);
 
-    // -------------------------------------------------------------------------
-    // Load ticks from SQLite
-    // -------------------------------------------------------------------------
-    const count = getTickCount(symbol);
-    console.log(`  📁 Ticks in database: ${count}`);
-
-    if (count < MIN_TICKS_REQUIRED) {
-      console.log(
-        `  ⚠️  Insufficient data for ${symbol} (have ${count}, need ≥${MIN_TICKS_REQUIRED} ticks).`,
-      );
-      console.log(
-        `      Run: COLLECTION_SECS=300 npm run research   (5-min collection ≈ ~300 ticks)\n`,
-      );
+    const rawTicks = getRecentTicks(symbol, MAX_TICKS);
+    if (rawTicks.length < MIN_TICKS_REQUIRED) {
+      console.log(`  ⚠️  Skipping ${symbol} — only ${rawTicks.length} ticks`);
       continue;
     }
 
-    const rawTicks = getRecentTicks(symbol, MAX_TICKS);
     console.log(`  ✅ Loaded ${rawTicks.length} ticks — replaying through FeatureEngine...`);
 
-    // -------------------------------------------------------------------------
-    // Replay ticks through FeatureEngine to reconstruct TickFeatures[]
-    // -------------------------------------------------------------------------
     const featureEngine = new FeatureEngine(symbol);
-    const features: TickFeatures[] = [];
+    const features: TickFeatures[] = rawTicks.map((t) => featureEngine.process(t));
+    console.log(`  ✅ ${features.length} feature rows ready\n`);
 
-    for (const tick of rawTicks) {
-      const f = featureEngine.process(tick);
-      features.push(f);
-    }
+    // Build per-symbol strategy suite (RL strategies need symbol parameter)
+    const strategies: Strategy[] = [
+      new MomentumStrategy({ lookback: 20, threshold: 0.001, momentumKey: 'mom20' }),
+      new MomentumStrategy({ lookback: 50, threshold: 0.002, momentumKey: 'mom50' }),
+      new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom20', zThreshold: 1.0 }),
+      new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom50', zThreshold: 1.5 }),
+      new MeanReversionStrategy({ zScoreKey: 'zScore20', entryThreshold: 1.5, exitThreshold: 0.5 }),
+      new MeanReversionStrategy({ zScoreKey: 'zScore50', entryThreshold: 2.0, exitThreshold: 0.5 }),
+      new BreakoutStrategy({ highKey: 'rollingHigh20', lowKey: 'rollingLow20', confirmationFraction: 0.001 }),
+      new BreakoutStrategy({ highKey: 'rollingHigh50', lowKey: 'rollingLow50', confirmationFraction: 0.002 }),
+      new WaveletStrategy(),
+      new EWMSStrategy(),
+      new TDQNStrategy({ symbol }),
+      new ActorCriticStrategy({ symbol }),
+    ];
 
-    console.log(`  ✅ Feature replay complete: ${features.length} feature rows ready\n`);
+    const numStrategies = strategies.length;
 
-    // -------------------------------------------------------------------------
-    // Run walk-forward validation for each strategy
-    // -------------------------------------------------------------------------
     for (const strategy of strategies) {
-      log.info({ strategy: strategy.name, symbol }, 'Running walk-forward validation');
+      log.info({ strategy: strategy.name, symbol }, 'Walk-forward validation');
 
       try {
         const wfResult = await runner.run(
@@ -170,21 +167,24 @@ async function main(): Promise<void> {
           {
             strategy,
             symbol,
-            payoutMultiplier: 0.85, // Standard Deriv binary payout
+            payoutMultiplier: 0.85,
             feePerTrade: 0,
             minConfidence: 0.3,
             contextWindow: 200,
-            numTrials: numStrategiesTried,
+            numTrials: numStrategies,
           },
-          numStrategiesTried,
+          numStrategies,
         );
 
         if (wfResult.aggregatedTestMetrics) {
           renderMetricsTable(
             wfResult.aggregatedTestMetrics,
-            `Walk-Forward Test: ${strategy.name} on ${symbol}`,
+            `${strategy.name} on ${symbol}`,
           );
         }
+
+        const sharpe = wfResult.aggregatedTestMetrics?.sharpeRatio ?? null;
+        const winRate = wfResult.aggregatedTestMetrics?.winRate ?? null;
 
         console.log(
           `\n  PBO: ${wfResult.pbo !== null ? `${(wfResult.pbo * 100).toFixed(1)}%` : 'N/A'}`,
@@ -197,58 +197,72 @@ async function main(): Promise<void> {
           console.log(`    ${note}`);
         }
 
-        results.push({
+        leaderboard.push({
           strategy: strategy.name,
           symbol,
+          sharpe,
+          winRate,
           passes: wfResult.passesRigorousValidation,
           pbo: wfResult.pbo,
           notes: wfResult.validationNotes,
         });
       } catch (err) {
-        log.error(
-          { strategy: strategy.name, symbol, error: (err as Error).message },
-          'Strategy evaluation failed',
-        );
+        log.error({ strategy: strategy.name, symbol, error: (err as Error).message }, 'Evaluation failed');
       }
     }
   }
 
   // ---------------------------------------------------------------------------
-  // Summary
+  // Strategy Leaderboard
   // ---------------------------------------------------------------------------
-  console.log(`\n${'='.repeat(70)}`);
-  console.log('📋 BACKTEST SUMMARY');
-  console.log(`${'='.repeat(70)}`);
+  if (leaderboard.length > 0) {
+    leaderboard.sort((a, b) => {
+      // Passing first, then by Sharpe
+      if (a.passes !== b.passes) return a.passes ? -1 : 1;
+      return (b.sharpe ?? -999) - (a.sharpe ?? -999);
+    });
 
-  const passing = results.filter((r) => r.passes);
-  const failing = results.filter((r) => !r.passes);
+    const col = (s: string, w: number) => s.padEnd(w).slice(0, w);
 
-  console.log(`\nTotal strategies evaluated: ${results.length}`);
-  console.log(`✅ Passing rigorous validation: ${passing.length}`);
-  console.log(`❌ Failing validation: ${failing.length}`);
+    console.log(`\n${'='.repeat(72)}`);
+    console.log('📋 STRATEGY LEADERBOARD — Sorted by Sharpe Ratio');
+    console.log('='.repeat(72));
+    console.log(
+      `  ${'Strategy'.padEnd(32)} ${'Symbol'.padEnd(14)} ${'Sharpe'.padEnd(8)} ${'WinRate'.padEnd(9)} Verdict`,
+    );
+    console.log('  ' + '─'.repeat(70));
 
-  if (results.length === 0) {
-    console.log('\n⚠️  NO STRATEGIES EVALUATED');
-    console.log('   Run `npm run research` to collect tick data first.');
-    console.log('   Recommended: COLLECTION_SECS=300 npm run research (5 min per symbol)\n');
-  } else if (passing.length === 0) {
-    console.log('\n⚠️  NO STRATEGIES PASSED RIGOROUS VALIDATION');
-    console.log('   This is a VALID scientific result — not a failure.');
-    console.log('   It means no robust edge was detected in this data.');
-    console.log('   Do NOT lower the validation bar to find a "winner".');
-    console.log('   Collect more data and try again: COLLECTION_SECS=3600 npm run research\n');
-  } else {
-    console.log('\n✅ Strategies that passed:');
-    for (const r of passing) {
+    for (const e of leaderboard) {
+      const sharpeStr = e.sharpe !== null ? e.sharpe.toFixed(2).padStart(6) : '  N/A';
+      const wrStr = e.winRate !== null ? `${(e.winRate * 100).toFixed(1)}%`.padStart(7) : '    N/A';
+      const verdict = e.passes ? '✅ PASS' : '❌ FAIL';
       console.log(
-        `   - ${r.strategy} on ${r.symbol} (PBO: ${r.pbo !== null ? `${(r.pbo * 100).toFixed(1)}%` : 'N/A'})`,
+        `  ${col(e.strategy, 32)} ${col(e.symbol, 14)} ${sharpeStr}   ${wrStr}   ${verdict}`,
       );
     }
-    console.log('\n  Next step: Run demo trading for these strategies ONLY');
-    console.log('  Command: npm run trade:demo');
+
+    const passing = leaderboard.filter((r) => r.passes);
+    console.log('  ' + '─'.repeat(70));
+    console.log(`  ${passing.length}/${leaderboard.length} strategy/symbol pairs passed rigorous validation`);
+
+    if (passing.length > 0) {
+      console.log('\n✅ Recommended for demo trading:');
+      for (const r of passing.slice(0, 5)) {
+        console.log(
+          `   • ${r.strategy} on ${r.symbol} (Sharpe: ${r.sharpe?.toFixed(2) ?? 'N/A'}, PBO: ${r.pbo !== null ? `${(r.pbo * 100).toFixed(1)}%` : 'N/A'})`,
+        );
+      }
+      console.log('\n  Next: npm run trade:demo');
+      console.log('  More data: npm run research:daemon');
+      console.log('  Browse markets: npm run markets');
+    } else {
+      console.log('\n⚠️  No strategies passed — collect more data:');
+      console.log('   npm run research:daemon  (let it run for several hours)');
+      console.log('   npm run markets          (browse all available markets)');
+    }
   }
 
-  console.log('\n⚠️  Remember: Backtest results are not guarantees of future performance.');
+  console.log('\n⚠️  Backtest results are not guarantees of future performance.');
   process.exit(0);
 }
 

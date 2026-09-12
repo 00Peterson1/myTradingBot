@@ -19,11 +19,16 @@
     "test:coverage": "vitest run --coverage",
     "migrate": "tsx scripts/migrate.ts",
     "research": "tsx src/cli/research.ts",
+    "research:daemon": "tsx src/cli/research-daemon.ts",
+    "markets": "tsx src/cli/markets.ts",
     "backtest": "tsx src/cli/backtest.ts",
     "trade:demo": "tsx src/cli/trade-demo.ts",
+    "sidecar:train": "cd python && python spread_model/train.py",
+    "sidecar:serve": "cd python && uvicorn spread_model.serve:app --port 8765 --reload",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/genai": "^2.22.0",
     "@types/better-sqlite3": "^9.6.0",
     "better-sqlite3": "^13.0.3",
     "chalk": "^5.3.0",

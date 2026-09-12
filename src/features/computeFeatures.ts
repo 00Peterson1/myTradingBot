@@ -12,6 +12,9 @@ import {
   autocorrelation,
   ema,
 } from './indicators/indicators.js';
+import { rsi, macd, bollingerBands, atr, adx, stochastic, cci, williamsR, ichimoku } from './technicals/TechnicalIndicators.js';
+import { haarDWT } from './WaveletFeatures.js';
+import { ewms } from './EWMSFeatures.js';
 import type { Tick, TickFeatures } from '../types/tick.js';
 
 /**
@@ -113,6 +116,29 @@ export function computeFeatures(
     emaCrossover = ema20 > ema50 ? 1 : ema20 < ema50 ? -1 : 0;
   }
 
+  // ---------------------------------------------------------------------------
+  // Technical Indicators
+  // ---------------------------------------------------------------------------
+  const rsi14 = rsi(prices, n, 14);
+  const { line: macdLine, signal: macdSignal, histogram: macdHistogram } = macd(prices, n);
+  const { upper: bollingerUpper, lower: bollingerLower, pct: bollingerPct, width: bollingerWidth } = bollingerBands(prices, n, 20, 2);
+  const atr14 = atr(prices, n, 14);
+  const { adx: adx14, diPlus: diPlus14, diMinus: diMinus14 } = adx(prices, n, 14);
+  const { k: stochasticK, d: stochasticD } = stochastic(prices, n, 14, 3);
+  const cci20 = cci(prices, n, 20);
+  const williamsR14 = williamsR(prices, n, 14);
+  const { tenkan: ichimokuTenkan, kijun: ichimokuKijun, senkouA: ichimokuSenkouA, senkouB: ichimokuSenkouB } = ichimoku(prices, n);
+
+  // ---------------------------------------------------------------------------
+  // Wavelet Features
+  // ---------------------------------------------------------------------------
+  const { detail1: waveletDetail1, detail2: waveletDetail2, trend: waveletTrend, noiseRatio: waveletNoiseRatio } = haarDWT(prices, n, 2);
+
+  // ---------------------------------------------------------------------------
+  // EWMS Features
+  // ---------------------------------------------------------------------------
+  const { fast: ewmsFast, slow: ewmsSlow, momentum: ewmsMomentum, acceleration: ewmsAcceleration } = ewms(prices, n);
+
   return {
     // Identity
     timestamp: tick.timestamp,
@@ -165,5 +191,18 @@ export function computeFeatures(
     ema20,
     ema50,
     emaCrossover,
+
+    // New Technicals
+    rsi14, macdLine, macdSignal, macdHistogram,
+    bollingerUpper, bollingerLower, bollingerPct, bollingerWidth,
+    atr14, adx14, diPlus14, diMinus14,
+    stochasticK, stochasticD, cci20, williamsR14,
+    ichimokuTenkan, ichimokuKijun, ichimokuSenkouA, ichimokuSenkouB,
+
+    // Wavelets
+    waveletDetail1, waveletDetail2, waveletTrend, waveletNoiseRatio,
+
+    // EWMS
+    ewmsFast, ewmsSlow, ewmsMomentum, ewmsAcceleration
   };
 }

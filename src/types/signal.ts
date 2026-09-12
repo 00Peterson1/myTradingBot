@@ -45,7 +45,15 @@ export type RejectionReason =
   | 'LIVE_TRADING_DISABLED'
   | 'DEMO_TRADING_DISABLED'
   | 'POSITION_SIZE_TOO_SMALL'
-  | 'NO_SIGNAL';
+  | 'NO_SIGNAL'
+  // Context filter
+  | 'LLM_POLICY_DIVERGENCE_RISK'  // Gemini flagged central bank policy divergence
+  | 'ECONOMIC_BLACKOUT'           // High-impact event within suppression window
+  // Pairs trading
+  | 'COINTEGRATION_BROKEN'        // Pair no longer statistically cointegrated
+  | 'SPREAD_EXPLOSION'            // |z-score| > hard-stop threshold
+  // ML model
+  | 'ML_LOW_REVERSION_PROB';      // PyTorch sidecar P(reversion) < threshold
 
 /**
  * Result of the RiskEngine evaluation of a signal.
