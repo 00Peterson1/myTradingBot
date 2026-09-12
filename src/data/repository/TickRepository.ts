@@ -1,7 +1,6 @@
-import type pg from 'pg';
-import { getPool } from '../database/pool.js';
-import { TICK_INSERT_BATCH_SIZE } from '../../config/constants.js';
+import { getDb } from '../database/sqlite.js';
 import { createLogger } from '../../monitoring/Logger.js';
+import { TICK_INSERT_BATCH_SIZE } from '../../config/constants.js';
 import type { Tick, TickFeatures } from '../../types/index.js';
 
 const log = createLogger('TickRepository');
@@ -19,29 +18,30 @@ export interface SymbolRecord {
   pipSize?: number;
 }
 
-export async function upsertSymbol(sym: SymbolRecord): Promise<void> {
-  await getPool().query(
-    `INSERT INTO symbols (symbol, display_name, market, submarket, instrument_type, pip_size, last_seen_at)
-     VALUES ($1, $2, $3, $4, $5, $6, NOW())
-     ON CONFLICT (symbol) DO UPDATE SET
-       display_name   = EXCLUDED.display_name,
-       last_seen_at   = NOW(),
-       is_active      = TRUE`,
-    [
+export function upsertSymbol(sym: SymbolRecord): void {
+  getDb()
+    .prepare(
+      `INSERT INTO symbols (symbol, display_name, market, submarket, instrument_type, pip_size, last_seen_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT (symbol) DO UPDATE SET
+         display_name   = excluded.display_name,
+         last_seen_at   = datetime('now'),
+         is_active      = 1`,
+    )
+    .run(
       sym.symbol,
       sym.displayName,
       sym.market,
       sym.submarket,
       sym.instrumentType,
       sym.pipSize ?? null,
-    ],
-  );
+    );
 }
 
-export async function getActiveSymbols(): Promise<string[]> {
-  const { rows } = await getPool().query<{ symbol: string }>(
-    'SELECT symbol FROM symbols WHERE is_active = TRUE ORDER BY symbol',
-  );
+export function getActiveSymbols(): string[] {
+  const rows = getDb()
+    .prepare<[], { symbol: string }>('SELECT symbol FROM symbols WHERE is_active = 1 ORDER BY symbol')
+    .all();
   return rows.map((r) => r.symbol);
 }
 
@@ -58,57 +58,47 @@ export interface TickInsert {
 
 /**
  * Inserts a single tick.
- * Silently ignores duplicates (ON CONFLICT DO NOTHING).
- * Returns the stored tick ID or null if it was a duplicate.
+ * Silently ignores duplicates (ON CONFLICT DO NOTHING via IGNORE).
+ * Returns the stored rowid or null if it was a duplicate.
  */
-export async function insertTick(tick: TickInsert, client?: pg.PoolClient): Promise<bigint | null> {
-  const ts = new Date(tick.epoch * 1000);
-  const db = client ?? getPool();
+export function insertTick(tick: TickInsert): bigint | null {
+  const ts = new Date(tick.epoch * 1000).toISOString();
+  const result = getDb()
+    .prepare(
+      `INSERT OR IGNORE INTO ticks (symbol, epoch, ts, price, tick_id)
+       VALUES (?, ?, ?, ?, ?)`,
+    )
+    .run(tick.symbol, tick.epoch, ts, tick.price, tick.tickId ?? null);
 
-  const result = await db.query<{ id: string }>(
-    `INSERT INTO ticks (symbol, epoch, ts, price, tick_id)
-     VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (symbol, epoch, price) DO NOTHING
-     RETURNING id`,
-    [tick.symbol, tick.epoch, ts, tick.price, tick.tickId ?? null],
-  );
-
-  if (result.rows.length === 0) return null;
-  const row = result.rows[0];
-  if (!row) return null;
-  return BigInt(row.id);
+  return result.changes > 0 ? BigInt(result.lastInsertRowid as number) : null;
 }
 
 /**
  * Bulk-inserts ticks in batches of TICK_INSERT_BATCH_SIZE.
  * Returns count of actually inserted (non-duplicate) ticks.
+ * Uses a transaction for speed — SQLite without transactions is very slow for bulk inserts.
  */
-export async function bulkInsertTicks(ticks: TickInsert[]): Promise<number> {
+export function bulkInsertTicks(ticks: TickInsert[]): number {
   if (ticks.length === 0) return 0;
 
+  const db = getDb();
+  const stmt = db.prepare(
+    `INSERT OR IGNORE INTO ticks (symbol, epoch, ts, price, tick_id) VALUES (?, ?, ?, ?, ?)`,
+  );
+
   let inserted = 0;
-  const pool = getPool();
+  const insertBatch = db.transaction((batch: TickInsert[]) => {
+    for (const tick of batch) {
+      const ts = new Date(tick.epoch * 1000).toISOString();
+      const result = stmt.run(tick.symbol, tick.epoch, ts, tick.price, tick.tickId ?? null);
+      if (result.changes > 0) inserted++;
+    }
+  });
 
   for (let i = 0; i < ticks.length; i += TICK_INSERT_BATCH_SIZE) {
     const batch = ticks.slice(i, i + TICK_INSERT_BATCH_SIZE);
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      for (const tick of batch) {
-        const id = await insertTick(tick, client);
-        if (id !== null) inserted++;
-      }
-
-      await client.query('COMMIT');
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-
-    log.debug({ batch: i / TICK_INSERT_BATCH_SIZE + 1, inserted }, 'Batch inserted');
+    insertBatch(batch);
+    log.debug({ batchIndex: Math.floor(i / TICK_INSERT_BATCH_SIZE) + 1, inserted }, 'Batch inserted');
   }
 
   return inserted;
@@ -118,118 +108,127 @@ export async function bulkInsertTicks(ticks: TickInsert[]): Promise<number> {
 // Tick Queries
 // ---------------------------------------------------------------------------
 
-export interface TickRow {
-  id: string;
+interface TickRow {
+  id: number;
   symbol: string;
   epoch: number;
-  ts: Date;
-  price: string;
-  tick_id: string | null;
+  ts: string;
+  price: number;
+  tick_id: number | null;
 }
 
 /**
- * Fetches the N most recent ticks for a symbol ordered ascending.
+ * Fetches the N most recent ticks for a symbol ordered ascending (oldest first).
  */
-export async function getRecentTicks(symbol: string, limit: number): Promise<Tick[]> {
-  const { rows } = await getPool().query<TickRow>(
-    `SELECT id, symbol, epoch, ts, price, tick_id
-     FROM ticks
-     WHERE symbol = $1
-     ORDER BY ts DESC
-     LIMIT $2`,
-    [symbol, limit],
-  );
+export function getRecentTicks(symbol: string, limit: number): Tick[] {
+  const rows = getDb()
+    .prepare<[string, number], TickRow>(
+      `SELECT id, symbol, epoch, ts, price, tick_id
+       FROM ticks
+       WHERE symbol = ?
+       ORDER BY epoch DESC
+       LIMIT ?`,
+    )
+    .all(symbol, limit);
+  // Reverse so ticks are oldest-first (chronological)
   return rows.reverse().map(rowToTick);
 }
 
 /**
- * Fetches ticks for a symbol within a time range.
+ * Fetches ticks for a symbol within a time range (inclusive).
  */
-export async function getTicksInRange(symbol: string, from: Date, to: Date): Promise<Tick[]> {
-  const { rows } = await getPool().query<TickRow>(
-    `SELECT id, symbol, epoch, ts, price, tick_id
-     FROM ticks
-     WHERE symbol = $1 AND ts >= $2 AND ts <= $3
-     ORDER BY ts ASC`,
-    [symbol, from, to],
-  );
+export function getTicksInRange(symbol: string, from: Date, to: Date): Tick[] {
+  const rows = getDb()
+    .prepare<[string, string, string], TickRow>(
+      `SELECT id, symbol, epoch, ts, price, tick_id
+       FROM ticks
+       WHERE symbol = ? AND ts >= ? AND ts <= ?
+       ORDER BY epoch ASC`,
+    )
+    .all(symbol, from.toISOString(), to.toISOString());
   return rows.map(rowToTick);
 }
 
 /**
- * Returns the latest tick timestamp for a symbol (for incremental fetching).
+ * Returns the latest tick epoch for a symbol (for incremental fetching).
  */
-export async function getLatestTickEpoch(symbol: string): Promise<number | null> {
-  const { rows } = await getPool().query<{ epoch: number }>(
-    'SELECT epoch FROM ticks WHERE symbol = $1 ORDER BY epoch DESC LIMIT 1',
-    [symbol],
-  );
-  return rows[0]?.epoch ?? null;
+export function getLatestTickEpoch(symbol: string): number | null {
+  const row = getDb()
+    .prepare<[string], { epoch: number }>(
+      'SELECT epoch FROM ticks WHERE symbol = ? ORDER BY epoch DESC LIMIT 1',
+    )
+    .get(symbol);
+  return row?.epoch ?? null;
 }
 
 /**
  * Returns tick count for a symbol (for research readiness checks).
  */
-export async function getTickCount(symbol: string): Promise<number> {
-  const { rows } = await getPool().query<{ count: string }>(
-    'SELECT COUNT(*) as count FROM ticks WHERE symbol = $1',
-    [symbol],
-  );
-  return parseInt(rows[0]?.count ?? '0', 10);
+export function getTickCount(symbol: string): number {
+  const row = getDb()
+    .prepare<[string], { count: number }>(
+      'SELECT COUNT(*) as count FROM ticks WHERE symbol = ?',
+    )
+    .get(symbol);
+  return row?.count ?? 0;
 }
 
 // ---------------------------------------------------------------------------
 // Feature Storage
 // ---------------------------------------------------------------------------
 
-export async function upsertTickFeatures(features: TickFeatures): Promise<void> {
-  await getPool().query(
-    `INSERT INTO tick_features (
-       tick_id, symbol, ts,
-       log_return, simple_return,
-       mom_5, mom_10, mom_20, mom_50, mom_100,
-       rolling_std_20, rolling_std_50, realized_vol_20,
-       vol_adj_mom_20, vol_adj_mom_50,
-       rolling_mean_20, rolling_mean_50,
-       z_score_20, z_score_50,
-       rolling_high_20, rolling_low_20, rolling_high_50, rolling_low_50,
-       drawdown_20, autocorr_lag1
-     ) VALUES (
-       $1, $2, $3,
-       $4, $5,
-       $6, $7, $8, $9, $10,
-       $11, $12, $13,
-       $14, $15,
-       $16, $17,
-       $18, $19,
-       $20, $21, $22, $23,
-       $24, $25
-     )
-     ON CONFLICT (tick_id) DO UPDATE SET
-       log_return = EXCLUDED.log_return,
-       simple_return = EXCLUDED.simple_return,
-       mom_5 = EXCLUDED.mom_5, mom_10 = EXCLUDED.mom_10,
-       mom_20 = EXCLUDED.mom_20, mom_50 = EXCLUDED.mom_50,
-       mom_100 = EXCLUDED.mom_100,
-       rolling_std_20 = EXCLUDED.rolling_std_20,
-       rolling_std_50 = EXCLUDED.rolling_std_50,
-       realized_vol_20 = EXCLUDED.realized_vol_20,
-       vol_adj_mom_20 = EXCLUDED.vol_adj_mom_20,
-       vol_adj_mom_50 = EXCLUDED.vol_adj_mom_50,
-       rolling_mean_20 = EXCLUDED.rolling_mean_20,
-       rolling_mean_50 = EXCLUDED.rolling_mean_50,
-       z_score_20 = EXCLUDED.z_score_20,
-       z_score_50 = EXCLUDED.z_score_50,
-       rolling_high_20 = EXCLUDED.rolling_high_20,
-       rolling_low_20 = EXCLUDED.rolling_low_20,
-       rolling_high_50 = EXCLUDED.rolling_high_50,
-       rolling_low_50 = EXCLUDED.rolling_low_50,
-       drawdown_20 = EXCLUDED.drawdown_20,
-       autocorr_lag1 = EXCLUDED.autocorr_lag1`,
-    [
-      features.tickCount.toString(),
+export function upsertTickFeatures(tickRowId: bigint, features: TickFeatures): void {
+  getDb()
+    .prepare(
+      `INSERT INTO tick_features (
+         tick_id, symbol, ts,
+         log_return, simple_return,
+         mom_5, mom_10, mom_20, mom_50, mom_100,
+         rolling_std_20, rolling_std_50, realized_vol_20,
+         vol_adj_mom_20, vol_adj_mom_50,
+         rolling_mean_20, rolling_mean_50,
+         z_score_20, z_score_50,
+         rolling_high_20, rolling_low_20, rolling_high_50, rolling_low_50,
+         drawdown_20, autocorr_lag1
+       ) VALUES (
+         ?, ?, ?,
+         ?, ?,
+         ?, ?, ?, ?, ?,
+         ?, ?, ?,
+         ?, ?,
+         ?, ?,
+         ?, ?,
+         ?, ?, ?, ?,
+         ?, ?
+       )
+       ON CONFLICT (tick_id) DO UPDATE SET
+         log_return      = excluded.log_return,
+         simple_return   = excluded.simple_return,
+         mom_5           = excluded.mom_5,
+         mom_10          = excluded.mom_10,
+         mom_20          = excluded.mom_20,
+         mom_50          = excluded.mom_50,
+         mom_100         = excluded.mom_100,
+         rolling_std_20  = excluded.rolling_std_20,
+         rolling_std_50  = excluded.rolling_std_50,
+         realized_vol_20 = excluded.realized_vol_20,
+         vol_adj_mom_20  = excluded.vol_adj_mom_20,
+         vol_adj_mom_50  = excluded.vol_adj_mom_50,
+         rolling_mean_20 = excluded.rolling_mean_20,
+         rolling_mean_50 = excluded.rolling_mean_50,
+         z_score_20      = excluded.z_score_20,
+         z_score_50      = excluded.z_score_50,
+         rolling_high_20 = excluded.rolling_high_20,
+         rolling_low_20  = excluded.rolling_low_20,
+         rolling_high_50 = excluded.rolling_high_50,
+         rolling_low_50  = excluded.rolling_low_50,
+         drawdown_20     = excluded.drawdown_20,
+         autocorr_lag1   = excluded.autocorr_lag1`,
+    )
+    .run(
+      Number(tickRowId),
       features.symbol,
-      features.timestamp,
+      features.timestamp.toISOString(),
       features.logReturn1,
       features.simpleReturn1,
       features.mom5,
@@ -252,8 +251,21 @@ export async function upsertTickFeatures(features: TickFeatures): Promise<void> 
       features.rollingLow50,
       features.drawdownPct20,
       features.ac1_20,
-    ],
-  );
+    );
+}
+
+/**
+ * Bulk-upsert features inside a single transaction for speed.
+ */
+export function bulkUpsertTickFeatures(pairs: Array<{ rowId: bigint; features: TickFeatures }>): void {
+  if (pairs.length === 0) return;
+  const db = getDb();
+  const upsert = db.transaction(() => {
+    for (const { rowId, features } of pairs) {
+      upsertTickFeatures(rowId, features);
+    }
+  });
+  upsert();
 }
 
 // ---------------------------------------------------------------------------
@@ -265,11 +277,11 @@ function rowToTick(row: TickRow): Tick {
     id: BigInt(row.id),
     symbol: row.symbol,
     epoch: row.epoch,
-    timestamp: row.ts,
-    price: parseFloat(row.price),
+    timestamp: new Date(row.ts),
+    price: row.price,
   };
   if (row.tick_id !== null) {
-    (tick as { tickId?: number }).tickId = parseInt(row.tick_id, 10);
+    (tick as { tickId?: number }).tickId = row.tick_id;
   }
   return tick;
 }

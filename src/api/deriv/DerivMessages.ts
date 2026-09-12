@@ -8,12 +8,11 @@ export function buildAuthorizeRequest(token: string, reqId: number): Record<stri
 }
 
 export function buildActiveSymbolsRequest(
-  productType: 'basic' | 'advanced' = 'basic',
+  detail: 'full' | 'brief' = 'brief',
   reqId?: number,
 ): Record<string, unknown> {
   return {
-    active_symbols: 'full',
-    product_type: productType,
+    active_symbols: detail,
     ...(reqId !== undefined ? { req_id: reqId } : {}),
   };
 }

@@ -1,0 +1,3 @@
+# This directory holds the SQLite database (data/trading.db).
+# The .db file is gitignored — it contains your collected tick data.
+# This .gitkeep file ensures the directory is tracked by git.

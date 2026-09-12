@@ -1,17 +1,26 @@
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
-// Active Symbol from Deriv API
-// ---------------------------------------------------------------------------
-export const ActiveSymbolSchema = z.object({
-  symbol: z.string(),
-  display_name: z.string(),
-  market: z.string(),
-  submarket: z.string(),
-  pip: z.number().optional(),
-  is_trading_suspended: z.number().transform((v) => v === 1),
-  exchange_is_open: z.number().transform((v) => v === 1),
-});
+// Accepts both old API (symbol) and new API (underlying_symbol) response shapes,
+// normalising everything to a consistent { symbol, display_name, market } object.
+export const ActiveSymbolSchema = z
+  .object({
+    // New API uses underlying_symbol; legacy uses symbol
+    underlying_symbol: z.string().optional(),
+    symbol: z.string().optional(),
+    // Display name — new API uses underlying_symbol_name
+    underlying_symbol_name: z.string().optional(),
+    display_name: z.string().optional(),
+    market: z.string().optional(),
+    submarket: z.string().optional(),
+  })
+  .passthrough()
+  .transform((data) => ({
+    symbol: data.underlying_symbol ?? data.symbol ?? '',
+    display_name: data.underlying_symbol_name ?? data.display_name ?? '',
+    market: data.market ?? '',
+    submarket: data.submarket ?? '',
+  }));
 
 export type ActiveSymbol = z.infer<typeof ActiveSymbolSchema>;
 

@@ -29,7 +29,7 @@ const envSchema = z.object({
   DATABASE_PORT: z.coerce.number().int().positive().default(5432),
   DATABASE_NAME: z.string().default('quant_trading'),
   DATABASE_USER: z.string().default('postgres'),
-  DATABASE_PASSWORD: z.string().min(1, 'DATABASE_PASSWORD is required'),
+  DATABASE_PASSWORD: z.string().default(''), // Not required for SQLite mode
   DATABASE_SSL: z
     .string()
     .transform((v) => v.toLowerCase() === 'true')

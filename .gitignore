@@ -34,3 +34,8 @@ Thumbs.db
 # Temporary
 *.tmp
 *.temp
+
+# SQLite database (local tick data — not for version control)
+data/*.db
+data/*.db-shm
+data/*.db-wal
