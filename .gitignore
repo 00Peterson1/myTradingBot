@@ -1,0 +1,36 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment files — NEVER commit .env
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Coverage
+coverage/
+
+# Backtest results (may contain sensitive performance data)
+backtest-results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.temp
