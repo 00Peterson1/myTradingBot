@@ -34,6 +34,13 @@ export function buildTicksHistoryRequest(
   };
 }
 
+export function buildContractsForRequest(symbol: string, reqId?: number): Record<string, unknown> {
+  return {
+    contracts_for: symbol,
+    ...(reqId !== undefined ? { req_id: reqId } : {}),
+  };
+}
+
 export function buildTicksHistoryRangeRequest(
   symbol: string,
   start: number,
@@ -73,12 +80,23 @@ export function buildUnsubscribeTicksRequest(
 
 export function buildProposalRequest(opts: {
   symbol: string;
-  contractType: 'CALL' | 'PUT' | 'DIGITEVEN' | 'DIGITODD';
+  contractType:
+    | 'CALL'
+    | 'PUT'
+    | 'DIGITEVEN'
+    | 'DIGITODD'
+    | 'DIGITOVER'
+    | 'DIGITUNDER'
+    | 'DIGITMATCH'
+    | 'DIGITDIFF'
+    | 'HIGHER'
+    | 'LOWER';
   duration: number;
   durationUnit: 's' | 'm' | 'h' | 'd' | 't';
   stake: number;
   currency: string;
   basis: 'stake' | 'payout';
+  barrier?: number | string;
   reqId?: number;
 }): Record<string, unknown> {
   return {
@@ -89,7 +107,8 @@ export function buildProposalRequest(opts: {
     currency: opts.currency,
     duration: opts.duration,
     duration_unit: opts.durationUnit,
-    symbol: opts.symbol,
+    underlying_symbol: opts.symbol,  // New Deriv API uses underlying_symbol (not symbol)
+    ...(opts.barrier !== undefined ? { barrier: String(opts.barrier) } : {}),
     ...(opts.reqId !== undefined ? { req_id: opts.reqId } : {}),
   };
 }
@@ -103,6 +122,34 @@ export function buildBuyRequest(
     buy: proposalId,
     price,
     ...(reqId !== undefined ? { req_id: reqId } : {}),
+  };
+}
+
+export function buildDirectBuyRequest(opts: {
+  symbol: string;
+  contractType: string;
+  duration: number;
+  durationUnit: 's' | 'm' | 'h' | 'd' | 't';
+  stake: number;
+  currency: string;
+  basis: 'stake' | 'payout';
+  barrier?: number | string;
+  reqId?: number;
+}): Record<string, unknown> {
+  return {
+    buy: '1',
+    price: opts.stake,
+    parameters: {
+      amount: opts.stake,
+      basis: opts.basis,
+      contract_type: opts.contractType,
+      currency: opts.currency,
+      duration: opts.duration,
+      duration_unit: opts.durationUnit,
+      underlying_symbol: opts.symbol,
+      ...(opts.barrier !== undefined ? { barrier: String(opts.barrier) } : {}),
+    },
+    ...(opts.reqId !== undefined ? { req_id: opts.reqId } : {}),
   };
 }
 

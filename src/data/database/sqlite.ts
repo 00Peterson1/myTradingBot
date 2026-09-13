@@ -167,7 +167,7 @@ function initSchema(db: Database.Database): void {
   `);
 
   // Extend symbols table with new columns (safe — catches if already exist)
-  const newSymbolCols: Array<[string, string]> = [
+  const newSymbolCols: [string, string][] = [
     ['market_category', 'TEXT NOT NULL DEFAULT ""'],
     ['exchange_is_open', 'INTEGER NOT NULL DEFAULT 0'],
     ['spot', 'REAL'],
@@ -180,6 +180,34 @@ function initSchema(db: Database.Database): void {
   for (const [col, def] of newSymbolCols) {
     try {
       db.exec(`ALTER TABLE symbols ADD COLUMN ${col} ${def}`);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+  }
+
+  // Extend market_profiles with statistical research columns
+  const newProfileCols: [string, string][] = [
+    ['availability_known', 'INTEGER NOT NULL DEFAULT 0'],
+    ['is_trading_suspended', 'INTEGER NOT NULL DEFAULT 0'],
+    ['market_type',        'TEXT NOT NULL DEFAULT "unknown"'],
+    ['is_autocorrelated',  'INTEGER NOT NULL DEFAULT 0'],
+    ['is_normal',          'INTEGER NOT NULL DEFAULT 1'],
+    ['has_edge',           'INTEGER NOT NULL DEFAULT 0'],
+    ['std_dev',            'REAL'],
+    ['sharpe',             'REAL'],
+    ['score',              'INTEGER NOT NULL DEFAULT 0'],
+    ['tick_count',         'INTEGER NOT NULL DEFAULT 0'],
+    ['skewness',           'REAL'],
+    ['kurtosis',           'REAL'],
+    ['ljungbox_pvalue',    'REAL'],
+    ['jb_pvalue',          'REAL'],
+    ['momentum_lift',      'REAL'],
+    ['momentum_pvalue',    'REAL'],
+    ['recommended_strategies', 'TEXT'],
+  ];
+  for (const [col, def] of newProfileCols) {
+    try {
+      db.exec(`ALTER TABLE market_profiles ADD COLUMN ${col} ${def}`);
     } catch {
       // Column already exists — safe to ignore
     }

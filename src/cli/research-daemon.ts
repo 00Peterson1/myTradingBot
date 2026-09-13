@@ -63,7 +63,7 @@ async function collectForSymbol(client: DerivClient, symbol: string, durationSec
 
     const db = getDb();
     const featureEngine = new FeatureEngine(symbol);
-    const featurePairs: Array<{ rowId: bigint; features: ReturnType<FeatureEngine['process']> }> = [];
+    const featurePairs: { rowId: bigint; features: ReturnType<FeatureEngine['process']> }[] = [];
 
     for (const tick of ticks) {
       const features = featureEngine.process(tick);

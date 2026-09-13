@@ -138,12 +138,12 @@ export class GeminiContextFilter {
   async assess(
     symbolA: string,
     signalMetadata: Record<string, unknown> = {},
-    upcomingEvents: Array<{ eventName: string; currency: string; impact: string; scheduledAt: string }> = [],
+    upcomingEvents: { eventName: string; currency: string; impact: string; scheduledAt: string }[] = [],
   ): Promise<ContextAssessment> {
     if (!this.genai) return SAFE_ASSESSMENT;
 
     // Build pair ID from primary symbol + its pair partner (from metadata)
-    const symbolB = signalMetadata['symbolB'] as string | undefined;
+    const symbolB = signalMetadata.symbolB as string | undefined;
     const pairId = symbolB ? `${symbolA}-${symbolB}` : symbolA;
 
     // Check cache first
@@ -262,19 +262,19 @@ export class GeminiContextFilter {
             continue;
           }
 
-          const divergenceScore = Math.min(10, Math.max(0, Number(parsed['divergence_score'] ?? 0)));
+          const divergenceScore = Math.min(10, Math.max(0, Number(parsed.divergence_score ?? 0)));
           const suppressTrade =
-            Boolean(parsed['suppress_trade']) || divergenceScore >= this.suppressThreshold;
+            Boolean(parsed.suppress_trade) || divergenceScore >= this.suppressThreshold;
 
           // Ensure rationale and keyRisk are never empty strings
           const rationale =
-            String(parsed['rationale'] ?? '').trim() ||
+            String(parsed.rationale ?? '').trim() ||
             (divergenceScore <= 3
               ? 'Central bank policies appear broadly aligned; mean-reversion premise valid.'
               : divergenceScore <= 6
                 ? 'Some policy divergence signals detected; trade confidence reduced.'
                 : 'Significant policy divergence detected; trade suppressed for safety.');
-          const keyRisk = String(parsed['key_risk'] ?? '').trim() || 'none identified';
+          const keyRisk = String(parsed.key_risk ?? '').trim() || 'none identified';
 
           return {
             divergenceScore,
@@ -325,10 +325,10 @@ export class GeminiContextFilter {
     cbContext: string,
     eventsText: string,
   ): string {
-    const zScore = metadata['spreadZ'] !== undefined ? Number(metadata['spreadZ']).toFixed(2) : 'N/A';
+    const zScore = metadata.spreadZ !== undefined ? Number(metadata.spreadZ).toFixed(2) : 'N/A';
     const cointegP =
-      metadata['cointegP'] !== undefined ? Number(metadata['cointegP']).toFixed(3) : 'N/A';
-    const direction = metadata['direction'] ?? 'unknown';
+      metadata.cointegP !== undefined ? Number(metadata.cointegP).toFixed(3) : 'N/A';
+    const direction = metadata.direction ?? 'unknown';
 
     return `You are a central bank policy analyst for FX correlation trading.
 

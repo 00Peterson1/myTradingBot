@@ -20,6 +20,16 @@ export interface Strategy {
   readonly description: string;
 
   /**
+   * Set to true for strategies that update internal weights/Q-tables inside
+   * generateSignal(). Such strategies perform online learning and MUST NOT be
+   * evaluated in a standard walk-forward backtest because they adapt to the
+   * test set while it is being scored.
+   *
+   * A prequential (interleaved train-then-test) protocol is required instead.
+   */
+  readonly isOnlineLearner?: true;
+
+  /**
    * Generates a signal from the current tick features and recent feature history.
    *
    * @param current - Features computed for the current tick

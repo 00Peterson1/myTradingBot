@@ -25,7 +25,7 @@ export interface Trade {
   readonly symbol: string;
   readonly strategy: string;
   readonly direction: 'BUY' | 'SELL';
-  readonly contractType: 'CALL' | 'PUT'; // Binary options contract type
+  readonly contractType: 'CALL' | 'PUT' | 'DIGITEVEN' | 'DIGITODD' | 'DIGITOVER' | 'DIGITUNDER' | 'DIGITMATCH' | 'DIGITDIFF';
   readonly contractDuration: number;
   readonly contractDurationUnit: 't' | 's' | 'm' | 'h' | 'd';
   readonly contractId?: string; // Deriv contract ID (null for paper/backtest)

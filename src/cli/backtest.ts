@@ -1,28 +1,4 @@
 #!/usr/bin/env node
-/**
- * Entry Point: Backtest Mode
- *
- * Usage: npm run backtest
- *
- * What this does:
- *   1. Opens data/trading.db — queries ALL symbols with enough ticks
- *   2. Loads historical tick data for each symbol
- *   3. Replays ticks through FeatureEngine to reconstruct all features
- *   4. Runs ALL strategy candidates through walk-forward validation
- *   5. Reports rigorous performance metrics (Sharpe, DSR, PBO)
- *   6. Outputs a ranked leaderboard + verdict per strategy/symbol pair
- *   7. Does NOT place any trades
- *
- * Strategies tested:
- *   Momentum, VolAdjMomentum, MeanReversion, Breakout (classical)
- *   Wavelet (Haar DWT), EWMS (LSTM approximation)
- *   TDQN (tabular deep Q-network), ActorCritic (linear function approximation)
- *
- * DATA REQUIREMENTS:
- *   - Minimum: 200 ticks per symbol
- *   - Recommended: 5,000+ ticks
- *   - Source: run `npm run research` or `npm run research:daemon`
- */
 
 import { configureLogger, createLogger } from '../monitoring/Logger.js';
 import { getEnv } from '../config/env.js';
@@ -33,8 +9,10 @@ import { MeanReversionStrategy } from '../strategies/mean-reversion/MeanReversio
 import { BreakoutStrategy } from '../strategies/breakout/BreakoutStrategy.js';
 import { WaveletStrategy } from '../strategies/signal/WaveletStrategy.js';
 import { EWMSStrategy } from '../strategies/signal/EWMSStrategy.js';
-import { TDQNStrategy } from '../strategies/rl/TDQNStrategy.js';
-import { ActorCriticStrategy } from '../strategies/rl/ActorCriticStrategy.js';
+// NOTE: TDQNStrategy and ActorCriticStrategy are intentionally excluded.
+// Both have isOnlineLearner = true — they update weights inside generateSignal(),
+// meaning they adapt to the test set while being scored on it. This invalidates
+// OOS evaluation. A prequential (interleaved train-then-test) protocol is required.
 import { WalkForwardRunner } from '../backtest/WalkForwardRunner.js';
 import { getDb } from '../data/database/sqlite.js';
 import { getTickCount, getRecentTicks } from '../data/repository/TickRepository.js';
@@ -42,73 +20,60 @@ import { FeatureEngine } from '../features/FeatureEngine.js';
 import type { Strategy } from '../strategies/base/Strategy.js';
 import type { TickFeatures } from '../types/tick.js';
 
-const MAX_TICKS = parseInt(process.env['BACKTEST_MAX_TICKS'] ?? '100000', 10);
+const MAX_TICKS = parseInt(process.env.BACKTEST_MAX_TICKS ?? '100000', 10);
 const MIN_TICKS_REQUIRED = 200;
-
-// ---------------------------------------------------------------------------
-// Leaderboard entry
-// ---------------------------------------------------------------------------
-interface LeaderboardEntry {
-  strategy: string;
-  symbol: string;
-  sharpe: number | null;
-  winRate: number | null;
-  passes: boolean;
-  pbo: number | null;
-  notes: string[];
-}
 
 async function main(): Promise<void> {
   const env = getEnv();
-  configureLogger(env.LOG_LEVEL, env.LOG_PRETTY);
+
+  const symIdx = process.argv.indexOf('--symbols');
+  const cliSymbols = symIdx !== -1 && process.argv[symIdx + 1]
+    ? process.argv[symIdx + 1]!.split(',').map((s) => s.trim())
+    : null;
+
+  const logLevel = (env.LOG_LEVEL === 'debug' || env.LOG_LEVEL === 'trace') ? env.LOG_LEVEL : 'warn';
+  configureLogger(logLevel, env.LOG_PRETTY);
   const log = createLogger('Backtest');
 
   renderBanner();
   renderSafetyStatus(env.DEMO_TRADING, env.LIVE_TRADING);
 
   console.log('🔬 BACKTEST MODE — Walk-Forward Strategy Validation');
-  console.log('   Tests ALL strategies across ALL symbols in the database.');
-  console.log('   No trades will be placed.\n');
+  console.log('   No trades will be placed in this mode.\n');
 
-  // ---------------------------------------------------------------------------
-  // Open SQLite and discover symbols with sufficient data
-  // ---------------------------------------------------------------------------
-  const db = (() => {
-    try {
-      return getDb();
-    } catch (err) {
-      console.error('\n❌ Could not open data/trading.db:', (err as Error).message);
-      console.error('   Run `npm run research` or `npm run research:daemon` first.\n');
-      process.exit(1);
-    }
-  })();
+  // Hypothesis alignment: backtest evaluates the SAME contract duration as demo.
+  const contractDuration = env.CONTRACT_DURATION;
+  const contractDurationUnit = env.CONTRACT_DURATION_UNIT;
+  const payoutMultiplier = env.BACKTEST_PAYOUT_MULTIPLIER;
 
-  // Query all symbols from DB that have enough ticks
-  type SymbolRow = { symbol: string; cnt: number };
-  const dbSymbols = db
-    .prepare<[number], SymbolRow>(
-      'SELECT symbol, COUNT(*) as cnt FROM ticks GROUP BY symbol HAVING cnt >= ?',
-    )
-    .all(MIN_TICKS_REQUIRED);
+  console.log('📐 Hypothesis (must match demo .env settings):');
+  console.log(`   Duration:  ${contractDuration} ${contractDurationUnit === 't' ? 'tick(s)' : contractDurationUnit}`);
+  console.log(`   Payout:    ${payoutMultiplier.toFixed(3)}x  (BACKTEST_PAYOUT_MULTIPLIER — verify against Deriv pricing)`);
+  console.log('');
 
-  const symbols: string[] =
-    dbSymbols.length > 0 ? dbSymbols.map((r) => r.symbol) : env.SYMBOLS;
-
-  if (symbols.length === 0) {
-    console.log('⚠️  No symbols with sufficient data found.');
-    console.log('   Run: npm run research:daemon   to start collecting data.');
-    console.log('   Run: npm run markets            to browse available markets.\n');
-    process.exit(0);
+  try {
+    getDb();
+  } catch (err) {
+    console.error('\n❌ Could not open data/trading.db:', (err as Error).message);
+    console.error('   Run `npm run research` first to collect tick data.\n');
+    process.exit(1);
   }
 
-  console.log(
-    `📊 Symbols to backtest: ${symbols.length} (all with ≥${MIN_TICKS_REQUIRED} ticks in DB)`,
-  );
-  symbols.forEach((s) => {
-    const cnt = dbSymbols.find((r) => r.symbol === s)?.cnt ?? getTickCount(s);
-    console.log(`   ${s.padEnd(16)} ${String(cnt).padStart(7)} ticks`);
-  });
-  console.log();
+  const db = getDb();
+  const dbSymbols = db
+    .prepare('SELECT DISTINCT symbol FROM ticks GROUP BY symbol HAVING COUNT(*) >= ?')
+    .all(MIN_TICKS_REQUIRED) as {symbol: string}[];
+  const allSymbols = dbSymbols.length > 0 ? dbSymbols.map(r => r.symbol) : env.SYMBOLS;
+
+  const symbols = cliSymbols
+    ? allSymbols.filter((s) => cliSymbols.includes(s))
+    : allSymbols;
+
+  if (cliSymbols) {
+    console.log(`🔍 Symbols filter: ${symbols.length > 0 ? symbols.join(', ') : '(none matched)'}`);
+  }
+  console.log(`\n📋 Symbols to backtest (${symbols.length}):`);
+  symbols.forEach(s => { console.log(`   • ${s}`); });
 
   const walkForwardConfig = {
     trainFraction: 0.6,
@@ -117,152 +82,166 @@ async function main(): Promise<void> {
     numFolds: 5,
     minTradesPerFold: 10,
   };
+
   const runner = new WalkForwardRunner(walkForwardConfig);
-  const leaderboard: LeaderboardEntry[] = [];
 
   // ---------------------------------------------------------------------------
-  // Per-symbol evaluation
+  // Strategy factories — each provides a FACTORY FUNCTION so BacktestEngine
+  // creates a fresh instance per fold period (prevents state bleed).
   // ---------------------------------------------------------------------------
+  interface StrategyFactory { name: string; factory: () => Strategy }
+
+  const strategyFactories: StrategyFactory[] = [
+    { name: 'Momentum(lookback=20,threshold=0.001)', factory: () => new MomentumStrategy({ lookback: 20, threshold: 0.001, momentumKey: 'mom20' }) },
+    { name: 'Momentum(lookback=50,threshold=0.002)', factory: () => new MomentumStrategy({ lookback: 50, threshold: 0.002, momentumKey: 'mom50' }) },
+    { name: 'VolAdjMomentum(zThreshold=1.0)',        factory: () => new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom20', zThreshold: 1.0 }) },
+    { name: 'VolAdjMomentum(zThreshold=1.5)',        factory: () => new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom50', zThreshold: 1.5 }) },
+    { name: 'MeanReversion(z=1.5,exit=0.5)',         factory: () => new MeanReversionStrategy({ zScoreKey: 'zScore20', entryThreshold: 1.5, exitThreshold: 0.5 }) },
+    { name: 'MeanReversion(z=2.0,exit=0.5)',         factory: () => new MeanReversionStrategy({ zScoreKey: 'zScore50', entryThreshold: 2.0, exitThreshold: 0.5 }) },
+    { name: 'Breakout(window=20,frac=0.001)',         factory: () => new BreakoutStrategy({ highKey: 'rollingHigh20', lowKey: 'rollingLow20', confirmationFraction: 0.001 }) },
+    { name: 'Breakout(window=50,frac=0.002)',         factory: () => new BreakoutStrategy({ highKey: 'rollingHigh50', lowKey: 'rollingLow50', confirmationFraction: 0.002 }) },
+    { name: 'Wavelet',                               factory: () => new WaveletStrategy() },
+    { name: 'EWMS',                                  factory: () => new EWMSStrategy() },
+  ];
+
+  const numStrategiesTried = strategyFactories.length;
+
+  const results: {
+    strategy: string;
+    symbol: string;
+    passes: boolean;
+    pbo: number | null;
+    notes: string[];
+    sharpe: number;
+    winRate: number;
+    trades: number;
+  }[] = [];
+
+  let errorsThisRun = 0;
+
   for (const symbol of symbols) {
-    console.log(`\n${'='.repeat(72)}`);
+    console.log(`\n${'='.repeat(70)}`);
     console.log(`📊 Symbol: ${symbol}`);
-    console.log(`${'='.repeat(72)}`);
+    console.log('='.repeat(70));
 
-    const rawTicks = getRecentTicks(symbol, MAX_TICKS);
-    if (rawTicks.length < MIN_TICKS_REQUIRED) {
-      console.log(`  ⚠️  Skipping ${symbol} — only ${rawTicks.length} ticks`);
+    const count = getTickCount(symbol);
+    console.log(`  📁 Ticks in database: ${count}`);
+
+    if (count < MIN_TICKS_REQUIRED) {
+      console.log(`  ⚠️  Insufficient data for ${symbol} (have ${count}, need ≥${MIN_TICKS_REQUIRED}).`);
       continue;
     }
 
+    const rawTicks = getRecentTicks(symbol, MAX_TICKS);
     console.log(`  ✅ Loaded ${rawTicks.length} ticks — replaying through FeatureEngine...`);
 
     const featureEngine = new FeatureEngine(symbol);
-    const features: TickFeatures[] = rawTicks.map((t) => featureEngine.process(t));
-    console.log(`  ✅ ${features.length} feature rows ready\n`);
+    const features: TickFeatures[] = [];
+    for (const tick of rawTicks) {
+      features.push(featureEngine.process(tick));
+    }
+    console.log(`  ✅ Feature replay complete: ${features.length} rows\n`);
 
-    // Build per-symbol strategy suite (RL strategies need symbol parameter)
-    const strategies: Strategy[] = [
-      new MomentumStrategy({ lookback: 20, threshold: 0.001, momentumKey: 'mom20' }),
-      new MomentumStrategy({ lookback: 50, threshold: 0.002, momentumKey: 'mom50' }),
-      new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom20', zThreshold: 1.0 }),
-      new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom50', zThreshold: 1.5 }),
-      new MeanReversionStrategy({ zScoreKey: 'zScore20', entryThreshold: 1.5, exitThreshold: 0.5 }),
-      new MeanReversionStrategy({ zScoreKey: 'zScore50', entryThreshold: 2.0, exitThreshold: 0.5 }),
-      new BreakoutStrategy({ highKey: 'rollingHigh20', lowKey: 'rollingLow20', confirmationFraction: 0.001 }),
-      new BreakoutStrategy({ highKey: 'rollingHigh50', lowKey: 'rollingLow50', confirmationFraction: 0.002 }),
-      new WaveletStrategy(),
-      new EWMSStrategy(),
-      new TDQNStrategy({ symbol }),
-      new ActorCriticStrategy({ symbol }),
-    ];
-
-    const numStrategies = strategies.length;
-
-    for (const strategy of strategies) {
-      log.info({ strategy: strategy.name, symbol }, 'Walk-forward validation');
+    for (const { name, factory } of strategyFactories) {
+      log.info({ strategy: name, symbol }, 'Running walk-forward');
 
       try {
         const wfResult = await runner.run(
           features,
           {
-            strategy,
+            strategyFactory: factory,
+            strategyName: name,
             symbol,
-            payoutMultiplier: 0.85,
+            payoutMultiplier,
             feePerTrade: 0,
             minConfidence: 0.3,
             contextWindow: 200,
-            numTrials: numStrategies,
+            numTrials: numStrategiesTried,
+            contractDuration,
+            contractDurationUnit,
           },
-          numStrategies,
+          numStrategiesTried,
         );
+
+        const sharpe = wfResult.aggregatedTestMetrics?.sharpeRatio ?? 0;
+        const winRate = wfResult.aggregatedTestMetrics?.winRate ?? 0;
+        const trades = wfResult.aggregatedTestMetrics?.totalTrades ?? 0;
 
         if (wfResult.aggregatedTestMetrics) {
           renderMetricsTable(
             wfResult.aggregatedTestMetrics,
-            `${strategy.name} on ${symbol}`,
+            `Walk-Forward Test: ${name} on ${symbol}`,
           );
         }
 
-        const sharpe = wfResult.aggregatedTestMetrics?.sharpeRatio ?? null;
-        const winRate = wfResult.aggregatedTestMetrics?.winRate ?? null;
-
-        console.log(
-          `\n  PBO: ${wfResult.pbo !== null ? `${(wfResult.pbo * 100).toFixed(1)}%` : 'N/A'}`,
-        );
+        console.log(`\n  PBO: ${wfResult.pbo !== null ? `${(wfResult.pbo * 100).toFixed(1)}%` : 'N/A'}`);
         console.log(`  ${wfResult.pboInterpretation}`);
-        console.log(
-          `\n  Validation: ${wfResult.passesRigorousValidation ? '✅ PASSES' : '❌ FAILS'}`,
-        );
+        console.log(`\n  Validation: ${wfResult.passesRigorousValidation ? '✅ PASSES' : '❌ FAILS'}`);
         for (const note of wfResult.validationNotes) {
           console.log(`    ${note}`);
         }
 
-        leaderboard.push({
-          strategy: strategy.name,
-          symbol,
-          sharpe,
-          winRate,
-          passes: wfResult.passesRigorousValidation,
-          pbo: wfResult.pbo,
-          notes: wfResult.validationNotes,
-        });
+        results.push({ strategy: name, symbol, passes: wfResult.passesRigorousValidation, pbo: wfResult.pbo, notes: wfResult.validationNotes, sharpe, winRate, trades });
       } catch (err) {
-        log.error({ strategy: strategy.name, symbol, error: (err as Error).message }, 'Evaluation failed');
+        errorsThisRun++;
+        const msg = (err as Error).message;
+        log.error({ strategy: name, symbol, error: msg }, 'Strategy evaluation failed');
+        console.error(`  ❌ ERROR: ${name} on ${symbol}: ${msg}`);
       }
     }
   }
 
   // ---------------------------------------------------------------------------
-  // Strategy Leaderboard
+  // Summary
   // ---------------------------------------------------------------------------
-  if (leaderboard.length > 0) {
-    leaderboard.sort((a, b) => {
-      // Passing first, then by Sharpe
-      if (a.passes !== b.passes) return a.passes ? -1 : 1;
-      return (b.sharpe ?? -999) - (a.sharpe ?? -999);
-    });
+  console.log(`\n${'='.repeat(70)}`);
+  console.log('📋 BACKTEST SUMMARY');
+  console.log(`${'='.repeat(70)}\n`);
 
-    const col = (s: string, w: number) => s.padEnd(w).slice(0, w);
-
-    console.log(`\n${'='.repeat(72)}`);
-    console.log('📋 STRATEGY LEADERBOARD — Sorted by Sharpe Ratio');
-    console.log('='.repeat(72));
-    console.log(
-      `  ${'Strategy'.padEnd(32)} ${'Symbol'.padEnd(14)} ${'Sharpe'.padEnd(8)} ${'WinRate'.padEnd(9)} Verdict`,
-    );
-    console.log('  ' + '─'.repeat(70));
-
-    for (const e of leaderboard) {
-      const sharpeStr = e.sharpe !== null ? e.sharpe.toFixed(2).padStart(6) : '  N/A';
-      const wrStr = e.winRate !== null ? `${(e.winRate * 100).toFixed(1)}%`.padStart(7) : '    N/A';
-      const verdict = e.passes ? '✅ PASS' : '❌ FAIL';
-      console.log(
-        `  ${col(e.strategy, 32)} ${col(e.symbol, 14)} ${sharpeStr}   ${wrStr}   ${verdict}`,
-      );
+  if (results.length > 0) {
+    console.log(`┌──────────────────────────┬──────────┬──────────┬─────────┬───────┬──────────┐`);
+    console.log(`│ Strategy                 │ Symbol   │  Sharpe  │ WinRate │Trades │ Verdict  │`);
+    console.log(`├──────────────────────────┼──────────┼──────────┼─────────┼───────┼──────────┤`);
+    const sorted = [...results].sort((a, b) => b.sharpe - a.sharpe);
+    for (const r of sorted) {
+      const s  = r.strategy.padEnd(24).substring(0, 24);
+      const sy = r.symbol.padEnd(8).substring(0, 8);
+      const sh = (r.sharpe ?? 0).toFixed(3).padStart(8);
+      const wr = (r.winRate * 100).toFixed(1).padStart(6) + '%';
+      const tr = String(r.trades).padStart(5);
+      const v  = r.passes ? '✅ PASS' : '❌ FAIL';
+      console.log(`│ ${s} │ ${sy} │ ${sh} │ ${wr} │ ${tr} │ ${v.padEnd(8)} │`);
     }
-
-    const passing = leaderboard.filter((r) => r.passes);
-    console.log('  ' + '─'.repeat(70));
-    console.log(`  ${passing.length}/${leaderboard.length} strategy/symbol pairs passed rigorous validation`);
-
-    if (passing.length > 0) {
-      console.log('\n✅ Recommended for demo trading:');
-      for (const r of passing.slice(0, 5)) {
-        console.log(
-          `   • ${r.strategy} on ${r.symbol} (Sharpe: ${r.sharpe?.toFixed(2) ?? 'N/A'}, PBO: ${r.pbo !== null ? `${(r.pbo * 100).toFixed(1)}%` : 'N/A'})`,
-        );
-      }
-      console.log('\n  Next: npm run trade:demo');
-      console.log('  More data: npm run research:daemon');
-      console.log('  Browse markets: npm run markets');
-    } else {
-      console.log('\n⚠️  No strategies passed — collect more data:');
-      console.log('   npm run research:daemon  (let it run for several hours)');
-      console.log('   npm run markets          (browse all available markets)');
-    }
+    console.log(`└──────────────────────────┴──────────┴──────────┴─────────┴───────┴──────────┘\n`);
   }
 
-  console.log('\n⚠️  Backtest results are not guarantees of future performance.');
+  const passing = results.filter(r => r.passes).length;
+  console.log(`  Strategies evaluated: ${results.length}`);
+  console.log(`  Passing validation:   ${passing}`);
+  console.log(`  Errors:               ${errorsThisRun}`);
+  console.log();
+
+  if (results.length === 0 && symbols.length === 0) {
+    console.error('❌ No symbols had sufficient data. Run `npm run research` to collect ticks.');
+    process.exit(1);
+  }
+
+  if (results.length === 0 && errorsThisRun > 0) {
+    console.error(`❌ All strategy evaluations failed (${errorsThisRun} errors). See log output above.`);
+    process.exit(1);
+  }
+
+  if (passing === 0) {
+    console.log('  ⚠️  NO EDGE FOUND — No strategy passes rigorous OOS validation.');
+    console.log('  This is a valid research result. Collect more data or revise hypotheses.');
+  }
+
+  if (errorsThisRun > 0) {
+    console.warn(`  ⚠️  ${errorsThisRun} evaluation(s) failed. Results exclude those runs.`);
+  }
+
+  console.log('\n  ⚠️  Backtest results are not guarantees of future performance.');
+  console.log('  Payout assumptions and zero-latency execution cannot be exactly replicated.');
   process.exit(0);
 }
 

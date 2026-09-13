@@ -1,4 +1,5 @@
-import { Strategy, makeSignal } from '../base/Strategy.js';
+import type { Strategy} from '../base/Strategy.js';
+import { makeSignal } from '../base/Strategy.js';
 import type { TickFeatures } from '../../types/tick.js';
 import type { Signal } from '../../types/signal.js';
 

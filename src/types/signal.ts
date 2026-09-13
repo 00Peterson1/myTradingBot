@@ -46,6 +46,7 @@ export type RejectionReason =
   | 'DEMO_TRADING_DISABLED'
   | 'POSITION_SIZE_TOO_SMALL'
   | 'NO_SIGNAL'
+  | 'OPEN_EXPOSURE_LIMIT'
   // Context filter
   | 'LLM_POLICY_DIVERGENCE_RISK'  // Gemini flagged central bank policy divergence
   | 'ECONOMIC_BLACKOUT'           // High-impact event within suppression window

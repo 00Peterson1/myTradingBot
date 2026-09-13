@@ -558,7 +558,7 @@ export function conditionalProbability(
 export function benjaminiHochbergYekutieli(
   pValues: readonly number[],
   alpha = 0.05,
-): Array<{ original: number; corrected: number; rejected: boolean }> {
+): { original: number; corrected: number; rejected: boolean }[] {
   const n = pValues.length;
   const harmonicSum = Array.from({ length: n }, (_, i) => 1 / (i + 1)).reduce((a, b) => a + b, 0);
   const adjustedAlpha = alpha / harmonicSum;
@@ -600,7 +600,7 @@ export function benjaminiHochbergYekutieli(
 export function bonferroniCorrection(
   pValues: readonly number[],
   alpha = 0.05,
-): Array<{ original: number; corrected: number; rejected: boolean }> {
+): { original: number; corrected: number; rejected: boolean }[] {
   const n = pValues.length;
   return pValues.map((p) => {
     const corrected = Math.min(1, p * n);

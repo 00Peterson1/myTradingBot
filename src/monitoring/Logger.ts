@@ -1,13 +1,14 @@
 import pino from 'pino';
 
 // ---------------------------------------------------------------------------
-// Logger configuration — set by main application startup
-// Tests use defaults without env
+// Logger — singleton, configured once at startup
+// Default level is 'warn' so modules that log INFO before configureLogger()
+// is called don't produce noisy output in CLIs.
 // ---------------------------------------------------------------------------
 
 let _config = {
-  level: 'info' as pino.Level,
-  pretty: process.env['NODE_ENV'] !== 'production',
+  level: 'warn' as pino.Level,  // safe quiet default
+  pretty: process.env.NODE_ENV !== 'production',
 };
 
 let _logger: pino.Logger | null = null;
@@ -21,7 +22,12 @@ let _logger: pino.Logger | null = null;
  */
 export function configureLogger(level: pino.Level, pretty: boolean): void {
   _config = { level, pretty };
-  _logger = null; // Force recreation with new config
+  if (_logger) {
+    // Update the existing instance's level in-place so already-created
+    // child loggers also respect the new level immediately.
+    _logger.level = level;
+  }
+  _logger = null; // Force full recreation on next getLogger() call
 }
 
 /**

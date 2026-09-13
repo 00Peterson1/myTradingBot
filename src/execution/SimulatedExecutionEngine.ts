@@ -63,7 +63,7 @@ export class SimulatedExecutionEngine {
       signalId: approved.signal.id,
       symbol: approved.signal.symbol,
       strategy: approved.signal.strategy,
-      direction: direction as 'BUY' | 'SELL',
+      direction: direction,
       stakeAmount: stake,
       contractType: direction === 'BUY' ? 'CALL' : 'PUT',
       contractDuration: approved.contractDuration,

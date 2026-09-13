@@ -1,4 +1,5 @@
-import { Strategy, makeSignal } from '../base/Strategy.js';
+import type { Strategy} from '../base/Strategy.js';
+import { makeSignal } from '../base/Strategy.js';
 import type { TickFeatures } from '../../types/tick.js';
 import type { Signal } from '../../types/signal.js';
 import { getDb } from '../../data/database/sqlite.js';
@@ -15,6 +16,12 @@ export interface TDQNConfig {
 export class TDQNStrategy implements Strategy {
   readonly name: string;
   readonly description: string;
+  /**
+   * This strategy performs online Q-table updates inside generateSignal().
+   * It MUST NOT be used in a standard walk-forward backtest — it adapts to
+   * test data while being scored, invalidating OOS evaluation.
+   */
+  readonly isOnlineLearner: true = true;
   private epsilon: number;
   private readonly learningRate: number;
   private readonly discount: number;
@@ -148,7 +155,7 @@ export class TDQNStrategy implements Strategy {
     let chosenAction: 'BUY' | 'SELL' | 'HOLD';
 
     if (Math.random() < this.epsilon) {
-      chosenAction = actions[Math.floor(Math.random() * actions.length)] as 'BUY' | 'SELL' | 'HOLD';
+      chosenAction = actions[Math.floor(Math.random() * actions.length)]!;
     } else {
       let maxQ = -Infinity;
       let bestActions: ('BUY' | 'SELL' | 'HOLD')[] = [];
@@ -161,7 +168,7 @@ export class TDQNStrategy implements Strategy {
           bestActions.push(a);
         }
       }
-      chosenAction = bestActions[Math.floor(Math.random() * bestActions.length)] as 'BUY' | 'SELL' | 'HOLD';
+      chosenAction = bestActions[Math.floor(Math.random() * bestActions.length)]!;
     }
 
     this.epsilon = Math.max(this.minEpsilon, this.epsilon * this.epsilonDecay);

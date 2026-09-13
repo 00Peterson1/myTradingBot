@@ -4,20 +4,25 @@
  */
 
 // ---------------------------------------------------------------------------
-// Deriv API Endpoints (new API — developers.deriv.com)
+// Deriv API Endpoints (api.derivws.com — new Deriv API)
+//
+// Architecture:
+//   Public WS  → wss://api.derivws.com/trading/v1/options/ws/public
+//               No auth. Ticks, symbols, proposals (pricing).
+//
+//   Trading WS → wss://api.derivws.com/trading/v1/options/ws/demo?otp=XXX
+//               Auth via OTP obtained from REST POST /accounts/{id}/otp.
+//               Buy, sell, balance, portfolio.
+//
+//   REST Base  → https://api.derivws.com
+//               Authorization: Bearer {PAT} + Deriv-App-ID: {APP_ID}
 // ---------------------------------------------------------------------------
 
-/** Public WebSocket gateway — market data, no authentication required. */
+/** Public WebSocket — market data, no auth required. */
 export const DERIV_WS_PUBLIC = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
-/** REST base URL — account management, OTP issuance. */
+/** REST base URL — account management and OTP issuance. */
 export const DERIV_REST_BASE = 'https://api.derivws.com';
-
-/** Trading WebSocket base (demo) — connect to OTP URL, not this directly. */
-export const DERIV_WS_DEMO_BASE = 'wss://api.derivws.com/trading/v1/options/ws/demo';
-
-/** Trading WebSocket base (real/live) — connect to OTP URL, not this directly. */
-export const DERIV_WS_REAL_BASE = 'wss://api.derivws.com/trading/v1/options/ws/real';
 
 // ---------------------------------------------------------------------------
 // Deriv WebSocket — timing

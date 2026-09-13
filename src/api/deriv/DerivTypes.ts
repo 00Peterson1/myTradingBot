@@ -13,16 +13,47 @@ export const ActiveSymbolSchema = z
     display_name: z.string().optional(),
     market: z.string().optional(),
     submarket: z.string().optional(),
+    market_display_name: z.string().optional(),
+    submarket_display_name: z.string().optional(),
+    subgroup: z.string().optional(),
+    underlying_symbol_type: z.string().optional(),
+    symbol_type: z.string().optional(),
+    exchange_is_open: z.union([z.number(), z.boolean()]).optional(),
+    is_trading_suspended: z.union([z.number(), z.boolean()]).optional(),
+    pip: z.number().optional(),
+    // In active_symbols this is the price increment, not the tick decimal count.
+    pip_size: z.number().optional(),
+    spot: z.number().optional(),
+    spot_time: z.number().optional(),
   })
   .passthrough()
   .transform((data) => ({
+    ...data,
     symbol: data.underlying_symbol ?? data.symbol ?? '',
     display_name: data.underlying_symbol_name ?? data.display_name ?? '',
     market: data.market ?? '',
     submarket: data.submarket ?? '',
+    symbol_type: data.underlying_symbol_type ?? data.symbol_type,
   }));
 
 export type ActiveSymbol = z.infer<typeof ActiveSymbolSchema>;
+
+export const AvailableContractSchema = z.object({
+  contract_type: z.string(),
+  min_contract_duration: z.string().optional(),
+  max_contract_duration: z.string().optional(),
+  contract_category: z.string().optional(),
+  expiry_type: z.string().optional(),
+  barriers: z.number().optional(),
+  barrier: z.string().optional(),
+  barrier_category: z.string().optional(),
+  start_type: z.string().optional(),
+  underlying_symbol: z.string().optional(),
+  market: z.string().optional(),
+  submarket: z.string().optional(),
+}).passthrough();
+
+export type AvailableContract = z.infer<typeof AvailableContractSchema>;
 
 // ---------------------------------------------------------------------------
 // Tick from Deriv subscription

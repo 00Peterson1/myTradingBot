@@ -58,7 +58,10 @@ export class DerivExecutionEngine {
       throw new Error('Cannot execute a NONE signal — logic error in caller');
     }
 
-    const contractType = signal.direction === 'BUY' ? 'CALL' : 'PUT';
+    const metadata = (signal.metadata ?? {}) as { contractType?: any; barrier?: number | string };
+    const contractType =
+      metadata.contractType ?? (signal.direction === 'BUY' ? 'CALL' : 'PUT');
+    const barrier = metadata.barrier;
 
     log.info(
       {
@@ -66,24 +69,51 @@ export class DerivExecutionEngine {
         symbol: signal.symbol,
         direction: signal.direction,
         contractType,
+        barrier,
         stake: stakeAmount,
         duration: `${contractDuration}${contractDurationUnit}`,
         strategy: signal.strategy,
       },
-      `[${this.mode}] Placing ${contractType} contract`,
+      `[${this.mode}] Placing ${contractType}${barrier !== undefined ? ` (${barrier})` : ''} contract`,
     );
 
     try {
-      // 1. Request proposal quote
-      const proposal = await this.client.requestProposal({
-        stake: stakeAmount,
-        basis: 'stake',
-        contractType,
-        currency: 'USD',
-        duration: contractDuration,
-        durationUnit: contractDurationUnit,
-        symbol: signal.symbol,
-      });
+      // 1. Request proposal quote (with automatic duration fallback for symbols like Crash/Boom)
+      let proposal;
+      try {
+        proposal = await this.client.requestProposal({
+          stake: stakeAmount,
+          basis: 'stake',
+          contractType,
+          ...(barrier !== undefined ? { barrier } : {}),
+          currency: 'USD',
+          duration: contractDuration,
+          durationUnit: contractDurationUnit,
+          symbol: signal.symbol,
+        });
+      } catch (propErr: any) {
+        if (
+          propErr?.message?.includes('TradingDurationNotAllowed') &&
+          contractDurationUnit === 't'
+        ) {
+          log.info(
+            { symbol: signal.symbol },
+            'Tick duration not allowed for symbol — retrying with 15s duration',
+          );
+          proposal = await this.client.requestProposal({
+            stake: stakeAmount,
+            basis: 'stake',
+            contractType,
+            ...(barrier !== undefined ? { barrier } : {}),
+            currency: 'USD',
+            duration: 15,
+            durationUnit: 's',
+            symbol: signal.symbol,
+          });
+        } else {
+          throw propErr;
+        }
+      }
 
       // 2. Buy contract with proposal ID and price
       const response = await this.client.buyContract(proposal.id, proposal.ask_price);
@@ -120,16 +150,19 @@ export class DerivExecutionEngine {
       return trade;
     } catch (err) {
       const error = err as Error;
-      log.error(
+      const cleanMsg = error.message.includes('TradingDurationNotAllowed')
+        ? `Deriv does not offer Rise/Fall contracts on ${signal.symbol}. (Options Rise/Fall contracts are available on Volatility indices).`
+        : error.message;
+
+      log.warn(
         {
           symbol: signal.symbol,
-          strategy: signal.strategy,
-          error: error.message,
+          error: cleanMsg,
           mode: this.mode,
         },
-        `[${this.mode}] Failed to place contract`,
+        `[${this.mode}] Order skipped for ${signal.symbol}`,
       );
-      throw error;
+      throw new Error(cleanMsg);
     }
   }
 

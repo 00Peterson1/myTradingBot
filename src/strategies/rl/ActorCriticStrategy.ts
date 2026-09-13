@@ -1,10 +1,17 @@
-import { Strategy, makeSignal } from '../base/Strategy.js';
+import type { Strategy} from '../base/Strategy.js';
+import { makeSignal } from '../base/Strategy.js';
 import type { TickFeatures } from '../../types/tick.js';
 import type { Signal } from '../../types/signal.js';
 
 export class ActorCriticStrategy implements Strategy {
   readonly name = 'ActorCritic';
   readonly description = 'Linear function approximation actor-critic';
+  /**
+   * This strategy performs online weight updates inside generateSignal().
+   * It MUST NOT be used in a standard walk-forward backtest — it adapts to
+   * test data while being scored, invalidating OOS evaluation.
+   */
+  readonly isOnlineLearner: true = true;
 
   private readonly learningRate = 0.01;
   private readonly gamma = 0.95;
@@ -69,7 +76,7 @@ export class ActorCriticStrategy implements Strategy {
         break;
       }
     }
-    const chosenAction = actions[chosenIndex] as 'BUY' | 'SELL' | 'HOLD';
+    const chosenAction = actions[chosenIndex]!;
     const confidence = Math.max(...probs);
 
     this.previousFeatureVec = featureVec;

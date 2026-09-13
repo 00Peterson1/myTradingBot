@@ -11,6 +11,7 @@ import { MIN_TRADES_FOR_SHARPE } from '../config/constants.js';
 import type { Strategy } from '../strategies/base/Strategy.js';
 import type { TickFeatures } from '../types/tick.js';
 import type { BacktestObservation, PerformanceMetrics, BacktestRun } from '../types/backtest.js';
+import type { Signal } from '../types/signal.js';
 
 const log = createLogger('BacktestEngine');
 
@@ -19,7 +20,9 @@ const log = createLogger('BacktestEngine');
 // ---------------------------------------------------------------------------
 
 export interface BacktestConfig {
-  strategy: Strategy;
+  /** A new instance is required for EVERY period; learned state must never leak. */
+  strategyFactory: () => Strategy;
+  strategyName: string;
   symbol: string;
   /** Contract payout multiplier — e.g. 0.85 means 85c payout per $1 stake on win */
   payoutMultiplier: number;
@@ -31,6 +34,12 @@ export interface BacktestConfig {
   contextWindow: number;
   /** Number of strategies tried (for Deflated Sharpe calculation) */
   numTrials?: number;
+  contractDuration?: number;
+  contractDurationUnit?: 't' | 's' | 'm' | 'h' | 'd';
+  pipSize?: number;
+  initialCapital?: number;
+  parameterHash?: string;
+  maxTradesPerHour?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -56,7 +65,11 @@ export interface BacktestConfig {
  *   - Does not model potential changes in payout ratios over time
  */
 export class BacktestEngine {
-  constructor(private readonly config: BacktestConfig) {}
+  constructor(private readonly config: BacktestConfig) {
+    if (!Number.isFinite(config.payoutMultiplier) || config.payoutMultiplier <= 0) throw new Error('Payout multiplier must be positive');
+    if (!Number.isFinite(config.initialCapital ?? 100) || (config.initialCapital ?? 100) <= 0) throw new Error('Initial capital must be positive');
+    if (!Number.isInteger(config.contractDuration ?? 1) || (config.contractDuration ?? 1) < 1) throw new Error('Contract duration must be a positive integer');
+  }
 
   /**
    * Runs the backtest on a set of feature-enriched ticks.
@@ -80,7 +93,7 @@ export class BacktestEngine {
   ): Promise<BacktestRun> {
     log.info(
       {
-        strategy: this.config.strategy.name,
+        strategy: this.config.strategyName,
         symbol: this.config.symbol,
         total: features.length,
       },
@@ -115,12 +128,16 @@ export class BacktestEngine {
     return {
       id: crypto.randomUUID(),
       createdAt: new Date(),
-      strategy: this.config.strategy.name,
+      strategy: this.config.strategyName,
       symbol: this.config.symbol,
       parameters: {
         payoutMultiplier: this.config.payoutMultiplier,
         feePerTrade: this.config.feePerTrade,
         minConfidence: this.config.minConfidence,
+        contractDuration: this.config.contractDuration ?? 1,
+        contractDurationUnit: this.config.contractDurationUnit ?? 't',
+        initialCapital: this.config.initialCapital ?? 100,
+        executionModel: 'Signal tick entry (zero latency), one open contract per symbol, fixed payout assumption',
       },
       trainFrom,
       trainTo,
@@ -150,38 +167,44 @@ export class BacktestEngine {
 
     const observations: BacktestObservation[] = [];
     const history: TickFeatures[] = [];
+    const strategy = this.config.strategyFactory();
+    let openUntilIndex = -1;
+    const entryTimes: number[] = [];
 
     for (let i = 0; i < periodFeatures.length - 1; i++) {
       const current = periodFeatures[i];
       if (!current) continue;
 
       // Maintain context window (history = ticks BEFORE current)
-      if (history.length > this.config.contextWindow) {
+      if (history.length >= this.config.contextWindow) {
         history.shift();
       }
 
-      const signal = this.config.strategy.generateSignal(current, history);
+      const signal = strategy.generateSignal(current, history);
 
       // Add current to history AFTER signal generation (causal)
       history.push(current);
 
+      if (i <= openUntilIndex) continue;
       if (signal.direction === 'NONE') continue;
       if (signal.confidence < this.config.minConfidence) continue;
 
-      // Next tick is our "exit" (for simplest binary option simulation)
-      const next = periodFeatures[i + 1];
-      if (!next) continue;
+      const entryIndex = i;
+      const entry = periodFeatures[entryIndex];
+      if (!entry) continue;
+      const expiryIndex = this.expiryIndex(periodFeatures, entryIndex);
+      const expiry = periodFeatures[expiryIndex];
+      // Do not invent an outcome when history ends before the contract expires.
+      if (!expiry) continue;
+      while (entryTimes.length && entryTimes[0]! <= current.timestamp.getTime() - 3_600_000) entryTimes.shift();
+      if (entryTimes.length >= (this.config.maxTradesPerHour ?? Infinity)) continue;
 
       const stake = 1.0; // Normalized stake for backtesting — risk engine handles real sizing
-      const entryPrice = current.price;
-      const exitPrice = next.price;
-
-      const priceWentUp = exitPrice > entryPrice;
-
-      // Win condition depends on direction
-      const won =
-        (signal.direction === 'BUY' && priceWentUp) ||
-        (signal.direction === 'SELL' && !priceWentUp);
+      const entryPrice = entry.price;
+      const exitPrice = expiry.price;
+      const won = contractWon(signal, entryPrice, exitPrice, this.config.pipSize);
+      openUntilIndex = expiryIndex;
+      entryTimes.push(current.timestamp.getTime());
 
       const grossProfit = won ? stake * this.config.payoutMultiplier : -stake;
       const netProfit = grossProfit - this.config.feePerTrade;
@@ -202,18 +225,30 @@ export class BacktestEngine {
     return observations;
   }
 
+  private expiryIndex(features: readonly TickFeatures[], entryIndex: number): number {
+    const duration = this.config.contractDuration ?? 1;
+    const unit = this.config.contractDurationUnit ?? 't';
+    if (unit === 't') return entryIndex + duration;
+    const seconds = { s: 1, m: 60, h: 3600, d: 86400 }[unit] * duration;
+    const expiryTime = features[entryIndex]!.timestamp.getTime() + seconds * 1000;
+    for (let i = entryIndex + 1; i < features.length; i++) {
+      if (features[i]!.timestamp.getTime() >= expiryTime) return i;
+    }
+    return features.length;
+  }
+
   // ---------------------------------------------------------------------------
   // Private: Metrics Computation
   // ---------------------------------------------------------------------------
 
-  private computeMetrics(
+  computeMetrics(
     observations: readonly BacktestObservation[],
     mode: 'BACKTEST',
     from: Date,
     to: Date,
     numTrials: number,
   ): PerformanceMetrics {
-    const paramHash = this.config.strategy.name; // simplified
+    const paramHash = this.config.parameterHash ?? this.config.strategyName;
 
     if (observations.length === 0) {
       return this.emptyMetrics(mode, from, to, paramHash);
@@ -236,8 +271,8 @@ export class BacktestEngine {
     const profitFactor = totalLossAmount > 0 ? totalWinAmount / totalLossAmount : Infinity;
 
     // Equity curve for drawdown
-    let equity = 0;
-    const equityCurve = profits.map((p) => (equity += p));
+    let equity = this.config.initialCapital ?? 100;
+    const equityCurve = [equity, ...profits.map((p) => (equity += p))];
     const { maxDrawdown, maxDrawdownPct } = computeMaxDrawdown(equityCurve);
 
     // Streaks
@@ -275,7 +310,7 @@ export class BacktestEngine {
 
     return {
       mode,
-      strategy: this.config.strategy.name,
+      strategy: this.config.strategyName,
       symbol: this.config.symbol,
       fromDate: from,
       toDate: to,
@@ -341,7 +376,7 @@ export class BacktestEngine {
   ): PerformanceMetrics {
     return {
       mode,
-      strategy: this.config.strategy.name,
+      strategy: this.config.strategyName,
       symbol: this.config.symbol,
       fromDate: from,
       toDate: to,
@@ -389,3 +424,25 @@ async function hashObject(obj: unknown): Promise<string> {
 }
 
 export { hashObject };
+
+/** Only supported strict Rise/Fall and digit contracts can be simulated. */
+export function contractWon(signal: Signal, entryPrice: number, exitPrice: number, pipSize?: number): boolean {
+  const contractType = signal.metadata.contractType ?? (signal.direction === 'BUY' ? 'CALL' : 'PUT');
+  if (contractType === 'CALL') return exitPrice > entryPrice;
+  if (contractType === 'PUT') return exitPrice < entryPrice;
+  if (pipSize === undefined || !Number.isInteger(pipSize) || pipSize < 0 || pipSize > 10) {
+    throw new Error('Digit contract backtesting requires verified symbol precision');
+  }
+  const digit = Number(exitPrice.toFixed(pipSize).slice(-1));
+  if (contractType === 'DIGITEVEN') return digit % 2 === 0;
+  if (contractType === 'DIGITODD') return digit % 2 === 1;
+  const barrier = Number(signal.metadata.barrier);
+  if (!Number.isInteger(barrier) || barrier < 0 || barrier > 9) throw new Error('Digit barrier must be an integer from 0 to 9');
+  switch (contractType) {
+    case 'DIGITOVER': return digit > barrier;
+    case 'DIGITUNDER': return digit < barrier;
+    case 'DIGITMATCH': return digit === barrier;
+    case 'DIGITDIFF': return digit !== barrier;
+    default: throw new Error(`Unsupported backtest contract: ${String(contractType)}`);
+  }
+}

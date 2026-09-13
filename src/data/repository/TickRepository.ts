@@ -70,7 +70,7 @@ export function insertTick(tick: TickInsert): bigint | null {
     )
     .run(tick.symbol, tick.epoch, ts, tick.price, tick.tickId ?? null);
 
-  return result.changes > 0 ? BigInt(result.lastInsertRowid as number) : null;
+  return result.changes > 0 ? BigInt(result.lastInsertRowid) : null;
 }
 
 /**
@@ -257,7 +257,7 @@ export function upsertTickFeatures(tickRowId: bigint, features: TickFeatures): v
 /**
  * Bulk-upsert features inside a single transaction for speed.
  */
-export function bulkUpsertTickFeatures(pairs: Array<{ rowId: bigint; features: TickFeatures }>): void {
+export function bulkUpsertTickFeatures(pairs: { rowId: bigint; features: TickFeatures }[]): void {
   if (pairs.length === 0) return;
   const db = getDb();
   const upsert = db.transaction(() => {

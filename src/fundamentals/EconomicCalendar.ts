@@ -34,7 +34,7 @@ export class EconomicCalendar {
     const db = getDb();
     
     const row = db.prepare('SELECT MIN(fetched_at) as oldest FROM economic_events').get() as { oldest: string | null } | undefined;
-    if (row && row.oldest) {
+    if (row?.oldest) {
       const oldestDate = new Date(row.oldest);
       const now = new Date();
       if (now.getTime() - oldestDate.getTime() < 3600_000) {
@@ -60,10 +60,10 @@ export class EconomicCalendar {
           const impact = this.mapImpact(item.impact, item.title);
           
           const prevStr = item.previous ? parseFloat(item.previous.replace(/[^0-9.-]+/g,"")) : null;
-          const prev = isNaN(prevStr as number) ? null : prevStr;
+          const prev = isNaN(prevStr!) ? null : prevStr;
           
           const foreStr = item.forecast ? parseFloat(item.forecast.replace(/[^0-9.-]+/g,"")) : null;
-          const fore = isNaN(foreStr as number) ? null : foreStr;
+          const fore = isNaN(foreStr!) ? null : foreStr;
 
           const eventId = item.title + '_' + item.date;
 

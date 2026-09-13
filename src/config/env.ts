@@ -24,6 +24,26 @@ const envSchema = z.object({
     .transform((v) => v.toLowerCase() === 'true')
     .default('false'),
 
+  // Trade Parameters — set these in .env to control trade sizing
+  STAKE_AMOUNT: z.coerce.number().positive().optional(),
+  CONTRACT_DURATION: z.coerce.number().int().positive().default(5),
+  CONTRACT_DURATION_UNIT: z.enum(['t', 's', 'm', 'h', 'd']).default('t'),
+  MAX_STAKE_PERCENT: z.coerce.number().min(0.001).max(0.25).default(0.02),
+  MAX_DAILY_LOSS_PERCENT: z.coerce.number().min(0.01).max(1.0).default(0.10),
+
+  // Contract Type & Digit Options
+  CONTRACT_TYPE: z.enum(['AUTO', 'RISE_FALL', 'EVEN_ODD', 'OVER_UNDER', 'MATCHES_DIFFERS']).default('AUTO'),
+  DIGIT_BARRIER: z.coerce.number().int().min(0).max(9).default(5),
+
+  // Vote / Consensus Trading Controls
+  VOTE_THRESHOLD: z.coerce.number().min(0.1).max(1.0).default(0.60),
+  MIN_CONSENSUS_CONFIDENCE: z.coerce.number().min(0.0).max(1.0).default(0.55),
+  MAX_TRADES_PER_HOUR: z.coerce.number().int().positive().default(10),
+  MAX_OPEN_TRADES: z.coerce.number().int().positive().default(3),
+  TOP_SYMBOLS: z.coerce.number().int().positive().optional(),
+  VALIDATION_MAX_AGE_HOURS: z.coerce.number().positive().default(24),
+  BACKTEST_PAYOUT_MULTIPLIER: z.coerce.number().positive().default(0.85),
+
   // Database
   DATABASE_HOST: z.string().default('localhost'),
   DATABASE_PORT: z.coerce.number().int().positive().default(5432),
@@ -49,8 +69,8 @@ const envSchema = z.object({
   // Data collection
   SYMBOLS: z
     .string()
-    .transform((v) => (v.trim() === '' ? ['R_100', 'R_10', 'R_25', 'R_50', 'R_75'] : v.split(',').map((s) => s.trim())))
-    .default('R_100,R_10,R_25,R_50,R_75'),
+    .transform((v) => (v.trim() === '' ? ['ALL'] : v.split(',').map((s) => s.trim()).filter(Boolean)))
+    .default('ALL'),
   COLLECT_SYMBOLS: z
     .string()
     .transform((v) => (v.trim() === '' ? [] : v.split(',').map((s) => s.trim())))
@@ -173,7 +193,7 @@ export function resetEnvForTesting(): void {
  */
 export function isLiveTradingEnabled(): boolean {
   const env = getEnv();
-  return env.LIVE_TRADING && env.LIVE_CONFIRMATION;
+  return env.LIVE_TRADING && env.LIVE_CONFIRMATION && !env.DEMO_TRADING;
 }
 
 /**

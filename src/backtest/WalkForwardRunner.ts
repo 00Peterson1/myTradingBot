@@ -1,25 +1,12 @@
-import { createLogger } from '../monitoring/Logger.js';
-import { BacktestEngine, type BacktestConfig } from '../backtest/BacktestEngine.js';
-import { probabilityOfBacktestOverfitting } from '../research/statistics/stats.js';
+import { BacktestEngine, type BacktestConfig } from './BacktestEngine.js';
 import type { TickFeatures } from '../types/tick.js';
 import type { BacktestRun, PerformanceMetrics } from '../types/backtest.js';
 
-const log = createLogger('WalkForwardRunner');
-
-// ---------------------------------------------------------------------------
-// Walk-Forward Configuration
-// ---------------------------------------------------------------------------
-
 export interface WalkForwardConfig {
-  /** Fraction of total data used for training in each fold [0, 1] */
   trainFraction: number;
-  /** Fraction used for validation [0, 1] */
   validateFraction: number;
-  /** Fraction used for out-of-sample test [0, 1] */
   testFraction: number;
-  /** Number of rolling folds to run (anchored walk-forward) */
   numFolds: number;
-  /** Minimum trades per fold to count as a valid fold */
   minTradesPerFold: number;
 }
 
@@ -40,333 +27,80 @@ export interface WalkForwardResult {
   config: WalkForwardConfig;
   folds: WalkForwardFold[];
   aggregatedTestMetrics: PerformanceMetrics | null;
-  pbo: number | null; // Probability of Backtest Overfitting across all folds
+  pbo: number | null;
   pboInterpretation: string;
   passesRigorousValidation: boolean;
   validationNotes: string[];
 }
 
-// ---------------------------------------------------------------------------
-// WalkForwardRunner
-// ---------------------------------------------------------------------------
-
-/**
- * Walk-Forward Validation Orchestrator
- *
- * Implements anchored walk-forward testing — the gold standard for
- * evaluating time-series strategies:
- *
- *  Fold 1: [====TRAIN====][--VAL--][TEST]...remaining data
- *  Fold 2: [======TRAIN======][--VAL--][TEST]...
- *  ...
- *
- * The train set grows with each fold (anchored), validation and test
- * windows slide forward.
- *
- * This prevents:
- *   - Look-ahead bias (test is always strictly in the future)
- *   - Data snooping (validation never touches test set)
- *   - Overfitting (final evaluation on unseen test set only)
- *
- * EMPIRICAL CAUTION:
- * Even walk-forward validation can overfit if the strategy is selected
- * based on test performance. The ONLY legitimate use is:
- *   1. Develop strategy on train set
- *   2. Tune parameters on validation set (once, not repeatedly)
- *   3. Report results on test set (one time, no further tuning)
- */
+/** Anchored folds with non-overlapping test periods and fresh strategy instances. */
 export class WalkForwardRunner {
   constructor(private readonly config: WalkForwardConfig) {
-    const total = config.trainFraction + config.validateFraction + config.testFraction;
-    if (Math.abs(total - 1.0) > 0.001) {
-      throw new Error(
-        `trainFraction + validateFraction + testFraction must sum to 1.0, got ${total}`,
-      );
+    const fractions = [config.trainFraction, config.validateFraction, config.testFraction];
+    if (fractions.some((f) => !Number.isFinite(f) || f <= 0) || Math.abs(fractions.reduce((a, b) => a + b, 0) - 1) > 0.001) {
+      throw new Error('Positive train/validate/test fractions must sum to 1.0');
     }
-    if (config.numFolds < 2) {
-      throw new Error('numFolds must be >= 2 for meaningful walk-forward validation');
-    }
+    if (!Number.isInteger(config.numFolds) || config.numFolds < 2) throw new Error('numFolds must be >= 2');
+    if (!Number.isInteger(config.minTradesPerFold) || config.minTradesPerFold < 1) throw new Error('minTradesPerFold must be positive');
   }
 
-  /**
-   * Runs walk-forward validation for a single strategy on feature data.
-   *
-   * @param features - Feature-enriched ticks in STRICT chronological order
-   * @param backtestConfig - Strategy + backtest parameters
-   * @param numStrategiesTried - Total strategies tried before this one (for PBO/DSR)
-   */
-  async run(
-    features: readonly TickFeatures[],
-    backtestConfig: BacktestConfig,
-    numStrategiesTried = 1,
-  ): Promise<WalkForwardResult> {
-    if (features.length < 100) {
-      throw new Error(
-        `Insufficient data for walk-forward: need ≥100 ticks, got ${features.length}`,
-      );
+  async run(features: readonly TickFeatures[], config: BacktestConfig, numStrategiesTried = 1): Promise<WalkForwardResult> {
+    if (features.length < 100) throw new Error(`Insufficient data for walk-forward: need >=100 ticks, got ${features.length}`);
+    for (let i = 1; i < features.length; i++) {
+      if (features[i]!.timestamp < features[i - 1]!.timestamp) throw new Error('Backtest features must be chronological');
     }
-
-    const strategy = backtestConfig.strategy.name;
-    const symbol = backtestConfig.symbol;
-
-    log.info(
-      { strategy, symbol, numFolds: this.config.numFolds, total: features.length },
-      'Starting walk-forward validation',
-    );
-
     const folds: WalkForwardFold[] = [];
-    const allTestReturns: number[][] = [];
-
-    // ---------------------------------------------------------------------------
-    // Anchored walk-forward: train grows, test slides forward
-    // ---------------------------------------------------------------------------
-    const n = features.length;
-    const foldStep = Math.floor(n * this.config.testFraction);
-
-    for (let foldIdx = 0; foldIdx < this.config.numFolds; foldIdx++) {
-      // Anchored: train start is always the beginning
-      const testEnd = n - foldStep * (this.config.numFolds - 1 - foldIdx);
-      const testStart = testEnd - foldStep;
-      const validateEnd = testStart;
-      const validateStart = Math.max(0, validateEnd - Math.floor(n * this.config.validateFraction));
-      const trainEnd = validateStart;
-      const trainStart = 0; // Anchored
-
-      if (trainEnd <= trainStart || validateEnd <= validateStart || testEnd <= testStart) {
-        log.warn({ foldIdx }, 'Skipping invalid fold (insufficient data)');
-        continue;
-      }
-
-      const trainFrom = features[trainStart]!.timestamp;
-      const trainTo = features[trainEnd - 1]!.timestamp;
-      const validateFrom = features[validateStart]!.timestamp;
-      const validateTo = features[validateEnd - 1]!.timestamp;
+    const engine = new BacktestEngine({ ...config, numTrials: numStrategiesTried });
+    // Keep the requested initial training fraction, split the remaining test
+    // allocation into disjoint folds, and grow training as each fold advances.
+    const firstTest = Math.floor(features.length * (this.config.trainFraction + this.config.validateFraction));
+    const validationLength = Math.floor(features.length * this.config.validateFraction);
+    const testLength = features.length - firstTest;
+    const boundary = (index: number): number => {
+      while (index > 0 && index < features.length && features[index]!.timestamp.getTime() === features[index - 1]!.timestamp.getTime()) index++;
+      return index;
+    };
+    for (let i = 0; i < this.config.numFolds; i++) {
+      const testStart = boundary(firstTest + Math.floor(testLength * i / this.config.numFolds));
+      const testEnd = boundary(firstTest + Math.floor(testLength * (i + 1) / this.config.numFolds));
+      const validationStart = boundary(Math.max(1, testStart - validationLength));
+      if (testEnd - testStart < 2 || validationStart >= testStart) continue;
+      const trainFrom = features[0]!.timestamp;
+      const trainTo = features[validationStart - 1]!.timestamp;
+      const validateFrom = features[validationStart]!.timestamp;
+      const validateTo = features[testStart - 1]!.timestamp;
       const testFrom = features[testStart]!.timestamp;
       const testTo = features[testEnd - 1]!.timestamp;
-
-      log.info(
-        {
-          fold: foldIdx + 1,
-          trainTicks: trainEnd - trainStart,
-          validateTicks: validateEnd - validateStart,
-          testTicks: testEnd - testStart,
-        },
-        'Running fold',
-      );
-
-      const engine = new BacktestEngine({
-        ...backtestConfig,
-        numTrials: numStrategiesTried,
-      });
-
-      const run = await engine.run(
-        features,
-        trainFrom,
-        trainTo,
-        validateFrom,
-        validateTo,
-        testFrom,
-        testTo,
-      );
-
-      folds.push({
-        foldIndex: foldIdx,
-        trainFrom,
-        trainTo,
-        validateFrom,
-        validateTo,
-        testFrom,
-        testTo,
-        run,
-      });
-
-      // Collect test returns for PBO calculation
-      const testReturns = run.observations
-        .filter((o) => o.timestamp >= testFrom && o.timestamp <= testTo)
-        .map((o) => o.returnPct);
-
-      if (testReturns.length >= this.config.minTradesPerFold) {
-        allTestReturns.push(testReturns);
-      }
+      const run = await engine.run(features, trainFrom, trainTo, validateFrom, validateTo, testFrom, testTo);
+      folds.push({ foldIndex: i, trainFrom, trainTo, validateFrom, validateTo, testFrom, testTo, run });
     }
-
-    if (folds.length === 0) {
-      throw new Error('No valid folds completed — insufficient data or all folds invalid');
-    }
-
-    // ---------------------------------------------------------------------------
-    // PBO across all test folds
-    // ---------------------------------------------------------------------------
-    let pbo: number | null = null;
-    let pboInterpretation = 'N/A — insufficient folds for PBO';
-
-    if (allTestReturns.length >= 2) {
-      const pboResult = probabilityOfBacktestOverfitting(allTestReturns, 8);
-      if (pboResult !== null) {
-        pbo = pboResult.pbo;
-        pboInterpretation = interpretPBO(pbo);
-      }
-    }
-
-    // ---------------------------------------------------------------------------
-    // Aggregate test metrics across folds
-    // ---------------------------------------------------------------------------
-    const aggregatedTestMetrics = this.aggregateTestMetrics(folds);
-
-    // ---------------------------------------------------------------------------
-    // Rigorous validation gate
-    // ---------------------------------------------------------------------------
-    const { passes, notes } = this.rigorousValidation(folds, aggregatedTestMetrics, pbo);
-
-    log.info(
-      {
-        strategy,
-        symbol,
-        folds: folds.length,
-        pbo,
-        passesValidation: passes,
-        validationNotes: notes,
-      },
-      'Walk-forward complete',
-    );
-
+    // Include ALL test trades, even from sparse or losing folds; excluding those
+    // trades biases the result. Compute totals/CI/drawdown from the combined path.
+    const observations = folds.flatMap((f) => f.run.observations.filter((o) => o.timestamp >= f.testFrom && o.timestamp <= f.testTo));
+    const aggregated = folds.length ? engine.computeMetrics(observations, 'BACKTEST', folds[0]!.testFrom, folds[folds.length - 1]!.testTo, numStrategiesTried) : null;
+    const notes: string[] = [];
+    if (folds.length < this.config.numFolds) notes.push(`FAIL: Only ${folds.length}/${this.config.numFolds} usable folds`);
+    const sparse = folds.filter((f) => f.run.testMetrics.totalTrades < this.config.minTradesPerFold).length;
+    if (sparse) notes.push(`FAIL: Insufficient data: ${sparse} folds have fewer than ${this.config.minTradesPerFold} test trades`);
+    if (!aggregated || aggregated.totalTrades < 30) notes.push(`FAIL: Insufficient data: ${aggregated?.totalTrades ?? 0} out-of-sample trades; need >=30`);
+    if (!aggregated || !Number.isFinite(aggregated.expectancy) || aggregated.expectancy <= 0) notes.push('FAIL: Out-of-sample expectancy must be positive after payout and fees');
+    if (!aggregated?.confidenceInterval95 || !Number.isFinite(aggregated.confidenceInterval95[0]) || aggregated.confidenceInterval95[0] <= 0) notes.push('FAIL: Lower 95% confidence bound on out-of-sample return must be positive');
+    if (aggregated && aggregated.maxDrawdownPct < -0.3) notes.push('FAIL: Maximum drawdown exceeds 30% of simulated starting capital');
+    const profitable = folds.filter((f) => f.run.testMetrics.totalProfit > 0).length;
+    if (!folds.length || profitable / folds.length < 0.6) notes.push('FAIL: Fewer than 60% of test folds are profitable');
+    const passed = notes.length === 0;
+    if (passed) notes.push(`PASS: Positive out-of-sample evidence across ${folds.length} folds`);
+    notes.push('Simulation assumes zero execution latency and a fixed minimum payout; historical ticks cannot reproduce dealer quotes or guarantee future performance.');
     return {
-      strategy,
-      symbol,
+      strategy: config.strategyName,
+      symbol: config.symbol,
       config: this.config,
       folds,
-      aggregatedTestMetrics,
-      pbo,
-      pboInterpretation,
-      passesRigorousValidation: passes,
+      aggregatedTestMetrics: aggregated,
+      pbo: null,
+      pboInterpretation: 'Unavailable: PBO requires aligned returns for multiple candidate strategies; temporal folds are not separate strategies.',
+      passesRigorousValidation: passed,
       validationNotes: notes,
     };
   }
-
-  // ---------------------------------------------------------------------------
-  // Private
-  // ---------------------------------------------------------------------------
-
-  private aggregateTestMetrics(folds: WalkForwardFold[]): PerformanceMetrics | null {
-    const validFolds = folds.filter(
-      (f) => f.run.testMetrics.totalTrades >= this.config.minTradesPerFold,
-    );
-
-    if (validFolds.length === 0) return null;
-
-    // Average key metrics across folds
-    const avg = (arr: (number | null)[]): number | null => {
-      const valid = arr.filter((v): v is number => v !== null);
-      return valid.length > 0 ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
-    };
-
-    const first = validFolds[0]!.run.testMetrics;
-
-    return {
-      ...first,
-      totalTrades: validFolds.reduce((a, f) => a + f.run.testMetrics.totalTrades, 0),
-      wins: validFolds.reduce((a, f) => a + f.run.testMetrics.wins, 0),
-      losses: validFolds.reduce((a, f) => a + f.run.testMetrics.losses, 0),
-      winRate: avg(validFolds.map((f) => f.run.testMetrics.winRate)) ?? 0,
-      netReturn: avg(validFolds.map((f) => f.run.testMetrics.netReturn)) ?? 0,
-      sharpeRatio: avg(validFolds.map((f) => f.run.testMetrics.sharpeRatio)),
-      sortinoRatio: avg(validFolds.map((f) => f.run.testMetrics.sortinoRatio)),
-      deflatedSharpe: avg(validFolds.map((f) => f.run.testMetrics.deflatedSharpe)),
-      maxDrawdownPct: Math.min(...validFolds.map((f) => f.run.testMetrics.maxDrawdownPct)),
-      edgeStatus: this.aggregateEdgeStatus(validFolds),
-      fromDate: validFolds[0]!.testFrom,
-      toDate: validFolds[validFolds.length - 1]!.testTo,
-    };
-  }
-
-  private aggregateEdgeStatus(folds: WalkForwardFold[]): PerformanceMetrics['edgeStatus'] {
-    const statuses = folds.map((f) => f.run.testMetrics.edgeStatus);
-    const edgeCount = statuses.filter((s) => s === 'EDGE_DETECTED').length;
-    const overfitCount = statuses.filter((s) => s === 'OVERFIT_RISK_HIGH').length;
-    const insufficientCount = statuses.filter((s) => s === 'INSUFFICIENT_EVIDENCE').length;
-
-    if (insufficientCount > folds.length / 2) return 'INSUFFICIENT_EVIDENCE';
-    if (overfitCount > 0) return 'OVERFIT_RISK_HIGH';
-    if (edgeCount > folds.length * 0.6) return 'EDGE_DETECTED';
-    return 'EDGE_NOT_DETECTED';
-  }
-
-  private rigorousValidation(
-    folds: WalkForwardFold[],
-    aggregated: PerformanceMetrics | null,
-    pbo: number | null,
-  ): { passes: boolean; notes: string[] } {
-    const notes: string[] = [];
-    let passes = true;
-
-    if (!aggregated) {
-      return {
-        passes: false,
-        notes: ['FAIL: No valid folds with sufficient trades'],
-      };
-    }
-
-    // 1. Minimum trades
-    if (aggregated.totalTrades < 30) {
-      notes.push(`FAIL: Only ${aggregated.totalTrades} total test trades — need ≥30`);
-      passes = false;
-    }
-
-    // 2. DSR must be significant
-    if (aggregated.deflatedSharpe === null || aggregated.deflatedSharpe < 0.75) {
-      notes.push(
-        `FAIL: Deflated Sharpe ${aggregated.deflatedSharpe?.toFixed(3) ?? 'N/A'} < 0.75 threshold`,
-      );
-      passes = false;
-    }
-
-    // 3. PBO must be low
-    if (pbo !== null && pbo > 0.4) {
-      notes.push(`FAIL: PBO = ${(pbo * 100).toFixed(1)}% > 40% — likely overfit`);
-      passes = false;
-    }
-
-    // 4. Drawdown must be bounded
-    if (aggregated.maxDrawdownPct < -0.3) {
-      notes.push(
-        `FAIL: Max drawdown ${(aggregated.maxDrawdownPct * 100).toFixed(1)}% exceeds 30% limit`,
-      );
-      passes = false;
-    }
-
-    // 5. Consistent across folds (not just lucky in one)
-    const consistentFolds = folds.filter((f) => f.run.testMetrics.netReturn > 0).length;
-    const consistencyRate = consistentFolds / folds.length;
-    if (consistencyRate < 0.6) {
-      notes.push(
-        `FAIL: Only ${(consistencyRate * 100).toFixed(0)}% of folds were profitable — need ≥60%`,
-      );
-      passes = false;
-    }
-
-    // 6. Win rate must be economically meaningful
-    if (aggregated.winRate < 0.5) {
-      notes.push(
-        `WARNING: Win rate ${(aggregated.winRate * 100).toFixed(1)}% < 50% — check payout ratio justification`,
-      );
-      // Don't fail — binary options can be profitable below 50% with right payout
-    }
-
-    if (passes) {
-      notes.push(
-        `PASS: Strategy meets all rigorous validation criteria across ${folds.length} folds`,
-      );
-      notes.push('NOTE: This is evidence of edge, not guarantee of future performance');
-    }
-
-    return { passes, notes };
-  }
-}
-
-function interpretPBO(pbo: number): string {
-  if (pbo < 0.1) return 'Low risk of overfitting (PBO < 10%)';
-  if (pbo < 0.25) return 'Moderate risk of overfitting (PBO 10-25%)';
-  if (pbo < 0.4) return 'Elevated overfitting risk (PBO 25-40%) — proceed with caution';
-  if (pbo < 0.5) return 'High overfitting risk (PBO 40-50%) — strategy likely overfit';
-  return 'CRITICAL: PBO ≥ 50% — strategy is essentially random in out-of-sample data';
 }

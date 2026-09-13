@@ -19,6 +19,7 @@ function mockSignal(direction: Signal['direction'] = 'BUY'): Signal {
 
 // Set required env vars before importing config-dependent modules
 function setTestEnv(): void {
+  delete process.env['STAKE_AMOUNT'];
   process.env['DERIV_API_TOKEN'] = 'test_token';
   process.env['DATABASE_PASSWORD'] = 'test_pass';
   process.env['DEMO_TRADING'] = 'true';

@@ -43,8 +43,12 @@ interface RiskState {
  */
 export class RiskEngine {
   private state: RiskState;
+  private reserved = new Map<string, number>();
 
   constructor(initialBalance: number) {
+    if (!Number.isFinite(initialBalance) || initialBalance <= 0) {
+      throw new Error('A positive account balance is required');
+    }
     const today = new Date().toISOString().slice(0, 10);
     this.state = {
       sessionStartBalance: initialBalance,
@@ -75,7 +79,7 @@ export class RiskEngine {
 
     // Hard safety: validate trading mode is enabled
     if (tradingMode === 'LIVE') {
-      const isLive = env.LIVE_TRADING && env.LIVE_CONFIRMATION;
+      const isLive = env.LIVE_TRADING && env.LIVE_CONFIRMATION && !env.DEMO_TRADING;
       if (!isLive) {
         log.warn({ signalId: signal.id }, 'Rejected: live trading not enabled');
         return { approved: false, reason: 'LIVE_TRADING_DISABLED', signal };
@@ -109,6 +113,7 @@ export class RiskEngine {
     // Reset cooldown if expired
     if (this.state.cooldownUntil !== null && new Date() >= this.state.cooldownUntil) {
       this.state.cooldownUntil = null;
+      this.state.consecutiveLosses = 0;
       log.info('Cooldown expired, trading resumed');
     }
 
@@ -138,7 +143,7 @@ export class RiskEngine {
         ? (this.state.dailyStartBalance - this.state.currentBalance) / this.state.dailyStartBalance
         : 0;
 
-    if (dailyLoss >= env.RISK_MAX_DAILY_LOSS_FRACTION) {
+    if (dailyLoss >= Math.min(env.RISK_MAX_DAILY_LOSS_FRACTION, env.MAX_DAILY_LOSS_PERCENT)) {
       log.warn(
         { dailyLoss, limit: env.RISK_MAX_DAILY_LOSS_FRACTION },
         'Rejected: max daily loss hit',
@@ -160,21 +165,37 @@ export class RiskEngine {
       return { approved: false, reason: 'MAX_CONSECUTIVE_LOSSES', signal };
     }
 
-    // Compute stake
-    const stake = this.computeStake(env.RISK_MAX_PER_TRADE_FRACTION);
+    // Compute stake — uses STAKE_AMOUNT from .env, capped by MAX_STAKE_PERCENT
+    const rawStake = this.computeStake(Math.min(env.RISK_MAX_PER_TRADE_FRACTION, env.MAX_STAKE_PERCENT));
 
-    if (stake < MIN_STAKE_USD) {
-      log.warn({ stake, minStake: MIN_STAKE_USD }, 'Rejected: stake too small');
+    if (rawStake < MIN_STAKE_USD) {
+      log.warn({ rawStake, minStake: MIN_STAKE_USD }, 'Rejected: stake too small');
       return { approved: false, reason: 'POSITION_SIZE_TOO_SMALL', signal };
+    }
+
+    // Use STAKE_AMOUNT from env if explicitly set, otherwise use risk-calculated stake
+    const configuredStake = env.STAKE_AMOUNT;
+    const stake = configuredStake !== undefined
+      ? Math.floor(Math.min(rawStake, configuredStake) * 100) / 100
+      : rawStake;
+    if (stake < MIN_STAKE_USD) return { approved: false, reason: 'POSITION_SIZE_TOO_SMALL', signal };
+    const reserved = this.getReservedExposure();
+    const dailyBudget = this.state.dailyStartBalance * Math.min(env.RISK_MAX_DAILY_LOSS_FRACTION, env.MAX_DAILY_LOSS_PERCENT);
+    const drawdownBudget = this.state.peakBalance * maxDDFraction;
+    if (this.reserved.size >= env.MAX_OPEN_TRADES ||
+        reserved + stake > this.state.currentBalance ||
+        Math.max(0, this.state.dailyStartBalance - this.state.currentBalance) + reserved + stake > dailyBudget ||
+        this.state.peakBalance - this.state.currentBalance + reserved + stake > drawdownBudget) {
+      return { approved: false, reason: 'OPEN_EXPOSURE_LIMIT', signal };
     }
 
     const approvedSignal: ApprovedSignal = {
       signal,
       stakeAmount: stake,
-      contractDuration: 5, // Default 5 ticks — configurable per strategy
-      contractDurationUnit: 't',
+      contractDuration: env.CONTRACT_DURATION ?? 5,
+      contractDurationUnit: (env.CONTRACT_DURATION_UNIT ?? 't'),
       approvedAt: new Date(),
-      riskNotes: `Stake=${stake}, DrawdownPct=${(currentDrawdown * 100).toFixed(2)}%, DailyLoss=${(dailyLoss * 100).toFixed(2)}%`,
+      riskNotes: `Stake=$${stake.toFixed(2)}, DrawdownPct=${(currentDrawdown * 100).toFixed(2)}%, DailyLoss=${(dailyLoss * 100).toFixed(2)}%`,
     };
 
     log.info(
@@ -195,6 +216,8 @@ export class RiskEngine {
    * This is mandatory — without this, risk limits cannot function.
    */
   recordTradeResult(profit: number): void {
+    if (!Number.isFinite(profit)) throw new Error('Invalid settled profit');
+    this.checkDailyReset();
     this.state.currentBalance += profit;
     this.state.totalTrades++;
     this.state.dailyTrades++;
@@ -226,10 +249,23 @@ export class RiskEngine {
    * Updates the balance from an external source (e.g., Deriv balance update).
    */
   updateBalance(balance: number): void {
+    if (!Number.isFinite(balance) || balance < 0) throw new Error('Invalid account balance');
     this.state.currentBalance = balance;
     if (balance > this.state.peakBalance) {
       this.state.peakBalance = balance;
     }
+  }
+
+  reserve(signal: ApprovedSignal): void {
+    this.reserved.set(signal.signal.id, signal.stakeAmount);
+  }
+
+  release(signalId: string): void {
+    this.reserved.delete(signalId);
+  }
+
+  getReservedExposure(): number {
+    return [...this.reserved.values()].reduce((sum, amount) => sum + amount, 0);
   }
 
   /**
