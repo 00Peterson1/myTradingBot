@@ -1,3 +1,4 @@
+import { assertDefined } from '../../utils/assertDefined.js';
 /**
  * Matches / Differs Strategy for Deriv Synthetic Indices.
  *
@@ -42,10 +43,10 @@ export class MatchesDiffersStrategy implements Strategy {
 
     if (this.mode === 'DIFFERS') {
       let minDigit = 0;
-      let minFreq = freqs[0]!;
+      let minFreq = assertDefined(freqs[0]);
       for (let d = 1; d <= 9; d++) {
-        if (freqs[d]! < minFreq) {
-          minFreq = freqs[d]!;
+        if (assertDefined(freqs[d]) < minFreq) {
+          minFreq = assertDefined(freqs[d]);
           minDigit = d;
         }
       }
@@ -62,10 +63,10 @@ export class MatchesDiffersStrategy implements Strategy {
       }
     } else {
       let maxDigit = 0;
-      let maxFreq = freqs[0]!;
+      let maxFreq = assertDefined(freqs[0]);
       for (let d = 1; d <= 9; d++) {
-        if (freqs[d]! > maxFreq) {
-          maxFreq = freqs[d]!;
+        if (assertDefined(freqs[d]) > maxFreq) {
+          maxFreq = assertDefined(freqs[d]);
           maxDigit = d;
         }
       }

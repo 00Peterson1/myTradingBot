@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { handleHelp } from './help.js';
+handleHelp('doctor', 'Read-only local diagnostics. --verbose --connectivity (public connection only)');
+import { print } from '../monitoring/print.js';
 /**
  * doctor — Diagnostic report for the quantitative trading workstation.
  *
@@ -17,6 +20,8 @@
 
 import { existsSync } from 'fs';
 import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { inspectDatabase } from './databaseDiagnostic.js';
 import { getEnv } from '../config/env.js';
 
 // ---------------------------------------------------------------------------
@@ -28,20 +33,18 @@ const FAIL = '❌';
 const WARN = '⚠️ ';
 const INFO = 'ℹ️ ';
 
-function section(title: string) {
-  console.log(`\n${'─'.repeat(60)}`);
-  console.log(`  ${title}`);
-  console.log('─'.repeat(60));
+function section(title: string): void {
+  print(`\n${'─'.repeat(60)}`);
+  print(`  ${title}`);
+  print('─'.repeat(60));
 }
 
-function row(icon: string, label: string, value: string) {
-  console.log(`  ${icon}  ${label.padEnd(32)} ${value}`);
+function row(icon: string, label: string, value: string): void {
+  print(`  ${icon}  ${label.padEnd(32)} ${value}`);
 }
 
-function redact(value: string | undefined, showChars = 4): string {
-  if (!value) return '(not set)';
-  if (value.length <= showChars) return '***';
-  return value.substring(0, showChars) + '***';
+function redact(value: string | undefined): string {
+  return value ? '(set; redacted)' : '(not set)';
 }
 
 // ---------------------------------------------------------------------------
@@ -51,7 +54,7 @@ function redact(value: string | undefined, showChars = 4): string {
 let warnings = 0;
 let errors = 0;
 
-function check(pass: boolean, label: string, okMsg: string, failMsg: string) {
+function check(pass: boolean, label: string, okMsg: string, failMsg: string): void {
   if (pass) {
     row(PASS, label, okMsg);
   } else {
@@ -60,7 +63,7 @@ function check(pass: boolean, label: string, okMsg: string, failMsg: string) {
   }
 }
 
-function warn(condition: boolean, label: string, msg: string) {
+function warn(condition: boolean, label: string, msg: string): void {
   if (condition) {
     row(WARN, label, msg);
     warnings++;
@@ -77,9 +80,9 @@ async function main(): Promise<void> {
   const verbose = process.argv.includes('--verbose');
   const doConnectivity = process.argv.includes('--connectivity');
 
-  console.log('\n╔════════════════════════════════════════════════════════════╗');
-  console.log('║   myTradingBot — System Diagnostic Report                  ║');
-  console.log('╚════════════════════════════════════════════════════════════╝');
+  print('\n╔════════════════════════════════════════════════════════════╗');
+  print('║   myTradingBot — System Diagnostic Report                  ║');
+  print('╚════════════════════════════════════════════════════════════╝');
 
   // ─────────────────────────────────────────────────────────────
   section('1. Node.js Environment');
@@ -108,23 +111,23 @@ async function main(): Promise<void> {
   } catch (err) {
     row(FAIL, 'Environment parse', (err as Error).message);
     errors++;
-    console.log('\n  Fix .env before proceeding. See .env.example for reference.\n');
+    print('\n  Fix .env before proceeding. See .env.example for reference.\n');
     process.exit(1);
   }
 
   // Key configuration values (safe to show)
-  const keysToShow: Array<[string, string]> = [
-    ['DERIV_APP_ID',              String(env.DERIV_APP_ID)],
-    ['DERIV_API_TOKEN',           redact(env.DERIV_API_TOKEN, 6)],
+  const keysToShow: [string, string][] = [
+    ['DERIV_APP_ID',              env.DERIV_APP_ID],
+    ['DERIV_API_TOKEN',           redact(env.DERIV_API_TOKEN)],
     ['DEMO_TRADING',              String(env.DEMO_TRADING)],
     ['LIVE_TRADING',              String(env.LIVE_TRADING)],
     ['LIVE_CONFIRMATION',         String(env.LIVE_CONFIRMATION)],
-    ['CONTRACT_TYPE',             String(env.CONTRACT_TYPE)],
-    ['CONTRACT_DURATION',         `${env.CONTRACT_DURATION} ${env.CONTRACT_DURATION_UNIT === 't' ? 'tick(s)' : env.CONTRACT_DURATION_UNIT}`],
+    ['CONTRACT_TYPE',             env.CONTRACT_TYPE],
+    ['CONTRACT_DURATION',         `${String(env.CONTRACT_DURATION)} ${env.CONTRACT_DURATION_UNIT === 't' ? 'tick(s)' : env.CONTRACT_DURATION_UNIT}`],
     ['BACKTEST_PAYOUT_MULTIPLIER',String(env.BACKTEST_PAYOUT_MULTIPLIER)],
-    ['STAKE_AMOUNT',              `$${env.STAKE_AMOUNT ?? 1.00}`],
+    ['STAKE_AMOUNT',              `$${String(env.STAKE_AMOUNT ?? 1.00)}`],
     ['SYMBOLS',                   env.SYMBOLS.join(', ')],
-    ['LOG_LEVEL',                 String(env.LOG_LEVEL ?? 'warn')],
+    ['LOG_LEVEL',                 env.LOG_LEVEL],
   ];
   if (verbose) {
     keysToShow.push(
@@ -144,7 +147,7 @@ async function main(): Promise<void> {
   // ─────────────────────────────────────────────────────────────
 
   check(
-    env.DEMO_TRADING === true || env.LIVE_TRADING === false,
+    env.DEMO_TRADING || !env.LIVE_TRADING,
     'Safe mode active',
     env.DEMO_TRADING ? 'DEMO_TRADING=true' : 'LIVE_TRADING=false',
     'LIVE_TRADING is enabled — requires LIVE_CONFIRMATION=true before trades execute',
@@ -166,38 +169,35 @@ async function main(): Promise<void> {
   section('4. Database');
   // ─────────────────────────────────────────────────────────────
 
-  const dbPath = resolve('data', 'trading.db');
+  const dbPath = fileURLToPath(new URL('../../data/trading.db', import.meta.url));
   const dbExists = existsSync(dbPath);
-  check(dbExists, 'Database file exists', dbPath, `Not found: ${dbPath} — run npm run research`);
+  check(dbExists, 'Database file exists', dbPath, `Not found: ${dbPath} — run npm run migrate`);
 
   if (dbExists) {
     try {
-      const { getDb } = await import('../data/database/sqlite.js');
-      const db = getDb();
-
-      // Check tables
-      const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as Array<{name: string}>;
-      const tableNames = tables.map(t => t.name);
-      check(tableNames.includes('ticks'), 'ticks table', 'present', 'missing — run npm run research');
-      check(tableNames.includes('research_results'), 'research_results table', 'present', 'missing — run npm run research');
+      const { tables: tableNames, counts, integrity } = inspectDatabase(dbPath);
+      check(integrity.length === 1 && integrity[0] === 'ok', 'SQLite integrity', 'ok', integrity.join('; '));
+      check(tableNames.includes('ticks'), 'ticks table', 'present', 'missing — run npm run migrate');
+      check(tableNames.includes('market_profiles'), 'market_profiles table', 'present', 'missing — run npm run migrate');
 
       if (tableNames.includes('ticks')) {
         // Per-symbol tick counts
-        const counts = db.prepare('SELECT symbol, COUNT(*) as cnt FROM ticks GROUP BY symbol ORDER BY cnt DESC').all() as Array<{symbol: string, cnt: number}>;
+
 
         if (counts.length === 0) {
-          row(WARN, 'Tick data', 'No ticks in database — run npm run research');
+          row(WARN, 'Tick data', 'No ticks in database — run npm run migrate');
           warnings++;
         } else {
-          row(INFO, 'Tick data', `${counts.length} symbol(s) in database`);
+          row(INFO, 'Tick data', `${String(counts.length)} symbol(s) in database`);
+          const belowMinimum = counts.filter(({ cnt }) => cnt < env.RESEARCH_MIN_OBSERVATIONS).length;
+          warnings += belowMinimum;
+          row(INFO, 'Below research minimum', String(belowMinimum));
           for (const { symbol, cnt } of counts.slice(0, 10)) {
-            const quality = cnt >= 10000 ? PASS : cnt >= 1000 ? WARN : FAIL;
-            if (cnt < 1000) errors++;
-            else if (cnt < 10000) warnings++;
-            row(quality, `  ${symbol}`, `${cnt.toLocaleString()} ticks${cnt < 1000 ? ' — insufficient for backtesting' : ''}`);
+            const quality = cnt >= env.RESEARCH_MIN_OBSERVATIONS ? INFO : WARN;
+            row(quality, `  ${symbol}`, `${cnt.toLocaleString()} ticks${cnt < env.RESEARCH_MIN_OBSERVATIONS ? ' — below configured research minimum' : ' — count alone does not establish sufficiency'}`);
           }
           if (counts.length > 10) {
-            row(INFO, '  ...and more', `${counts.length - 10} additional symbols`);
+            row(INFO, '  ...and more', `${String(counts.length - 10)} additional symbols`);
           }
         }
       }
@@ -211,16 +211,14 @@ async function main(): Promise<void> {
   section('5. Methodological Risk Checks');
   // ─────────────────────────────────────────────────────────────
 
-  row(PASS, 'RL strategies in backtest', 'QUARANTINED — isOnlineLearner=true prevents OOS evaluation');
-  row(PASS, 'Backtest/demo horizon', `Both use ${env.CONTRACT_DURATION} ${env.CONTRACT_DURATION_UNIT === 't' ? 'tick(s)' : env.CONTRACT_DURATION_UNIT} (aligned)`);
-  row(INFO, 'Payout assumption', `${env.BACKTEST_PAYOUT_MULTIPLIER}x — verify against actual Deriv contract pricing`);
+  row(INFO, 'RL strategies in backtest', 'Standard engine rejects declared online learners; no frozen RL protocol implemented');
+  row(INFO, 'Configured horizon', `Both use ${String(env.CONTRACT_DURATION)} ${env.CONTRACT_DURATION_UNIT === 't' ? 'tick(s)' : env.CONTRACT_DURATION_UNIT} (execution parity not verified)`);
+  row(INFO, 'Payout assumption', `${String(env.BACKTEST_PAYOUT_MULTIPLIER)}x — verify against actual Deriv contract pricing`);
   row(WARN, 'Experiment registry', 'Not yet implemented — experiments are not versioned or hash-identified');
   warnings++;
-  row(WARN, 'Risk engine persistence', 'In-memory only — risk state resets on process restart');
-  warnings++;
-  row(WARN, 'Settlement mechanism', 'setTimeout approximation — not event-driven (Milestone 3)');
-  warnings++;
-  row(WARN, 'Ichimoku cloud', 'Causal (computed at current index, no forward shift) — verified ✓');
+  row(INFO, 'Risk engine persistence', 'Trading runners use the SQLite Options ledger; inspect account state before resuming');
+  row(INFO, 'Settlement mechanism', 'Polls provider terminal state; unknown purchases and reconciliation drift block orders');
+  row(INFO, 'Feature parity', 'Not checked by doctor; deterministic replay tests are required');
 
   // ─────────────────────────────────────────────────────────────
   if (doConnectivity) {
@@ -243,14 +241,14 @@ async function main(): Promise<void> {
   section('Summary');
   // ─────────────────────────────────────────────────────────────
 
-  console.log(`\n  ${PASS} Checks passed`);
-  if (warnings > 0) console.log(`  ${WARN} ${warnings} warning(s) — review items marked ⚠️`);
-  if (errors > 0)   console.log(`  ${FAIL} ${errors} error(s) — fix items marked ❌ before running`);
+  print(`\n  Diagnostic errors: ${String(errors)}`);
+  if (warnings > 0) print(`  ${WARN} ${String(warnings)} warning(s) — review items marked ⚠️`);
+  if (errors > 0)   print(`  ${FAIL} ${String(errors)} error(s) — fix items marked ❌ before running`);
 
-  console.log('\n  Run `npm run research` to collect tick data.');
-  console.log('  Run `npm run backtest` to evaluate strategies.');
-  console.log('  Run `npm run trade:demo` to run the demo trading loop.');
-  console.log('  Run `npm run doctor -- --connectivity` to test Deriv WS connectivity.\n');
+  print('\n  Run `npm run research:daemon` to persist tick data; research saves summary profiles.');
+  print('  Run `npm run backtest` to evaluate strategies.');
+  print('  Demo/live readiness is NOT established by these diagnostics.');
+  print('  Run `npm run doctor -- --connectivity` to test Deriv WS connectivity.\n');
 
   process.exit(errors > 0 ? 1 : 0);
 }

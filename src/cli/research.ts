@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import { handleHelp } from './help.js';
+handleHelp('research', 'Public market survey; saves summary profiles. Configure SYMBOLS and COLLECTION_SECS.');
+import { print } from '../monitoring/print.js';
+import { assertDefined } from '../utils/assertDefined.js';
 /**
  * Research Mode — Market-Aware Statistical Survey
  *
@@ -81,7 +85,7 @@ function analyzeBoomCrash(
 ): Record<string, number | string | boolean | null> {
   if (returns.length < 10) return {};
 
-  const rStd = stddev(returns) ?? 0;
+  const rStd = stddev(returns);
   const threshold = 3 * rStd;
 
   // Find spikes
@@ -104,7 +108,7 @@ function analyzeBoomCrash(
   // Average inter-spike interval
   let intervalSum = 0;
   for (let i = 1; i < spikeIndices.length; i++) {
-    intervalSum += (spikeIndices[i]! - spikeIndices[i - 1]!);
+    intervalSum += (assertDefined(spikeIndices[i]) - assertDefined(spikeIndices[i - 1]));
   }
   const avgInterval = spikeIndices.length > 1
     ? intervalSum / (spikeIndices.length - 1)
@@ -143,7 +147,7 @@ function analyzeStep(ticks: Tick[]): Record<string, number | string | boolean | 
 
   const directions: number[] = [];
   for (let i = 1; i < ticks.length; i++) {
-    const diff = (ticks[i]!.price ?? 0) - (ticks[i - 1]!.price ?? 0);
+    const diff = assertDefined(ticks[i]).price - assertDefined(ticks[i - 1]).price;
     if (diff > 0) directions.push(1);
     else if (diff < 0) directions.push(-1);
     else directions.push(0);
@@ -189,7 +193,7 @@ function analyzeStep(ticks: Tick[]): Record<string, number | string | boolean | 
 function analyzeJump(returns: number[]): Record<string, number | string | boolean | null> {
   if (returns.length < 10) return {};
 
-  const rStd = stddev(returns) ?? 1;
+  const rStd = stddev(returns);
   const jumpThreshold = 2.5 * rStd;
   const jumps = returns.filter((r) => Math.abs(r) > jumpThreshold);
   const jumpRate = jumps.length / returns.length;
@@ -202,7 +206,7 @@ function analyzeJump(returns: number[]): Record<string, number | string | boolea
   }
   let clustered = 0;
   for (let i = 1; i < jumpIndices.length; i++) {
-    if ((jumpIndices[i]! - jumpIndices[i - 1]!) <= 3) clustered++;
+    if ((assertDefined(jumpIndices[i]) - assertDefined(jumpIndices[i - 1])) <= 3) clustered++;
   }
   const clusterRate = jumpIndices.length > 1 ? clustered / (jumpIndices.length - 1) : null;
 
@@ -234,48 +238,48 @@ function printSymbolResult(r: SymbolResult): void {
     unknown: '❓',
   };
 
-  console.log(`\n${'─'.repeat(64)}`);
-  console.log(`  ${typeEmoji[r.marketType]} ${r.symbol}  [${r.marketType.toUpperCase()}]  ${r.tickCount} ticks  Score: ${r.score}/100`);
-  console.log('─'.repeat(64));
+  print(`\n${'─'.repeat(64)}`);
+  print(`  ${typeEmoji[r.marketType]} ${r.symbol}  [${r.marketType.toUpperCase()}]  ${String(r.tickCount)} ticks  Score: ${String(r.score)}/100`);
+  print('─'.repeat(64));
 
   // Distribution
-  console.log(`  Volatility (σ):  ${r.stdDev.toExponential(3)}   Sharpe: ${r.sharpe !== null ? r.sharpe.toFixed(3) : 'N/A'}`);
-  console.log(`  Skewness:        ${r.skewness.toFixed(3)}   Kurtosis (ex): ${r.kurtosis.toFixed(3)}`);
+  print(`  Volatility (σ):  ${r.stdDev.toExponential(3)}   Sharpe: ${r.sharpe !== null ? r.sharpe.toFixed(3) : 'N/A'}`);
+  print(`  Skewness:        ${r.skewness.toFixed(3)}   Kurtosis (ex): ${r.kurtosis.toFixed(3)}`);
 
   // Autocorrelation
   const acLabel = r.isAutocorrelated
-    ? `✓ YES  p=${r.autocorrPValue?.toFixed(4)}  ← serial dependence, patterns exist`
-    : `✗ No   p=${r.autocorrPValue?.toFixed(4)}  (random walk)`;
-  console.log(`  Autocorrelation: ${acLabel}`);
+    ? `✓ YES  p=${String(r.autocorrPValue?.toFixed(4))}  ← serial dependence, patterns exist`
+    : `✗ No   p=${String(r.autocorrPValue?.toFixed(4))}  (random walk)`;
+  print(`  Autocorrelation: ${acLabel}`);
 
   // Normality
   const normLabel = r.isNormal
-    ? `✓ Normal   p=${r.jbPValue?.toFixed(4)}`
-    : `✗ Non-normal p=${r.jbPValue?.toFixed(4)}  ← fat tails`;
-  console.log(`  Distribution:    ${normLabel}`);
+    ? `✓ Normal   p=${String(r.jbPValue?.toFixed(4))}`
+    : `✗ Non-normal p=${String(r.jbPValue?.toFixed(4))}  ← fat tails`;
+  print(`  Distribution:    ${normLabel}`);
 
   // Momentum edge
   const edgeLabel = r.hasEdge
-    ? `✓ YES  lift=${r.edgeLift?.toFixed(3)}  p=${r.edgePValue?.toFixed(4)}`
+    ? `✓ YES  lift=${String(r.edgeLift?.toFixed(3))}  p=${String(r.edgePValue?.toFixed(4))}`
     : `✗ None  (lift=${r.edgeLift?.toFixed(3) ?? 'N/A'})`;
-  console.log(`  Momentum edge:   ${edgeLabel}`);
+  print(`  Momentum edge:   ${edgeLabel}`);
 
   // Market-type-specific extras
   if (Object.keys(r.extras).length > 0) {
-    console.log(`\n  [${r.marketType.toUpperCase()}-specific analysis]`);
+    print(`\n  [${r.marketType.toUpperCase()}-specific analysis]`);
     for (const [k, v] of Object.entries(r.extras)) {
       if (k === 'tradingNote' || k === 'note') {
-        console.log(`  → ${String(v)}`);
+        print(`  → ${String(v)}`);
       } else if (v !== null) {
         const display = typeof v === 'number' ? v.toFixed(4) : String(v);
-        console.log(`  ${k.padEnd(28)}: ${display}`);
+        print(`  ${k.padEnd(28)}: ${display}`);
       }
     }
   }
 
   // Strategy recommendation
   const strategies = strategiesForMarketType(r.marketType);
-  console.log(`\n  Recommended:  [${strategies.join(', ')}]`);
+  print(`\n  Recommended:  [${strategies.join(', ')}]`);
 }
 
 function recommendStrategy(r: SymbolResult): string {
@@ -301,16 +305,16 @@ async function main(): Promise<void> {
   renderBanner();
   renderSafetyStatus(env.DEMO_TRADING, env.LIVE_TRADING);
 
-  console.log('📊 RESEARCH MODE — Market-Aware Statistical Survey');
-  console.log(`   Collection: ${COLLECTION_SECS}s per symbol`);
-  console.log(`   Symbols:    ${env.SYMBOLS.join(', ')}`);
-  console.log(`   Total time: ~${Math.round(env.SYMBOLS.length * COLLECTION_SECS / 60)} min\n`);
-  console.log(`   Tip: COLLECTION_SECS=300 npm run research  (5 min per symbol for better stats)\n`);
+  print('📊 RESEARCH MODE — Market-Aware Statistical Survey');
+  print(`   Collection: ${String(COLLECTION_SECS)}s per symbol`);
+  print(`   Symbols:    ${env.SYMBOLS.join(', ')}`);
+  print(`   Total time: ~${String(Math.round(env.SYMBOLS.length * COLLECTION_SECS / 60))} min\n`);
+  print(`   Tip: COLLECTION_SECS=300 npm run research  (5 min per symbol for better stats)\n`);
 
   // Open DB (auto-creates schema)
   try {
     getDb();
-    console.log('💾 Results will be saved to data/trading.db\n');
+    print('💾 Results will be saved to data/trading.db\n');
   } catch (err) {
     log.warn({ err }, 'SQLite unavailable — results will NOT be saved');
   }
@@ -320,19 +324,21 @@ async function main(): Promise<void> {
   log.info('Connected to Deriv public WebSocket');
 
   const results: SymbolResult[] = [];
+  let failures = 0;
+  let saved = 0;
 
   // ─── Per-symbol collection & analysis ────────────────────────────────────
   for (let i = 0; i < env.SYMBOLS.length; i++) {
-    const symbol = env.SYMBOLS[i]!;
+    const symbol = assertDefined(env.SYMBOLS[i]);
     const marketType = detectMarketType(symbol);
 
-    log.info({ symbol, marketType, progress: `${i + 1}/${env.SYMBOLS.length}` }, 'Collecting...');
+    log.info({ symbol, marketType, progress: `${String(i + 1)}/${String(env.SYMBOLS.length)}` }, 'Collecting...');
 
     const rawReturns: number[] = [];
     const ticks: Tick[] = [];
-    let subFailed = false;
 
-    await new Promise<void>((resolve) => {
+
+    const subscribed = await new Promise<boolean>((resolve) => {
       const handler = (tick: DerivTick): void => {
         if (tick.symbol !== symbol) return;
         const t: Tick = {
@@ -343,7 +349,7 @@ async function main(): Promise<void> {
         };
         ticks.push(t);
         if (ticks.length >= 2) {
-          const prev = ticks[ticks.length - 2]!.price;
+          const prev = assertDefined(ticks[ticks.length - 2]).price;
           const curr = t.price;
           if (prev > 0 && curr > 0) rawReturns.push(Math.log(curr / prev));
         }
@@ -351,17 +357,19 @@ async function main(): Promise<void> {
 
       client.on('tick', handler);
       client.subscribeTicks(symbol).catch(() => {
-        subFailed = true;
-        resolve();
+        clearTimeout(timer);
+        client.off('tick', handler);
+        resolve(false);
       });
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         client.off('tick', handler);
-        resolve();
+        resolve(true);
       }, COLLECTION_SECS * 1_000);
     });
 
-    if (subFailed) {
+    if (!subscribed) {
+      failures++;
       log.warn({ symbol }, 'Subscription failed — symbol may not be available on this account');
       continue;
     }
@@ -372,8 +380,8 @@ async function main(): Promise<void> {
     }
 
     // ── Standard statistical tests (all markets) ──────────────────────────
-    const rMean   = mean(rawReturns) ?? 0;
-    const rStd    = stddev(rawReturns) ?? 0;
+    const rMean   = mean(rawReturns);
+    const rStd    = stddev(rawReturns);
     const rSkew   = skewness(rawReturns) ?? 0;
     const rKurt   = kurtosis(rawReturns) ?? 0;
     const sharpe  = computeSharpe(rawReturns);
@@ -424,7 +432,7 @@ async function main(): Promise<void> {
     };
 
     results.push(result);
-    printSymbolResult(result);
+    if (process.argv.includes('--verbose')) printSymbolResult(result);
 
     // ── Persist to DB ─────────────────────────────────────────────────────
     try {
@@ -446,28 +454,30 @@ async function main(): Promise<void> {
         edgePValue: condP?.pValue ?? null,
         score,
       });
+      saved++;
       log.info({ symbol, score }, 'Result saved to DB');
     } catch (err) {
-      log.warn({ symbol, err }, 'Could not save to DB — continuing');
+      failures++;
+      log.error({ symbol, err }, 'Could not save research result');
     }
   }
 
   // ─── Final ranked table ───────────────────────────────────────────────────
   if (results.length === 0) {
-    console.log('\n⚠️  No results. Check SYMBOLS= in .env and run again.');
+    print('\n⚠️  No results. Check SYMBOLS= in .env and run again.');
     await client.disconnect();
-    process.exit(0);
+    process.exit(1);
   }
 
   results.sort((a, b) => b.score - a.score);
 
   const W = 86;
-  console.log('\n');
-  console.log('╔' + '═'.repeat(W) + '╗');
-  console.log('║' + '  RESEARCH SUMMARY — RANKED BY TRADING INTEREST (best → worst)'.padEnd(W) + '║');
-  console.log('╠' + '═'.repeat(W) + '╣');
-  console.log('║ Symbol       Type         Ticks  Autocorr  Normal  Edge   Score  Best Strategy' + ' '.repeat(W - 79) + '║');
-  console.log('╠' + '═'.repeat(W) + '╣');
+  print('\n');
+  print('╔' + '═'.repeat(W) + '╗');
+  print('║' + '  RESEARCH SUMMARY — RANKED BY TRADING INTEREST (best → worst)'.padEnd(W) + '║');
+  print('╠' + '═'.repeat(W) + '╣');
+  print('║ Symbol       Type         Ticks  Autocorr  Normal  Edge   Score  Best Strategy' + ' '.repeat(W - 79) + '║');
+  print('╠' + '═'.repeat(W) + '╣');
 
   for (const r of results) {
     const type    = r.marketType.padEnd(10);
@@ -478,24 +488,24 @@ async function main(): Promise<void> {
     const score   = String(r.score).padStart(3);
     const line =
       `║ ${r.symbol.padEnd(12)}${type}${String(r.tickCount).padStart(5)}  ${ac} ${norm} ${edge}  ${score}    ${strat}`;
-    console.log(line.padEnd(W + 1) + '║');
+    print(line.padEnd(W + 1) + '║');
   }
 
-  const best = results[0]!;
-  console.log('╠' + '═'.repeat(W) + '╣');
-  console.log(('║  🏆 BEST: ' + best.symbol + '  [' + best.marketType + ']  Score ' + best.score + '/100  — ' + recommendStrategy(best)).padEnd(W + 1) + '║');
-  console.log('╚' + '═'.repeat(W) + '╝');
+  const best = assertDefined(results[0]);
+  print('╠' + '═'.repeat(W) + '╣');
+  print(('║  🏆 BEST: ' + best.symbol + '  [' + best.marketType + ']  Score ' + String(best.score) + '/100  — ' + recommendStrategy(best)).padEnd(W + 1) + '║');
+  print('╚' + '═'.repeat(W) + '╝');
 
-  console.log('\n📌 Results saved to data/trading.db');
-  console.log('   → npm run trade:demo will automatically use this data to pick the best symbols\n');
+  print(`\nProfiles saved: ${String(saved)}; failures: ${String(failures)}. Raw survey ticks are not persisted.`);
+  print('Exploratory profiles do not establish a tradable edge or demo eligibility.');
 
-  console.log('📌 To trade all symbols, check TOP_SYMBOLS in .env (currently', env.TOP_SYMBOLS ?? env.SYMBOLS.length, ')');
-  console.log('   Increase COLLECTION_SECS for better statistical confidence:\n');
-  console.log('   COLLECTION_SECS=300 npm run research   (5 min per symbol — recommended)\n');
+  print('📌 To trade all symbols, check TOP_SYMBOLS in .env (currently', env.TOP_SYMBOLS ?? env.SYMBOLS.length, ')');
+  print('   Increase COLLECTION_SECS for better statistical confidence:\n');
+  print('   COLLECTION_SECS=300 npm run research   (5 min per symbol — recommended)\n');
 
   await client.disconnect();
   log.info('Research complete');
-  process.exit(0);
+  process.exit(failures > 0 || results.length === 0 ? 1 : 0);
 }
 
 main().catch((err: unknown) => {

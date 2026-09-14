@@ -1,11 +1,14 @@
 #!/usr/bin/env node
+import { handleHelp } from './help.js';
+handleHelp('markets', 'Discover/list instruments. --cat CATEGORY --open --min-ticks COUNT');
+import { print } from '../monitoring/print.js';
 import { MarketCatalogue } from '../markets/MarketCatalogue.js';
 import { getTickCount } from '../data/repository/TickRepository.js';
 import { getDb } from '../data/database/sqlite.js';
 import { DerivClient } from '../api/deriv/DerivClient.js';
 import { parseArgs } from 'util';
 
-async function main() {
+async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       cat: { type: 'string' },
@@ -24,7 +27,7 @@ async function main() {
   let markets = MarketCatalogue.getAll();
 
   if (markets.length === 0) {
-    console.log('No markets found in database. Discovering from API...');
+    print('No markets found in database. Discovering from API...');
     const client = new DerivClient();
     await client.connectPublic();
     markets = await MarketCatalogue.discoverAll(client);
@@ -49,11 +52,11 @@ async function main() {
 
   results.sort((a, b) => b.ticks - a.ticks);
 
-  console.log('╔═════════════════════════════════════════════════════════════════════════════════════════╗');
-  console.log(`║  ALL MARKETS (${results.length} symbols found)                                                          ║`.padEnd(90, ' ') + '║');
-  console.log('╠═════════════════════════════════════════════════════════════════════════════════════════╣');
-  console.log('║ Category    Symbol         Name                    Ticks   Open  Score                  ║');
-  console.log('╠═════════════════════════════════════════════════════════════════════════════════════════╣');
+  print('╔═════════════════════════════════════════════════════════════════════════════════════════╗');
+  print(`║  ALL MARKETS (${String(results.length)} symbols found)                                                          ║`.padEnd(90, ' ') + '║');
+  print('╠═════════════════════════════════════════════════════════════════════════════════════════╣');
+  print('║ Category    Symbol         Name                    Ticks   Open  Score                  ║');
+  print('╠═════════════════════════════════════════════════════════════════════════════════════════╣');
 
   for (const r of results) {
     const cat = r.market.marketCategory.padEnd(11, ' ').slice(0, 11);
@@ -64,11 +67,11 @@ async function main() {
     const openStr = open.padEnd(5, ' ');
     const score = r.market.researchScore.toString().padStart(3, ' ');
     
-    console.log(`║ ${cat} ${sym} ${name} ${ticksStr}  ${openStr} ${score}                    ║`);
+    print(`║ ${cat} ${sym} ${name} ${ticksStr}  ${openStr} ${score}                    ║`);
   }
 
-  console.log('╚═════════════════════════════════════════════════════════════════════════════════════════╝');
-  console.log('Tip: Run `npm run research:daemon` to collect more data.');
+  print('╚═════════════════════════════════════════════════════════════════════════════════════════╝');
+  print('Tip: Run `npm run research:daemon` to collect more data.');
 }
 
 main().catch(console.error);

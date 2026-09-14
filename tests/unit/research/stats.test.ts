@@ -1,3 +1,4 @@
+import { assertDefined } from '../../../src/utils/assertDefined.js';
 import { describe, it, expect } from 'vitest';
 import {
   normalCDF,
@@ -10,7 +11,7 @@ import {
   computeMaxDrawdown,
   probabilityOfBacktestOverfitting,
   benjaminiHochbergYekutieli,
-} from '../../../src/research/statistics/stats';
+} from '../../../src/research/statistics/stats.js';
 
 // ---------------------------------------------------------------------------
 // Normal CDF
@@ -32,7 +33,7 @@ describe('normalCDF', () => {
   it('is monotonically increasing', () => {
     const vals = [-3, -2, -1, 0, 1, 2, 3].map(normalCDF);
     for (let i = 1; i < vals.length; i++) {
-      expect(vals[i]!).toBeGreaterThan(vals[i - 1]!);
+      expect(assertDefined(vals[i])).toBeGreaterThan(assertDefined(vals[i - 1]));
     }
   });
 });
@@ -65,14 +66,14 @@ describe('computeSharpe', () => {
     const positive = Array.from({ length: 50 }, () => 0.01 + Math.random() * 0.001);
     const result = computeSharpe(positive);
     expect(result).not.toBeNull();
-    expect(result!.sharpe).toBeGreaterThan(0);
+    expect(assertDefined(result).sharpe).toBeGreaterThan(0);
   });
 
   it('computes negative Sharpe for consistently negative returns', () => {
     const negative = Array.from({ length: 50 }, () => -0.01 - Math.random() * 0.001);
     const result = computeSharpe(negative);
     expect(result).not.toBeNull();
-    expect(result!.sharpe).toBeLessThan(0);
+    expect(assertDefined(result).sharpe).toBeLessThan(0);
   });
 
   it('observation count matches input', () => {
@@ -127,7 +128,7 @@ describe('deflatedSharpeRatio', () => {
     const strong = Array.from({ length: 100 }, () => 0.02 + Math.random() * 0.001);
     const result = deflatedSharpeRatio(strong, 1);
     expect(result).not.toBeNull();
-    expect(result!.dsr).toBeGreaterThan(0.8);
+    expect(assertDefined(result).dsr).toBeGreaterThan(0.8);
   });
 
   it('more trials → lower DSR (selection bias adjustment)', () => {
@@ -157,9 +158,9 @@ describe('ljungBoxTest', () => {
     const iid = Array.from({ length: 200 }, (_, i) => Math.sin(i * 7919) * 0.01);
     const result = ljungBoxTest(iid, 20, 0.05);
     expect(result).not.toBeNull();
-    expect(typeof result!.Q).toBe('number');
-    expect(result!.pValue).toBeGreaterThanOrEqual(0);
-    expect(result!.pValue).toBeLessThanOrEqual(1);
+    expect(typeof assertDefined(result).Q).toBe('number');
+    expect(assertDefined(result).pValue).toBeGreaterThanOrEqual(0);
+    expect(assertDefined(result).pValue).toBeLessThanOrEqual(1);
   });
 
   it('rejects H0 for highly autocorrelated series', () => {
@@ -170,8 +171,8 @@ describe('ljungBoxTest', () => {
     }
     const result = ljungBoxTest(ar, 20, 0.05);
     expect(result).not.toBeNull();
-    expect(result!.rejectH0).toBe(true);
-    expect(result!.pValue).toBeLessThan(0.05);
+    expect(assertDefined(result).rejectH0).toBe(true);
+    expect(assertDefined(result).pValue).toBeLessThan(0.05);
   });
 });
 
@@ -188,7 +189,7 @@ describe('jarqueBera', () => {
     const fatTail = Array.from({ length: 100 }, (_, i) => (i < 95 ? 0 : i % 2 === 0 ? 10 : -10));
     const result = jarqueBera(fatTail);
     expect(result).not.toBeNull();
-    expect(result!.isNormal).toBe(false);
+    expect(assertDefined(result).isNormal).toBe(false);
   });
 });
 
@@ -210,9 +211,9 @@ describe('conditionalProbability', () => {
       'previous_positive',
     );
     expect(result).not.toBeNull();
-    expect(result!.unconditional).toBeGreaterThan(0);
-    expect(result!.unconditional).toBeLessThan(1);
-    expect(result!.lift).toBeGreaterThan(0);
+    expect(assertDefined(result).unconditional).toBeGreaterThan(0);
+    expect(assertDefined(result).unconditional).toBeLessThan(1);
+    expect(assertDefined(result).lift).toBeGreaterThan(0);
   });
 
   it('lift ≈ 1 for genuinely random returns (no edge)', () => {
@@ -225,8 +226,8 @@ describe('conditionalProbability', () => {
     );
     expect(result).not.toBeNull();
     // Lift for random data: wide tolerance since it's stochastic
-    expect(result!.lift).toBeGreaterThan(0.5);
-    expect(result!.lift).toBeLessThan(1.5);
+    expect(assertDefined(result).lift).toBeGreaterThan(0.5);
+    expect(assertDefined(result).lift).toBeLessThan(1.5);
   });
 });
 
@@ -263,6 +264,7 @@ describe('computeMaxDrawdown', () => {
 
 describe(
   'probabilityOfBacktestOverfitting',
+  { timeout: 30_000 },
   () => {
     it('returns null for single strategy', () => {
       const strat = [Array(200).fill(0.01)];
@@ -275,11 +277,10 @@ describe(
       );
       const result = probabilityOfBacktestOverfitting(strategies, 8);
       expect(result).not.toBeNull();
-      expect(result!.pbo).toBeGreaterThanOrEqual(0);
-      expect(result!.pbo).toBeLessThanOrEqual(1);
+      expect(assertDefined(result).pbo).toBeGreaterThanOrEqual(0);
+      expect(assertDefined(result).pbo).toBeLessThanOrEqual(1);
     });
   },
-  { timeout: 30_000 },
 );
 
 // ---------------------------------------------------------------------------
@@ -296,8 +297,8 @@ describe('benjaminiHochbergYekutieli', () => {
   it('rejects very low p-values', () => {
     const pValues = [0.001, 0.5, 0.8, 0.9];
     const result = benjaminiHochbergYekutieli(pValues, 0.05);
-    expect(result[0]!.rejected).toBe(true);
-    expect(result[3]!.rejected).toBe(false);
+    expect(assertDefined(result[0]).rejected).toBe(true);
+    expect(assertDefined(result[3]).rejected).toBe(false);
   });
 
   it('is conservative: not all borderline p-values are rejected', () => {

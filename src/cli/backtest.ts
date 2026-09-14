@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import { handleHelp } from './help.js';
+handleHelp('backtest', 'Preliminary Options simulation. --symbols SYMBOL,...; no account orders.');
+import { print } from '../monitoring/print.js';
+import { assertDefined } from '../utils/assertDefined.js';
 
 import { configureLogger, createLogger } from '../monitoring/Logger.js';
 import { getEnv } from '../config/env.js';
@@ -25,10 +29,11 @@ const MIN_TICKS_REQUIRED = 200;
 
 async function main(): Promise<void> {
   const env = getEnv();
+  const verbose = process.argv.includes('--verbose');
 
   const symIdx = process.argv.indexOf('--symbols');
   const cliSymbols = symIdx !== -1 && process.argv[symIdx + 1]
-    ? process.argv[symIdx + 1]!.split(',').map((s) => s.trim())
+    ? assertDefined(process.argv[symIdx + 1]).split(',').map((s) => s.trim())
     : null;
 
   const logLevel = (env.LOG_LEVEL === 'debug' || env.LOG_LEVEL === 'trace') ? env.LOG_LEVEL : 'warn';
@@ -38,18 +43,18 @@ async function main(): Promise<void> {
   renderBanner();
   renderSafetyStatus(env.DEMO_TRADING, env.LIVE_TRADING);
 
-  console.log('🔬 BACKTEST MODE — Walk-Forward Strategy Validation');
-  console.log('   No trades will be placed in this mode.\n');
+  print('🔬 BACKTEST MODE — Walk-Forward Strategy Validation');
+  print('   No trades will be placed in this mode.\n');
 
   // Hypothesis alignment: backtest evaluates the SAME contract duration as demo.
   const contractDuration = env.CONTRACT_DURATION;
   const contractDurationUnit = env.CONTRACT_DURATION_UNIT;
   const payoutMultiplier = env.BACKTEST_PAYOUT_MULTIPLIER;
 
-  console.log('📐 Hypothesis (must match demo .env settings):');
-  console.log(`   Duration:  ${contractDuration} ${contractDurationUnit === 't' ? 'tick(s)' : contractDurationUnit}`);
-  console.log(`   Payout:    ${payoutMultiplier.toFixed(3)}x  (BACKTEST_PAYOUT_MULTIPLIER — verify against Deriv pricing)`);
-  console.log('');
+  print('📐 Hypothesis (must match demo .env settings):');
+  print(`   Duration:  ${String(contractDuration)} ${contractDurationUnit === 't' ? 'tick(s)' : contractDurationUnit}`);
+  print(`   Payout:    ${payoutMultiplier.toFixed(3)}x  (BACKTEST_PAYOUT_MULTIPLIER — verify against Deriv pricing)`);
+  print('');
 
   try {
     getDb();
@@ -70,10 +75,10 @@ async function main(): Promise<void> {
     : allSymbols;
 
   if (cliSymbols) {
-    console.log(`🔍 Symbols filter: ${symbols.length > 0 ? symbols.join(', ') : '(none matched)'}`);
+    print(`🔍 Symbols filter: ${symbols.length > 0 ? symbols.join(', ') : '(none matched)'}`);
   }
-  console.log(`\n📋 Symbols to backtest (${symbols.length}):`);
-  symbols.forEach(s => { console.log(`   • ${s}`); });
+  print(`\n📋 Symbols to backtest (${String(symbols.length)}):`);
+  symbols.forEach(s => { print(`   • ${s}`); });
 
   const walkForwardConfig = {
     trainFraction: 0.6,
@@ -120,27 +125,27 @@ async function main(): Promise<void> {
   let errorsThisRun = 0;
 
   for (const symbol of symbols) {
-    console.log(`\n${'='.repeat(70)}`);
-    console.log(`📊 Symbol: ${symbol}`);
-    console.log('='.repeat(70));
+    print(`\n${'='.repeat(70)}`);
+    print(`📊 Symbol: ${symbol}`);
+    print('='.repeat(70));
 
     const count = getTickCount(symbol);
-    console.log(`  📁 Ticks in database: ${count}`);
+    print(`  📁 Ticks in database: ${String(count)}`);
 
     if (count < MIN_TICKS_REQUIRED) {
-      console.log(`  ⚠️  Insufficient data for ${symbol} (have ${count}, need ≥${MIN_TICKS_REQUIRED}).`);
+      print(`  ⚠️  Insufficient data for ${symbol} (have ${String(count)}, need ≥${String(MIN_TICKS_REQUIRED)}).`);
       continue;
     }
 
     const rawTicks = getRecentTicks(symbol, MAX_TICKS);
-    console.log(`  ✅ Loaded ${rawTicks.length} ticks — replaying through FeatureEngine...`);
+    print(`  ✅ Loaded ${String(rawTicks.length)} ticks — replaying through FeatureEngine...`);
 
     const featureEngine = new FeatureEngine(symbol);
     const features: TickFeatures[] = [];
     for (const tick of rawTicks) {
       features.push(featureEngine.process(tick));
     }
-    console.log(`  ✅ Feature replay complete: ${features.length} rows\n`);
+    print(`  ✅ Feature replay complete: ${String(features.length)} rows\n`);
 
     for (const { name, factory } of strategyFactories) {
       log.info({ strategy: name, symbol }, 'Running walk-forward');
@@ -167,6 +172,7 @@ async function main(): Promise<void> {
         const winRate = wfResult.aggregatedTestMetrics?.winRate ?? 0;
         const trades = wfResult.aggregatedTestMetrics?.totalTrades ?? 0;
 
+        if (verbose) {
         if (wfResult.aggregatedTestMetrics) {
           renderMetricsTable(
             wfResult.aggregatedTestMetrics,
@@ -174,11 +180,13 @@ async function main(): Promise<void> {
           );
         }
 
-        console.log(`\n  PBO: ${wfResult.pbo !== null ? `${(wfResult.pbo * 100).toFixed(1)}%` : 'N/A'}`);
-        console.log(`  ${wfResult.pboInterpretation}`);
-        console.log(`\n  Validation: ${wfResult.passesRigorousValidation ? '✅ PASSES' : '❌ FAILS'}`);
+        print(`\n  PBO: ${wfResult.pbo !== null ? `${(wfResult.pbo * 100).toFixed(1)}%` : 'N/A'}`);
+        print(`  ${wfResult.pboInterpretation}`);
+        print(`\n  Validation: ${wfResult.passesRigorousValidation ? '✅ PASSES' : '❌ FAILS'}`);
         for (const note of wfResult.validationNotes) {
-          console.log(`    ${note}`);
+          print(`    ${note}`);
+        }
+
         }
 
         results.push({ strategy: name, symbol, passes: wfResult.passesRigorousValidation, pbo: wfResult.pbo, notes: wfResult.validationNotes, sharpe, winRate, trades });
@@ -194,55 +202,55 @@ async function main(): Promise<void> {
   // ---------------------------------------------------------------------------
   // Summary
   // ---------------------------------------------------------------------------
-  console.log(`\n${'='.repeat(70)}`);
-  console.log('📋 BACKTEST SUMMARY');
-  console.log(`${'='.repeat(70)}\n`);
+  print(`\n${'='.repeat(70)}`);
+  print('📋 BACKTEST SUMMARY');
+  print(`${'='.repeat(70)}\n`);
 
   if (results.length > 0) {
-    console.log(`┌──────────────────────────┬──────────┬──────────┬─────────┬───────┬──────────┐`);
-    console.log(`│ Strategy                 │ Symbol   │  Sharpe  │ WinRate │Trades │ Verdict  │`);
-    console.log(`├──────────────────────────┼──────────┼──────────┼─────────┼───────┼──────────┤`);
+    print(`┌──────────────────────────┬──────────┬──────────┬─────────┬───────┬──────────┐`);
+    print(`│ Strategy                 │ Symbol   │  Sharpe  │ WinRate │Trades │ Verdict  │`);
+    print(`├──────────────────────────┼──────────┼──────────┼─────────┼───────┼──────────┤`);
     const sorted = [...results].sort((a, b) => b.sharpe - a.sharpe);
     for (const r of sorted) {
       const s  = r.strategy.padEnd(24).substring(0, 24);
       const sy = r.symbol.padEnd(8).substring(0, 8);
-      const sh = (r.sharpe ?? 0).toFixed(3).padStart(8);
+      const sh = r.sharpe.toFixed(3).padStart(8);
       const wr = (r.winRate * 100).toFixed(1).padStart(6) + '%';
       const tr = String(r.trades).padStart(5);
       const v  = r.passes ? '✅ PASS' : '❌ FAIL';
-      console.log(`│ ${s} │ ${sy} │ ${sh} │ ${wr} │ ${tr} │ ${v.padEnd(8)} │`);
+      print(`│ ${s} │ ${sy} │ ${sh} │ ${wr} │ ${tr} │ ${v.padEnd(8)} │`);
     }
-    console.log(`└──────────────────────────┴──────────┴──────────┴─────────┴───────┴──────────┘\n`);
+    print(`└──────────────────────────┴──────────┴──────────┴─────────┴───────┴──────────┘\n`);
   }
 
   const passing = results.filter(r => r.passes).length;
-  console.log(`  Strategies evaluated: ${results.length}`);
-  console.log(`  Passing validation:   ${passing}`);
-  console.log(`  Errors:               ${errorsThisRun}`);
-  console.log();
+  print(`  Strategies evaluated: ${String(results.length)}`);
+  print(`  Passing validation:   ${String(passing)}`);
+  print(`  Errors:               ${String(errorsThisRun)}`);
+  print();
 
-  if (results.length === 0 && symbols.length === 0) {
-    console.error('❌ No symbols had sufficient data. Run `npm run research` to collect ticks.');
+  if (results.length === 0 && errorsThisRun === 0) {
+    console.error('❌ INSUFFICIENT_DATA — No experiments completed. Collect ticks with npm run research:daemon.');
     process.exit(1);
   }
 
   if (results.length === 0 && errorsThisRun > 0) {
-    console.error(`❌ All strategy evaluations failed (${errorsThisRun} errors). See log output above.`);
+    console.error(`❌ All strategy evaluations failed (${String(errorsThisRun)} errors). See log output above.`);
     process.exit(1);
   }
 
   if (passing === 0) {
-    console.log('  ⚠️  NO EDGE FOUND — No strategy passes rigorous OOS validation.');
-    console.log('  This is a valid research result. Collect more data or revise hypotheses.');
+    print('  ⚠️  INSUFFICIENT_EVIDENCE — No candidate passed the preliminary simulation checks.');
+    print('  This is a valid research result. Collect more data or revise hypotheses.');
   }
 
   if (errorsThisRun > 0) {
-    console.warn(`  ⚠️  ${errorsThisRun} evaluation(s) failed. Results exclude those runs.`);
+    console.warn(`  ⚠️  ${String(errorsThisRun)} evaluation(s) failed. Results exclude those runs.`);
   }
 
-  console.log('\n  ⚠️  Backtest results are not guarantees of future performance.');
-  console.log('  Payout assumptions and zero-latency execution cannot be exactly replicated.');
-  process.exit(0);
+  print('\n  ⚠️  Backtest results are not guarantees of future performance.');
+  print('  Payout assumptions and zero-latency execution cannot be exactly replicated.');
+  process.exit(errorsThisRun > 0 ? 1 : 0);
 }
 
 main().catch((err: unknown) => {

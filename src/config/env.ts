@@ -7,21 +7,27 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   // Deriv
-  DERIV_API_TOKEN: z.string().min(1, 'DERIV_API_TOKEN is required'),
-  DERIV_APP_ID: z.string().min(1, 'DERIV_APP_ID is required'),
+  DERIV_API_TOKEN: z.string().trim().default(''),
+  DERIV_APP_ID: z.string().trim().default(''),
 
   // Safety — these defaults make the system safe even if env is misconfigured
   DEMO_TRADING: z
     .string()
-    .transform((v) => v.toLowerCase() === 'true')
+    .transform((v) => v.trim().toLowerCase())
+    .pipe(z.enum(['true', 'false']))
+    .transform((v) => v === 'true')
     .default('true'),
   LIVE_TRADING: z
     .string()
-    .transform((v) => v.toLowerCase() === 'true')
+    .transform((v) => v.trim().toLowerCase())
+    .pipe(z.enum(['true', 'false']))
+    .transform((v) => v === 'true')
     .default('false'),
   LIVE_CONFIRMATION: z
     .string()
-    .transform((v) => v.toLowerCase() === 'true')
+    .transform((v) => v.trim().toLowerCase())
+    .pipe(z.enum(['true', 'false']))
+    .transform((v) => v === 'true')
     .default('false'),
 
   // Trade Parameters — set these in .env to control trade sizing
@@ -52,7 +58,9 @@ const envSchema = z.object({
   DATABASE_PASSWORD: z.string().default(''), // Not required for SQLite mode
   DATABASE_SSL: z
     .string()
-    .transform((v) => v.toLowerCase() === 'true')
+    .transform((v) => v.trim().toLowerCase())
+    .pipe(z.enum(['true', 'false']))
+    .transform((v) => v === 'true')
     .default('false'),
   DATABASE_POOL_MIN: z.coerce.number().int().nonnegative().default(2),
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
@@ -115,7 +123,9 @@ const envSchema = z.object({
   PYTORCH_SIDECAR_URL: z.string().default('http://localhost:8765'),
   PYTORCH_SIDECAR_ENABLED: z
     .string()
-    .transform((v) => v.toLowerCase() === 'true')
+    .transform((v) => v.trim().toLowerCase())
+    .pipe(z.enum(['true', 'false']))
+    .transform((v) => v === 'true')
     .default('false'),
   ML_REVERSION_PROB_THRESHOLD: z.coerce.number().min(0).max(1).default(0.3),
 
@@ -123,7 +133,9 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   LOG_PRETTY: z
     .string()
-    .transform((v) => v.toLowerCase() === 'true')
+    .transform((v) => v.trim().toLowerCase())
+    .pipe(z.enum(['true', 'false']))
+    .transform((v) => v === 'true')
     .default('true'),
 
   // Backtesting
@@ -174,9 +186,7 @@ let _env: Env | null = null;
  * Parsed lazily on first call and cached thereafter.
  */
 export function getEnv(): Env {
-  if (_env === null) {
-    _env = loadEnv();
-  }
+  _env ??= loadEnv();
   return _env;
 }
 
@@ -201,4 +211,13 @@ export function isLiveTradingEnabled(): boolean {
  */
 export function isDemoTradingEnabled(): boolean {
   return getEnv().DEMO_TRADING;
+}
+
+/** Credentials are required only at the authenticated account boundary. */
+export function getTradingEnv(): Env {
+  const env = getEnv();
+  if (!env.DERIV_API_TOKEN || !env.DERIV_APP_ID) {
+    throw new Error('Authenticated trading requires DERIV_API_TOKEN and DERIV_APP_ID');
+  }
+  return env;
 }

@@ -1,3 +1,4 @@
+import { print } from './print.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
@@ -31,17 +32,17 @@ export function renderMetricsTable(metrics: PerformanceMetrics, title?: string):
     LIVE: chalk.red,
   } as Record<TradingMode, (s: string) => string>;
 
-  const color = modeColor[metrics.mode] ?? chalk.white;
+  const color = modeColor[metrics.mode];
   const header = title ?? `${color(`[${metrics.mode}]`)} ${metrics.strategy} — ${metrics.symbol}`;
 
-  console.log('\n' + chalk.bold('─'.repeat(70)));
-  console.log(chalk.bold(header));
-  console.log(
+  print('\n' + chalk.bold('─'.repeat(70)));
+  print(chalk.bold(header));
+  print(
     chalk.dim(
       `  Period: ${metrics.fromDate.toISOString().slice(0, 10)} → ${metrics.toDate.toISOString().slice(0, 10)}`,
     ),
   );
-  console.log(chalk.bold('─'.repeat(70)));
+  print(chalk.bold('─'.repeat(70)));
 
   const table = new Table({
     head: [chalk.bold('Metric'), chalk.bold('Value')],
@@ -94,18 +95,18 @@ export function renderMetricsTable(metrics: PerformanceMetrics, title?: string):
     ['─────────────────────────', '─────────────────────────'],
     [
       chalk.bold('EDGE STATUS'),
-      (edgeColor[metrics.edgeStatus] ?? chalk.white)(chalk.bold(metrics.edgeStatus)),
+      edgeColor[metrics.edgeStatus](chalk.bold(metrics.edgeStatus)),
     ],
   );
 
-  console.log(table.toString());
+  print(table.toString());
 }
 
 /**
  * Renders the system header banner.
  */
 export function renderBanner(): void {
-  console.log(
+  print(
     chalk.cyan(`
 ╔══════════════════════════════════════════════════════════╗
 ║   Quant Trading Research System v${readPackageVersion().padEnd(24)}║
@@ -122,12 +123,12 @@ export function renderBanner(): void {
  * Renders a safety status panel showing current trading mode.
  */
 export function renderSafetyStatus(demoEnabled: boolean, liveEnabled: boolean): void {
-  console.log(chalk.bold('\n📊 Trading Mode Status:'));
-  console.log(
+  print(chalk.bold('\n📊 Trading Mode Status:'));
+  print(
     `  Demo Trading:  ${demoEnabled ? chalk.green('✓ ENABLED') : chalk.red('✗ DISABLED')}`,
   );
-  console.log(
+  print(
     `  Live Trading:  ${liveEnabled ? chalk.red('⚠ ENABLED (real money!)') : chalk.green('✓ DISABLED (safe)')}`,
   );
-  console.log();
+  print();
 }

@@ -1,3 +1,4 @@
+import { assertDefined } from '../../../src/utils/assertDefined.js';
 import { describe, it, expect } from 'vitest';
 import {
   logReturn,
@@ -17,7 +18,7 @@ import {
   median,
   skewness,
   kurtosis,
-} from '../../../src/features/indicators/indicators';
+} from '../../../src/features/indicators/indicators.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,7 +53,7 @@ describe('logReturn', () => {
     const pricesA = [100, 102, 200]; // future spike
     const pricesB = [100, 102, 50]; // future crash
     // logReturn at index 1 must be identical regardless of prices[2]
-    expect(logReturn(pricesA, 1)).toBeCloseTo(logReturn(pricesB, 1)!, 10);
+    expect(logReturn(pricesA, 1)).toBeCloseTo(assertDefined(logReturn(pricesB, 1)), 10);
   });
 });
 
@@ -86,7 +87,7 @@ describe('momentum', () => {
     const p1 = [100, 102, 104, 106, 200, 300]; // future spike
     const p2 = [100, 102, 104, 106, 200, 10]; // future crash
     // momentum at i=4, k=4: ln(p[4]/p[0]) — independent of p[5]
-    expect(momentum(p1, 4, 4)).toBeCloseTo(momentum(p2, 4, 4)!, 10);
+    expect(momentum(p1, 4, 4)).toBeCloseTo(assertDefined(momentum(p2, 4, 4)), 10);
   });
 });
 
@@ -108,7 +109,7 @@ describe('rollingMean', () => {
   it('INVARIANT: does not use future values', () => {
     const p1 = [1, 2, 3, 4, 5, 999]; // future outlier
     const p2 = [1, 2, 3, 4, 5, 0];
-    expect(rollingMean(p1, 4, 5)).toBeCloseTo(rollingMean(p2, 4, 5)!, 10);
+    expect(rollingMean(p1, 4, 5)).toBeCloseTo(assertDefined(rollingMean(p2, 4, 5)), 10);
   });
 });
 
@@ -126,7 +127,7 @@ describe('rollingStd', () => {
     const varying = [1, 3, 2, 5, 4];
     const std = rollingStd(varying, 4, 5);
     expect(std).not.toBeNull();
-    expect(std!).toBeGreaterThan(0);
+    expect(assertDefined(std)).toBeGreaterThan(0);
   });
 });
 
@@ -162,7 +163,7 @@ describe('zScore', () => {
   it('INVARIANT: does not use future prices', () => {
     const p1 = [1, 2, 3, 4, 5, 999];
     const p2 = [1, 2, 3, 4, 5, -999];
-    expect(zScore(p1, 4, 5)).toBeCloseTo(zScore(p2, 4, 5)!, 10);
+    expect(zScore(p1, 4, 5)).toBeCloseTo(assertDefined(zScore(p2, 4, 5)), 10);
   });
 });
 
@@ -218,7 +219,7 @@ describe('autocorrelation', () => {
     const rets: (number | null)[] = Array.from({ length: 60 }, (_, i) => (i % 2 === 0 ? 1 : -1));
     const ac = autocorrelation(rets, 59, 50, 1);
     expect(ac).not.toBeNull();
-    expect(ac!).toBeLessThan(-0.9); // Should be very negative
+    expect(assertDefined(ac)).toBeLessThan(-0.9); // Should be very negative
   });
 
   it('INVARIANT: does not use future returns', () => {
@@ -227,7 +228,7 @@ describe('autocorrelation', () => {
     const rets2 = [...rets1];
     rets2[25] = -999;
     // AC at i=24, window=20, lag=1 should not depend on rets[25]
-    expect(autocorrelation(rets1, 24, 20, 1)).toBeCloseTo(autocorrelation(rets2, 24, 20, 1)!, 10);
+    expect(autocorrelation(rets1, 24, 20, 1)).toBeCloseTo(assertDefined(autocorrelation(rets2, 24, 20, 1)), 10);
   });
 });
 
@@ -308,14 +309,14 @@ describe('skewness', () => {
     const sym = [-3, -2, -1, 0, 1, 2, 3];
     const sk = skewness(sym);
     expect(sk).not.toBeNull();
-    expect(Math.abs(sk!)).toBeLessThan(0.01);
+    expect(Math.abs(assertDefined(sk))).toBeLessThan(0.01);
   });
 
   it('returns positive for right-skewed distribution', () => {
     const rightSkewed = [1, 1, 1, 1, 1, 1, 1, 1, 1, 100];
     const sk = skewness(rightSkewed);
     expect(sk).not.toBeNull();
-    expect(sk!).toBeGreaterThan(0);
+    expect(assertDefined(sk)).toBeGreaterThan(0);
   });
 });
 
@@ -328,6 +329,6 @@ describe('kurtosis', () => {
     const fatTail = Array.from({ length: 100 }, () => 0).concat([100, -100]);
     const k = kurtosis(fatTail);
     expect(k).not.toBeNull();
-    expect(k!).toBeGreaterThan(5);
+    expect(assertDefined(k)).toBeGreaterThan(5);
   });
 });

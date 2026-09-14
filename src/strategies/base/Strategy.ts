@@ -50,7 +50,8 @@ export function makeSignal(
   metadata: Record<string, unknown> = {},
 ): Signal {
   return {
-    id: crypto.randomUUID(),
+    product: 'OPTIONS', hypothesisId: null, strategyVersion: '1',
+      id: crypto.randomUUID(),
     timestamp: current.timestamp,
     symbol: current.symbol,
     price: current.price,

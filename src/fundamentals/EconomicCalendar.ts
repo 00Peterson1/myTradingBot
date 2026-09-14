@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { getDb } from '../data/database/sqlite.js';
 import { getEnv } from '../config/env.js';
 
@@ -14,6 +15,22 @@ export interface EconomicEvent {
   forecast: number | null;
   actual: number | null;
   affectedPairs: string[];
+}
+
+const calendarItemSchema = z.object({
+  title: z.string().min(1), country: z.string(), impact: z.string(),
+  date: z.string().refine(value => Number.isFinite(Date.parse(value)), 'Invalid event date'),
+  previous: z.string().nullish(), forecast: z.string().nullish(),
+});
+interface EventRow {
+  event_id: string; country: string; currency: string; event_name: string;
+  scheduled_at: string; impact: EventImpact; previous: number | null;
+  forecast: number | null; actual: number | null; affected_pairs: string;
+}
+function parseValue(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number.parseFloat(value.replace(/[^0-9.-]+/g, ''));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export class EconomicCalendar {
@@ -44,8 +61,8 @@ export class EconomicCalendar {
 
     try {
       const response = await fetch('https://nfs.faireconomy.media/ff_calendar_thisweek.json');
-      if (!response.ok) return;
-      const data = await response.json() as any[];
+      if (!response.ok) throw new Error(`Calendar request failed: ${String(response.status)}`);
+      const data = z.array(calendarItemSchema).parse(await response.json());
 
       const stmt = db.prepare(`
         INSERT INTO economic_events (event_id, country, currency, event_name, scheduled_at, impact, previous, forecast, actual, affected_pairs, fetched_at)
@@ -59,11 +76,8 @@ export class EconomicCalendar {
         for (const item of data) {
           const impact = this.mapImpact(item.impact, item.title);
           
-          const prevStr = item.previous ? parseFloat(item.previous.replace(/[^0-9.-]+/g,"")) : null;
-          const prev = isNaN(prevStr!) ? null : prevStr;
-          
-          const foreStr = item.forecast ? parseFloat(item.forecast.replace(/[^0-9.-]+/g,"")) : null;
-          const fore = isNaN(foreStr!) ? null : foreStr;
+          const prev = parseValue(item.previous);
+          const fore = parseValue(item.forecast);
 
           const eventId = item.title + '_' + item.date;
 
@@ -81,8 +95,8 @@ export class EconomicCalendar {
           );
         }
       })();
-    } catch (e) {
-      // Graceful fail
+    } catch (error) {
+      throw new Error('Economic calendar refresh failed', { cause: error });
     }
   }
 
@@ -101,7 +115,7 @@ export class EconomicCalendar {
     const db = getDb();
     
     const placeholders = currencies.map(() => '?').join(',');
-    const events = db.prepare(`SELECT * FROM economic_events WHERE currency IN (${placeholders})`).all(...currencies) as any[];
+    const events = db.prepare(`SELECT * FROM economic_events WHERE currency IN (${placeholders})`).all(...currencies) as EventRow[];
 
     const nowTime = now.getTime();
 
@@ -133,8 +147,8 @@ export class EconomicCalendar {
       WHERE currency IN (${placeholders}) 
       AND impact IN ('HIGH', 'CRITICAL')
       AND datetime(scheduled_at) > datetime('now')
-      AND datetime(scheduled_at) <= datetime('now', '+${hoursAhead} hours')
-    `).all(...currencies) as any[];
+      AND datetime(scheduled_at) <= datetime('now', ?)
+    `).all(...currencies, `+${String(hoursAhead)} hours`) as EventRow[];
 
     return events.map(row => ({
       eventId: row.event_id,
@@ -142,28 +156,28 @@ export class EconomicCalendar {
       currency: row.currency,
       eventName: row.event_name,
       scheduledAt: new Date(row.scheduled_at),
-      impact: row.impact as EventImpact,
+      impact: row.impact,
       previous: row.previous,
       forecast: row.forecast,
       actual: row.actual,
-      affectedPairs: JSON.parse(row.affected_pairs || '[]')
+      affectedPairs: z.array(z.string()).parse(JSON.parse(row.affected_pairs))
     }));
   }
 
   getAllEvents(): EconomicEvent[] {
     const db = getDb();
-    const events = db.prepare('SELECT * FROM economic_events').all() as any[];
+    const events = db.prepare('SELECT * FROM economic_events').all() as EventRow[];
     return events.map(row => ({
       eventId: row.event_id,
       country: row.country,
       currency: row.currency,
       eventName: row.event_name,
       scheduledAt: new Date(row.scheduled_at),
-      impact: row.impact as EventImpact,
+      impact: row.impact,
       previous: row.previous,
       forecast: row.forecast,
       actual: row.actual,
-      affectedPairs: JSON.parse(row.affected_pairs || '[]')
+      affectedPairs: z.array(z.string()).parse(JSON.parse(row.affected_pairs))
     }));
   }
 }

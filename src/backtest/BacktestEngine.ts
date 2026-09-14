@@ -1,3 +1,4 @@
+import { assertDefined } from '../utils/assertDefined.js';
 import crypto from 'crypto';
 import { createLogger } from '../monitoring/Logger.js';
 import { mean, stddev } from '../features/indicators/indicators.js';
@@ -82,7 +83,7 @@ export class BacktestEngine {
    * @param testFrom - Test period start (inclusive)
    * @param testTo - Test period end (inclusive)
    */
-  async run(
+  run(
     features: readonly TickFeatures[],
     trainFrom: Date,
     trainTo: Date,
@@ -91,6 +92,7 @@ export class BacktestEngine {
     testFrom: Date,
     testTo: Date,
   ): Promise<BacktestRun> {
+    return Promise.resolve().then(() => {
     log.info(
       {
         strategy: this.config.strategyName,
@@ -150,6 +152,7 @@ export class BacktestEngine {
       testMetrics,
       observations: [...trainObs, ...validateObs, ...testObs],
     };
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -168,6 +171,9 @@ export class BacktestEngine {
     const observations: BacktestObservation[] = [];
     const history: TickFeatures[] = [];
     const strategy = this.config.strategyFactory();
+    if (strategy.isOnlineLearner) {
+      throw new Error('Online learners cannot be scored in a standard backtest; frozen evaluation is required');
+    }
     let openUntilIndex = -1;
     const entryTimes: number[] = [];
 
@@ -196,7 +202,7 @@ export class BacktestEngine {
       const expiry = periodFeatures[expiryIndex];
       // Do not invent an outcome when history ends before the contract expires.
       if (!expiry) continue;
-      while (entryTimes.length && entryTimes[0]! <= current.timestamp.getTime() - 3_600_000) entryTimes.shift();
+      while (entryTimes.length && assertDefined(entryTimes[0]) <= current.timestamp.getTime() - 3_600_000) entryTimes.shift();
       if (entryTimes.length >= (this.config.maxTradesPerHour ?? Infinity)) continue;
 
       const stake = 1.0; // Normalized stake for backtesting — risk engine handles real sizing
@@ -230,9 +236,9 @@ export class BacktestEngine {
     const unit = this.config.contractDurationUnit ?? 't';
     if (unit === 't') return entryIndex + duration;
     const seconds = { s: 1, m: 60, h: 3600, d: 86400 }[unit] * duration;
-    const expiryTime = features[entryIndex]!.timestamp.getTime() + seconds * 1000;
+    const expiryTime = assertDefined(features[entryIndex]).timestamp.getTime() + seconds * 1000;
     for (let i = entryIndex + 1; i < features.length; i++) {
-      if (features[i]!.timestamp.getTime() >= expiryTime) return i;
+      if (assertDefined(features[i]).timestamp.getTime() >= expiryTime) return i;
     }
     return features.length;
   }
@@ -425,24 +431,4 @@ async function hashObject(obj: unknown): Promise<string> {
 
 export { hashObject };
 
-/** Only supported strict Rise/Fall and digit contracts can be simulated. */
-export function contractWon(signal: Signal, entryPrice: number, exitPrice: number, pipSize?: number): boolean {
-  const contractType = signal.metadata.contractType ?? (signal.direction === 'BUY' ? 'CALL' : 'PUT');
-  if (contractType === 'CALL') return exitPrice > entryPrice;
-  if (contractType === 'PUT') return exitPrice < entryPrice;
-  if (pipSize === undefined || !Number.isInteger(pipSize) || pipSize < 0 || pipSize > 10) {
-    throw new Error('Digit contract backtesting requires verified symbol precision');
-  }
-  const digit = Number(exitPrice.toFixed(pipSize).slice(-1));
-  if (contractType === 'DIGITEVEN') return digit % 2 === 0;
-  if (contractType === 'DIGITODD') return digit % 2 === 1;
-  const barrier = Number(signal.metadata.barrier);
-  if (!Number.isInteger(barrier) || barrier < 0 || barrier > 9) throw new Error('Digit barrier must be an integer from 0 to 9');
-  switch (contractType) {
-    case 'DIGITOVER': return digit > barrier;
-    case 'DIGITUNDER': return digit < barrier;
-    case 'DIGITMATCH': return digit === barrier;
-    case 'DIGITDIFF': return digit !== barrier;
-    default: throw new Error(`Unsupported backtest contract: ${String(contractType)}`);
-  }
-}
+export { contractWon } from './contractOutcome.js';

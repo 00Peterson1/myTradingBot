@@ -34,14 +34,14 @@ export class VolAdjMomentumStrategy implements Strategy {
   readonly description: string;
 
   constructor(private readonly params: VolAdjMomentumParams) {
-    this.name = `VolAdjMomentum(key=${params.momentumKey},z=${params.zThreshold})`;
-    this.description = `Volatility-adjusted momentum: BUY if Z > ${params.zThreshold}, SELL if Z < -${params.zThreshold}`;
+    this.name = `VolAdjMomentum(key=${params.momentumKey},z=${String(params.zThreshold)})`;
+    this.description = `Volatility-adjusted momentum: BUY if Z > ${String(params.zThreshold)}, SELL if Z < -${String(params.zThreshold)}`;
   }
 
   generateSignal(current: TickFeatures, _history: readonly TickFeatures[]): Signal {
     const z = current[this.params.momentumKey];
 
-    if (z === null || z === undefined) {
+    if (z === null) {
       return makeSignal(this.name, current, 'NONE', 0, { reason: 'insufficient_history' });
     }
 

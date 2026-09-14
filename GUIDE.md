@@ -1,95 +1,21 @@
-# myTradingBot — Complete Guide
+# Quantitative research workstation
 
-> ⚠️ This is a research tool. Past performance does not guarantee future results.
-> Never risk money you cannot afford to lose.
+The intended workflow is research → backtesting → validated demo evaluation → explicitly eligible live execution. The current implementation does **not** enforce all of these gates. See [the milestone review](docs/MILESTONE_REVIEW.md) for verified capabilities and remaining defects.
 
----
+| Command | Current behavior |
+|---|---|
+| `npm run doctor` | Local configuration and read-only database diagnostics; does not certify trading readiness |
+| `npm run doctor -- --connectivity` | Also checks the public market-data connection; no account authorization or orders |
+| `npm run migrate` | Initializes the existing SQLite schema; versioned migrations are not implemented |
+| `npm run markets` | Lists cached markets; discovers them through the public API when the cache is empty |
+| `npm run research:daemon` | Collects and persists tick batches and derived features |
+| `npm run research` | Samples ticks in memory and saves exploratory summary profiles |
+| `npm run backtest` | Runs preliminary chronological simulations using configured duration/payout assumptions |
+| `npm run trade:demo` | Existing Options execution runner; lifecycle, durable accounting and reconciliation remain incomplete |
+| `npm run trade:live` | Existing real-account Options runner; not ready for validated deployment |
 
-## What this bot does
+`SYMBOLS` selects instruments. Instrument discovery does not guarantee availability of a particular contract, duration, account or product. The code includes directional and digit Options strategies with incomplete capability integration. CFD trading is not implemented.
 
-```
-RESEARCH → BACKTEST → DEMO TRADE → (optionally) LIVE TRADE
-```
+`CONTRACT_DURATION`, `CONTRACT_DURATION_UNIT` and `BACKTEST_PAYOUT_MULTIPLIER` configure simulation assumptions. The executor still contains a duration fallback, so configured equality is not proof of execution parity. Fixed payouts are assumptions, not observed historical quotes.
 
-| Step | Command | What happens |
-|------|---------|-------------|
-| 1. List Markets | `npm run trade:demo -- --list-markets` | Displays complete catalog of all Deriv synthetic & forex markets |
-| 2. Research | `npm run research` | Collects live ticks, runs market-type tests, ranks symbols |
-| 3. Backtest | `npm run backtest` | Replays collected data through strategies, validates edge |
-| 4. Demo trade | `npm run trade:demo` | Places real contracts on your Deriv DEMO account |
-| 5. Live trade | `npm run trade:live` | Places real contracts on your Deriv REAL account |
-
----
-
-## How to Trade Forex, Commodities, Crypto & Stocks
-
-The bot fully supports **Forex pairs** (e.g. `frxEURUSD`, `frxGBPUSD`, `frxUSDJPY`), **Commodities** (`frxXAUUSD` Gold, `frxXAGUSD` Silver), **Cryptocurrencies** (`cryBTCUSD`, `cryETHUSD`), and **Stock Indices** (`US500`, `UT100`).
-
-### 1. View all available symbols:
-```bash
-npm run trade:demo -- --list-markets
-```
-
-### 2. Configure Forex & Commodity symbols in `.env`:
-```env
-SYMBOLS=frxEURUSD,frxGBPUSD,frxUSDJPY,frxXAUUSD,cryBTCUSD,1HZ10V,BOOM500
-```
-
-### 3. Research & Backtest Forex markets:
-```bash
-npm run research
-npm run backtest
-```
-
----
-
-## How to Trade REAL Accounts (Live Trading with Real Money)
-
-To switch from Demo trading to **Real Money Live Trading**:
-
-### Step 1: Get your REAL Deriv API Token
-1. Log in at **[app.deriv.com](https://app.deriv.com)** with your **Real Account** (login ID starting with `CR...`).
-2. Go to **Account Settings → API Token**.
-3. Create a new token named `LiveTradingToken` with **Read + Trade** permissions.
-4. Copy the token string (starts with `pat_...`).
-
-### Step 2: Configure `.env` for Live Safety
-In `myTradingBot/.env`, update the safety switches:
-```env
-# 1. Paste your REAL account API token
-DERIV_API_TOKEN=pat_your_real_account_token_here
-
-# 2. Disable demo and enable live safety switches
-DEMO_TRADING=false
-LIVE_TRADING=true
-LIVE_CONFIRMATION=true
-
-# 3. Set conservative risk limits
-STAKE_AMOUNT=1.00                          # $1 USD per trade to start
-MAX_STAKE_PERCENT=0.01                     # Max 1% of balance per trade
-MAX_DAILY_LOSS_PERCENT=0.05                # Stop trading if 5% lost in a day
-RISK_MAX_DRAWDOWN_FRACTION=0.10            # Emergency kill switch at 10% drawdown
-```
-
-### Step 3: Launch Live Trading
-Run the dedicated live execution script:
-```bash
-npm run trade:live
-```
-
-> [!WARNING]
-> Live trading uses **real money** from your Deriv balance. Always run `npm run research` and `npm run backtest` first to confirm strategy edge before launching live trading.
-
----
-
-## Supported Contract Types & Options
-
-Set `CONTRACT_TYPE` in `.env` or run with CLI environment overrides:
-
-| Contract Type | `.env` setting | What it trades |
-|--------------|---------------|----------------|
-| **Auto (Default)** | `CONTRACT_TYPE=AUTO` | Pairs strategies and contract types automatically per market |
-| **Rise / Fall** | `CONTRACT_TYPE=RISE_FALL` | `CALL` (Rise) and `PUT` (Fall) directional contracts |
-| **Even / Odd** | `CONTRACT_TYPE=EVEN_ODD` | `DIGITEVEN` and `DIGITODD` based on last digit parity |
-| **Over / Under** | `CONTRACT_TYPE=OVER_UNDER` | `DIGITOVER` and `DIGITUNDER` based on target barrier (e.g. `DIGIT_BARRIER=5`) |
-| **Matches / Differs** | `CONTRACT_TYPE=MATCHES_DIFFERS` | `DIGITDIFF` and `DIGITMATCH` based on digit recurrence frequency |
+Run `npm run typecheck`, `npm test`, and `npm run lint` to check engineering health. Passing tests or a preliminary backtest check does not establish an edge, demo eligibility, or live eligibility. Keep credentials in the untracked `.env`; diagnostics redact the token completely.

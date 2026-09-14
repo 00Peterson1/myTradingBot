@@ -1,3 +1,4 @@
+import type { CFDPosition, OptionSpecification } from './product.js';
 /**
  * Trade lifecycle status.
  */
@@ -18,7 +19,9 @@ export type TradingMode = 'BACKTEST' | 'PAPER' | 'DEMO' | 'LIVE';
 /**
  * A trade record — complete lifecycle from signal to settlement.
  */
-export interface Trade {
+export interface OptionTrade {
+  readonly product: 'OPTIONS';
+  readonly optionSpecification: OptionSpecification;
   readonly id: string; // UUID
   readonly signalId: string; // UUID of the Signal that generated this trade
   readonly mode: TradingMode;
@@ -30,7 +33,7 @@ export interface Trade {
   readonly contractDurationUnit: 't' | 's' | 'm' | 'h' | 'd';
   readonly contractId?: string; // Deriv contract ID (null for paper/backtest)
   readonly stakeAmount: number;
-  readonly entryPrice: number;
+  readonly entryPrice: number | null;
   readonly exitPrice: number | null; // null = not yet settled
   readonly entryTime: Date;
   readonly exitTime: Date | null;
@@ -45,8 +48,8 @@ export interface TradeResult {
   readonly profit: number; // Positive = won, negative = lost
   readonly won: boolean;
   readonly returnPct: number; // profit / stakeAmount
-  readonly exitPrice: number;
-  readonly exitTime: Date;
+  readonly exitPrice: number | null;
+  readonly exitTime: Date | null;
   readonly status: 'SETTLED';
 }
 
@@ -65,3 +68,7 @@ export interface DailyPnL {
   readonly totalProfit: number;
   readonly winRate: number;
 }
+
+/** Compatibility name for existing Options-only consumers. */
+export type Trade = OptionTrade;
+export type ProductExposure = OptionTrade | CFDPosition;

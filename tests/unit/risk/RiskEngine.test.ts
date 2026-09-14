@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { RiskEngine } from '../../../src/risk/RiskEngine';
-import { resetEnvForTesting } from '../../../src/config/env';
-import type { Signal } from '../../../src/types/signal';
+import { RiskEngine } from '../../../src/risk/RiskEngine.js';
+import { resetEnvForTesting } from '../../../src/config/env.js';
+import type { Signal } from '../../../src/types/signal.js';
 
 // Helper to create a mock signal
 function mockSignal(direction: Signal['direction'] = 'BUY'): Signal {
   return {
+    product: 'OPTIONS', hypothesisId: null, strategyVersion: '1',
     id: crypto.randomUUID(),
     timestamp: new Date(),
     symbol: 'R_100',
@@ -19,19 +20,19 @@ function mockSignal(direction: Signal['direction'] = 'BUY'): Signal {
 
 // Set required env vars before importing config-dependent modules
 function setTestEnv(): void {
-  delete process.env['STAKE_AMOUNT'];
-  process.env['DERIV_API_TOKEN'] = 'test_token';
-  process.env['DATABASE_PASSWORD'] = 'test_pass';
-  process.env['DEMO_TRADING'] = 'true';
-  process.env['LIVE_TRADING'] = 'false';
-  process.env['LIVE_CONFIRMATION'] = 'false';
-  process.env['RISK_MAX_PER_TRADE_FRACTION'] = '0.01';
-  process.env['RISK_MAX_DAILY_LOSS_FRACTION'] = '0.05';
-  process.env['RISK_MAX_DRAWDOWN_FRACTION'] = '0.15';
-  process.env['RISK_MAX_CONSECUTIVE_LOSSES'] = '3';
-  process.env['RISK_COOLDOWN_SECONDS'] = '1';
-  process.env['LOG_LEVEL'] = 'error'; // Suppress logs in tests
-  process.env['LOG_PRETTY'] = 'false';
+  delete process.env.STAKE_AMOUNT;
+  process.env.DERIV_API_TOKEN = 'test_token';
+  process.env.DATABASE_PASSWORD = 'test_pass';
+  process.env.DEMO_TRADING = 'true';
+  process.env.LIVE_TRADING = 'false';
+  process.env.LIVE_CONFIRMATION = 'false';
+  process.env.RISK_MAX_PER_TRADE_FRACTION = '0.01';
+  process.env.RISK_MAX_DAILY_LOSS_FRACTION = '0.05';
+  process.env.RISK_MAX_DRAWDOWN_FRACTION = '0.15';
+  process.env.RISK_MAX_CONSECUTIVE_LOSSES = '3';
+  process.env.RISK_COOLDOWN_SECONDS = '1';
+  process.env.LOG_LEVEL = 'error'; // Suppress logs in tests
+  process.env.LOG_PRETTY = 'false';
 }
 
 describe('RiskEngine', () => {

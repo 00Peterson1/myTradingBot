@@ -1,16 +1,17 @@
+import { assertDefined } from '../utils/assertDefined.js';
 import { rollingStd } from './indicators/indicators.js';
 
 export function ewms(prices: readonly number[], n: number): { fast: number | null, slow: number | null, momentum: number | null, acceleration: number | null } {
-  const getEwm = (alpha: number, minPeriods: number, endIndex: number) => {
+  const getEwm = (alpha: number, minPeriods: number, endIndex: number): number | null => {
     if (endIndex < minPeriods - 1) return null;
-    let val = prices[endIndex - minPeriods + 1]!;
+    let val = assertDefined(prices[endIndex - minPeriods + 1]);
     for (let i = endIndex - minPeriods + 2; i <= endIndex; i++) {
-      val = alpha * prices[i]! + (1 - alpha) * val;
+      val = alpha * assertDefined(prices[i]) + (1 - alpha) * val;
     }
     return val;
   };
   
-  const calcMom = (endIndex: number) => {
+  const calcMom = (endIndex: number): { fast: number | null; slow: number | null; momentum: number | null } => {
     const fast = getEwm(0.2, 5, endIndex);
     const slow = getEwm(0.05, 20, endIndex);
     const std = rollingStd(prices, endIndex, 20);

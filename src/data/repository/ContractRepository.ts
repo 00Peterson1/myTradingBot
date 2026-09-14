@@ -1,7 +1,7 @@
 import { getDb } from '../database/sqlite.js';
 import type { AvailableContract } from '../../api/deriv/DerivTypes.js';
 
-function table() {
+function table(): ReturnType<typeof getDb> {
   const db = getDb();
   db.exec(`CREATE TABLE IF NOT EXISTS market_contracts (
     symbol TEXT PRIMARY KEY, contracts_json TEXT NOT NULL, fetched_at TEXT NOT NULL

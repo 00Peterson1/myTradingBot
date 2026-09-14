@@ -1,3 +1,5 @@
+import { assertDefined } from '../utils/assertDefined.js';
+import { majorUnits, optionSpecificationSchema } from '../types/product.js';
 import { createLogger } from '../monitoring/Logger.js';
 import { getEnv, isLiveTradingEnabled } from '../config/env.js';
 import type { DerivClient } from '../api/deriv/DerivClient.js';
@@ -51,17 +53,21 @@ export class DerivExecutionEngine {
    * @param approved - Risk-validated signal with stake amount
    * @returns Pending trade awaiting settlement
    */
-  async execute(approved: ApprovedSignal): Promise<Trade> {
+  async execute(approved: ApprovedSignal, beforePurchase?: () => void): Promise<Trade> {
     const { signal, stakeAmount, contractDuration, contractDurationUnit } = approved;
 
     if (signal.direction === 'NONE') {
       throw new Error('Cannot execute a NONE signal — logic error in caller');
     }
 
-    const metadata = (signal.metadata ?? {}) as { contractType?: any; barrier?: number | string };
-    const contractType =
-      metadata.contractType ?? (signal.direction === 'BUY' ? 'CALL' : 'PUT');
-    const barrier = metadata.barrier;
+    const spec = optionSpecificationSchema.parse(approved.optionSpecification);
+    if (signal.product !== 'OPTIONS' || spec.symbol !== signal.symbol ||
+        majorUnits(spec.stake) !== stakeAmount || spec.duration !== contractDuration ||
+        spec.durationUnit !== contractDurationUnit) {
+      throw new Error('Approved Options specification does not match the execution request');
+    }
+    const contractType = spec.contractType;
+    const barrier = spec.barrier;
 
     log.info(
       {
@@ -71,66 +77,42 @@ export class DerivExecutionEngine {
         contractType,
         barrier,
         stake: stakeAmount,
-        duration: `${contractDuration}${contractDurationUnit}`,
+        duration: `${String(contractDuration)}${contractDurationUnit}`,
         strategy: signal.strategy,
       },
-      `[${this.mode}] Placing ${contractType}${barrier !== undefined ? ` (${barrier})` : ''} contract`,
+      `[${this.mode}] Placing ${contractType}${barrier !== undefined ? ` (${String(barrier)})` : ''} contract`,
     );
 
     try {
-      // 1. Request proposal quote (with automatic duration fallback for symbols like Crash/Boom)
-      let proposal;
-      try {
-        proposal = await this.client.requestProposal({
-          stake: stakeAmount,
-          basis: 'stake',
-          contractType,
-          ...(barrier !== undefined ? { barrier } : {}),
-          currency: 'USD',
-          duration: contractDuration,
-          durationUnit: contractDurationUnit,
-          symbol: signal.symbol,
-        });
-      } catch (propErr: any) {
-        if (
-          propErr?.message?.includes('TradingDurationNotAllowed') &&
-          contractDurationUnit === 't'
-        ) {
-          log.info(
-            { symbol: signal.symbol },
-            'Tick duration not allowed for symbol — retrying with 15s duration',
-          );
-          proposal = await this.client.requestProposal({
-            stake: stakeAmount,
-            basis: 'stake',
-            contractType,
-            ...(barrier !== undefined ? { barrier } : {}),
-            currency: 'USD',
-            duration: 15,
-            durationUnit: 's',
-            symbol: signal.symbol,
-          });
-        } else {
-          throw propErr;
-        }
+      // The approved hypothesis is immutable. Unsupported specifications must fail.
+      const proposal = await this.client.requestProposal({
+        stake: majorUnits(spec.stake), basis: spec.basis, contractType,
+        ...(barrier !== undefined ? { barrier } : {}),
+        currency: spec.stake.currency, duration: spec.duration,
+        durationUnit: spec.durationUnit, symbol: spec.symbol,
+      });
+      if (!Number.isFinite(proposal.ask_price) || proposal.ask_price <= 0 || proposal.ask_price > stakeAmount) {
+        throw new Error('Proposal cost exceeds approved stake or is invalid');
       }
 
+      beforePurchase?.();
       // 2. Buy contract with proposal ID and price
       const response = await this.client.buyContract(proposal.id, proposal.ask_price);
 
       const trade: Trade = {
+        product: 'OPTIONS', optionSpecification: spec,
         id: crypto.randomUUID(),
         signalId: signal.id,
         symbol: signal.symbol,
         strategy: signal.strategy,
         direction: signal.direction,
-        stakeAmount,
+        stakeAmount: response.buy_price,
         contractType,
         contractDuration,
         contractDurationUnit,
-        entryPrice: response.buy_price,
+        entryPrice: null, // Entry spot is only known from subsequent contract status.
         exitPrice: null, // Not yet settled
-        entryTime: new Date(),
+        entryTime: new Date(response.purchase_time * 1000),
         exitTime: null,
         mode: this.mode,
         status: 'OPEN',
@@ -150,9 +132,7 @@ export class DerivExecutionEngine {
       return trade;
     } catch (err) {
       const error = err as Error;
-      const cleanMsg = error.message.includes('TradingDurationNotAllowed')
-        ? `Deriv does not offer Rise/Fall contracts on ${signal.symbol}. (Options Rise/Fall contracts are available on Volatility indices).`
-        : error.message;
+      const cleanMsg = error.message;
 
       log.warn(
         {
@@ -162,7 +142,7 @@ export class DerivExecutionEngine {
         },
         `[${this.mode}] Order skipped for ${signal.symbol}`,
       );
-      throw new Error(cleanMsg);
+      throw err;
     }
   }
 
@@ -179,8 +159,12 @@ export class DerivExecutionEngine {
 
     const response = await this.client.getContractResult(trade.contractId);
 
-    const won = response.profit >= 0;
-    const profit = response.profit;
+    if (!response.isSettled) throw new Error('Contract is not settled');
+    if (response.currency !== trade.optionSpecification.stake.currency || response.contractType !== trade.contractType) {
+      throw new Error('Settlement product/currency does not match the purchased contract');
+    }
+    const profit = assertDefined(response.profit);
+    const won = profit > 0;
 
     log.info(
       {
@@ -196,8 +180,8 @@ export class DerivExecutionEngine {
       profit,
       won,
       returnPct: profit / trade.stakeAmount,
-      exitPrice: trade.entryPrice,
-      exitTime: new Date(),
+      exitPrice: response.exitPrice,
+      exitTime: response.exitTime,
       status: 'SETTLED',
     };
   }

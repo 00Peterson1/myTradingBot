@@ -1,3 +1,4 @@
+import { assertDefined } from '../../utils/assertDefined.js';
 import { ema, rollingMean, rollingStd, rollingHigh, rollingLow } from '../indicators/indicators.js';
 
 export function rsi(prices: readonly number[], n: number, period = 14): number | null {
@@ -7,7 +8,7 @@ export function rsi(prices: readonly number[], n: number, period = 14): number |
   let sumLoss = 0;
 
   for (let i = 1; i <= period; i++) {
-    const diff = prices[i]! - prices[i - 1]!;
+    const diff = assertDefined(prices[i]) - assertDefined(prices[i - 1]);
     if (diff > 0) sumGain += diff;
     else sumLoss -= diff;
   }
@@ -16,7 +17,7 @@ export function rsi(prices: readonly number[], n: number, period = 14): number |
   let avgLoss = sumLoss / period;
 
   for (let i = period + 1; i <= n; i++) {
-    const diff = prices[i]! - prices[i - 1]!;
+    const diff = assertDefined(prices[i]) - assertDefined(prices[i - 1]);
     const gain = diff > 0 ? diff : 0;
     const loss = diff < 0 ? -diff : 0;
     avgGain = (avgGain * (period - 1) + gain) / period;
@@ -49,13 +50,13 @@ export function macd(prices: readonly number[], n: number): { line: number | nul
 
   let signalEma = 0;
   for (let i = 0; i < 9; i++) {
-    signalEma += lineArr[i]!;
+    signalEma += assertDefined(lineArr[i]);
   }
   signalEma /= 9;
 
   const alpha = 2 / 10;
   for (let i = 9; i < lineArr.length; i++) {
-    signalEma = alpha * lineArr[i]! + (1 - alpha) * signalEma;
+    signalEma = alpha * assertDefined(lineArr[i]) + (1 - alpha) * signalEma;
   }
 
   return {
@@ -73,8 +74,8 @@ export function bollingerBands(prices: readonly number[], n: number, period = 20
   const upper = mean + stdDev * std;
   const lower = mean - stdDev * std;
   const p = prices[n];
-  const pct = upper === lower || upper === null || lower === null || p === undefined ? null : (p - lower) / (upper - lower);
-  const width = mean === 0 || upper === null || lower === null || mean === null ? null : (upper - lower) / mean;
+  const pct = upper === lower || p === undefined ? null : (p - lower) / (upper - lower);
+  const width = mean === 0 ? null : (upper - lower) / mean;
 
   return { upper, lower, pct, width };
 }
@@ -83,13 +84,13 @@ function rma(values: number[], period: number): number[] {
   if (values.length < period) return [];
   const res: number[] = [];
   let current = 0;
-  for (let i = 0; i < period; i++) current += values[i]!;
+  for (let i = 0; i < period; i++) current += assertDefined(values[i]);
   current /= period;
   res.push(current);
   
   const alpha = 1 / period;
   for (let i = period; i < values.length; i++) {
-    current = alpha * values[i]! + (1 - alpha) * current;
+    current = alpha * assertDefined(values[i]) + (1 - alpha) * current;
     res.push(current);
   }
   return res;
@@ -99,7 +100,7 @@ export function atr(prices: readonly number[], n: number, period = 14): number |
   if (n < period) return null;
   const trs: number[] = [];
   for (let i = 1; i <= n; i++) {
-    trs.push(Math.abs(prices[i]! - prices[i - 1]!));
+    trs.push(Math.abs(assertDefined(prices[i]) - assertDefined(prices[i - 1])));
   }
   const smoothed = rma(trs, period);
   if (smoothed.length === 0) return null;
@@ -114,7 +115,7 @@ export function adx(prices: readonly number[], n: number, period = 14): { adx: n
   const downMoves: number[] = [];
   
   for (let i = 1; i <= n; i++) {
-    const diff = prices[i]! - prices[i - 1]!;
+    const diff = assertDefined(prices[i]) - assertDefined(prices[i - 1]);
     trs.push(Math.abs(diff));
     upMoves.push(diff > 0 ? diff : 0);
     downMoves.push(diff < 0 ? -diff : 0);
@@ -131,9 +132,9 @@ export function adx(prices: readonly number[], n: number, period = 14): { adx: n
   let diMinus = null;
   
   for (let i = 0; i < smoothedTr.length; i++) {
-    const tr = smoothedTr[i]!;
-    const up = smoothedUp[i]!;
-    const down = smoothedDown[i]!;
+    const tr = assertDefined(smoothedTr[i]);
+    const up = assertDefined(smoothedUp[i]);
+    const down = assertDefined(smoothedDown[i]);
     
     if (tr === 0) {
       dxs.push(0);
@@ -170,7 +171,7 @@ export function stochastic(prices: readonly number[], n: number, kPeriod = 14, d
     if (high === low) {
       kArr.push(50);
     } else {
-      kArr.push((prices[i]! - low) / (high - low) * 100);
+      kArr.push((assertDefined(prices[i]) - low) / (high - low) * 100);
     }
   }
   
@@ -179,7 +180,7 @@ export function stochastic(prices: readonly number[], n: number, kPeriod = 14, d
   
   let dSum = 0;
   for (let i = kArr.length - dPeriod; i < kArr.length; i++) {
-    dSum += kArr[i]!;
+    dSum += assertDefined(kArr[i]);
   }
   
   return { k, d: dSum / dPeriod };
@@ -191,12 +192,12 @@ export function cci(prices: readonly number[], n: number, period = 20): number |
   
   let madSum = 0;
   for (let i = n - period + 1; i <= n; i++) {
-    madSum += Math.abs(prices[i]! - sma);
+    madSum += Math.abs(assertDefined(prices[i]) - sma);
   }
   const mad = madSum / period;
   if (mad === 0) return 0;
   
-  return (prices[n]! - sma) / (0.015 * mad);
+  return (assertDefined(prices[n]) - sma) / (0.015 * mad);
 }
 
 export function williamsR(prices: readonly number[], n: number, period = 14): number | null {
@@ -204,7 +205,7 @@ export function williamsR(prices: readonly number[], n: number, period = 14): nu
   const low = rollingLow(prices, n, period);
   if (high === null || low === null || high === low) return null;
   
-  return (high - prices[n]!) / (high - low) * -100;
+  return (high - assertDefined(prices[n])) / (high - low) * -100;
 }
 
 export function ichimoku(prices: readonly number[], n: number): { tenkan: number | null, kijun: number | null, senkouA: number | null, senkouB: number | null } {

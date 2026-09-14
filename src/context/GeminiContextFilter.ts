@@ -1,3 +1,4 @@
+import { assertDefined } from '../utils/assertDefined.js';
 /**
  * GeminiContextFilter
  *
@@ -238,7 +239,7 @@ export class GeminiContextFilter {
     for (const model of models) {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          const response = await this.genai!.models.generateContent({
+          const response = await assertDefined(this.genai).models.generateContent({
             model,
             contents: prompt,
             config: {
@@ -268,13 +269,13 @@ export class GeminiContextFilter {
 
           // Ensure rationale and keyRisk are never empty strings
           const rationale =
-            String(parsed.rationale ?? '').trim() ||
+            (typeof parsed.rationale === 'string' ? parsed.rationale.trim() : '') ||
             (divergenceScore <= 3
               ? 'Central bank policies appear broadly aligned; mean-reversion premise valid.'
               : divergenceScore <= 6
                 ? 'Some policy divergence signals detected; trade confidence reduced.'
                 : 'Significant policy divergence detected; trade suppressed for safety.');
-          const keyRisk = String(parsed.key_risk ?? '').trim() || 'none identified';
+          const keyRisk = (typeof parsed.key_risk === 'string' ? parsed.key_risk.trim() : '') || 'none identified';
 
           return {
             divergenceScore,
@@ -290,7 +291,7 @@ export class GeminiContextFilter {
             const delayMs = 1000 * Math.pow(2, attempt - 1); // 1s, 2s, 4s
             log.warn(
               { model, attempt, status, delayMs },
-              `Model overloaded — retrying in ${delayMs}ms`,
+              `Model overloaded — retrying in ${String(delayMs)}ms`,
             );
             await new Promise((r) => setTimeout(r, delayMs));
             continue;
@@ -328,7 +329,7 @@ export class GeminiContextFilter {
     const zScore = metadata.spreadZ !== undefined ? Number(metadata.spreadZ).toFixed(2) : 'N/A';
     const cointegP =
       metadata.cointegP !== undefined ? Number(metadata.cointegP).toFixed(3) : 'N/A';
-    const direction = metadata.direction ?? 'unknown';
+    const direction = typeof metadata.direction === 'string' ? metadata.direction : 'unknown';
 
     return `You are a central bank policy analyst for FX correlation trading.
 
@@ -423,10 +424,10 @@ Score guide:
     if (/^(1HZ|BOOM|CRASH|stpRNG|JD)\d/.test(symbol)) return [];
     // 'frxEURGBP' → ['EUR', 'GBP']
     const match = /^frx([A-Z]{3})([A-Z]{3})$/.exec(symbol);
-    if (match?.[1] && match?.[2]) return [match[1], match[2]];
+    if (match?.[1] && match[2]) return [match[1], match[2]];
     // 'EURUSD' → ['EUR', 'USD']
     const bare = /^([A-Z]{3})([A-Z]{3})$/.exec(symbol);
-    if (bare?.[1] && bare?.[2]) return [bare[1], bare[2]];
+    if (bare?.[1] && bare[2]) return [bare[1], bare[2]];
     return [];
   }
 
@@ -500,6 +501,6 @@ Score guide:
 // Singleton
 let _filter: GeminiContextFilter | null = null;
 export function getGeminiContextFilter(): GeminiContextFilter {
-  if (!_filter) _filter = new GeminiContextFilter();
+  _filter ??= new GeminiContextFilter();
   return _filter;
 }

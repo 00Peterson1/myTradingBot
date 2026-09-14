@@ -1,7 +1,10 @@
+import { normalizeContractState, PortfolioSchema, DerivTickSchema } from './DerivTypes.js';
+import type { ContractState } from './DerivTypes.js';
+import { assertDefined } from '../../utils/assertDefined.js';
 import { EventEmitter } from 'events';
 import WebSocket from 'ws';
 import { z } from 'zod';
-import { getEnv } from '../../config/index.js';
+import { getTradingEnv } from '../../config/env.js';
 import {
   DERIV_WS_PUBLIC,
   DERIV_REST_BASE,
@@ -65,6 +68,13 @@ export interface TradingAccount {
   balance: number;
 }
 
+export class DerivApiError extends Error {
+  constructor(readonly code: string, message: string) {
+    super(`Deriv API error [${code}]: ${message}`);
+    this.name = 'DerivApiError';
+  }
+}
+
 /** A transport failure cannot establish whether a submitted trade executed. */
 export class UncertainTradeError extends Error {
   constructor(message: string) {
@@ -87,14 +97,6 @@ export interface DerivClientEvents {
   tradingDisconnected: (reason: string) => void;
 }
 
-declare interface DerivClient {
-  on<K extends keyof DerivClientEvents>(event: K, listener: DerivClientEvents[K]): this;
-  emit<K extends keyof DerivClientEvents>(
-    event: K,
-    ...args: Parameters<DerivClientEvents[K]>
-  ): boolean;
-}
-
 // ---------------------------------------------------------------------------
 // DerivClient
 //
@@ -114,17 +116,15 @@ declare interface DerivClient {
 //   await client.connectPublic();           // market data
 //   await client.connectTrading('demo');    // trading (calls REST → OTP → WS)
 // ---------------------------------------------------------------------------
-class DerivClient extends EventEmitter {
+class DerivClient extends EventEmitter<{ [K in keyof DerivClientEvents]: Parameters<DerivClientEvents[K]> }> {
   // Public WS — market data (ticks, proposals). No auth.
   private publicWs: WebSocket | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private publicPending = new Map<number, PendingRequest<any>>();
+  private publicPending = new Map<number, PendingRequest<unknown>>();
   private publicPing: NodeJS.Timeout | null = null;
 
   // Trading WS — authenticated (buy, sell, balance). Auth via OTP.
   private tradingWs: WebSocket | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private tradingPending = new Map<number, PendingRequest<any>>();
+  private tradingPending = new Map<number, PendingRequest<unknown>>();
   private tradingPing: NodeJS.Timeout | null = null;
   private publicConnecting: Promise<void> | null = null;
   private tradingConnecting: Promise<void> | null = null;
@@ -140,6 +140,7 @@ class DerivClient extends EventEmitter {
   private subscriptions = new Map<string, string>(); // symbol → subscription ID
   private desiredSubscriptions = new Set<string>();
   private reconnectAttempts = 0;
+  private readonly maxReconnectAttempts: number = DERIV_RECONNECT_MAX_ATTEMPTS;
   private isShuttingDown = false;
   public isAuthorized = false;
 
@@ -157,7 +158,7 @@ class DerivClient extends EventEmitter {
     if (this.publicWs?.readyState === WebSocket.OPEN) return;
     if (this.publicReconnectTimer) clearTimeout(this.publicReconnectTimer);
     this.publicReconnectTimer = null;
-    this.publicConnecting = (async () => {
+    this.publicConnecting = (async (): Promise<void> => {
       log.info({ url: DERIV_WS_PUBLIC }, 'Connecting to public WebSocket');
       await this.openConnection('public', DERIV_WS_PUBLIC);
       // Snapshot before awaiting: mutating a Map while iterating can revisit entries forever.
@@ -198,7 +199,7 @@ class DerivClient extends EventEmitter {
     if (this.isTradingConnected()) return;
     if (this.tradingReconnectTimer) clearTimeout(this.tradingReconnectTimer);
     this.tradingReconnectTimer = null;
-    this.tradingConnecting = (async () => {
+    this.tradingConnecting = (async (): Promise<void> => {
       this.tradingAccount ??= await this.getAccount(mode);
       this.assertActive();
       // OTPs are single use: always request a fresh one, including reconnects.
@@ -234,7 +235,7 @@ class DerivClient extends EventEmitter {
   /**
    * Gracefully disconnects all connections.
    */
-  async disconnect(): Promise<void> {
+  disconnect(): Promise<void> {
     log.info('Disconnecting from Deriv API');
     this.isShuttingDown = true;
     this.isAuthorized = false;
@@ -258,6 +259,7 @@ class DerivClient extends EventEmitter {
       this.tradingWs = null;
     }
     this.emit('disconnected', 'Client disconnect');
+    return Promise.resolve();
   }
 
   // ---------------------------------------------------------------------------
@@ -309,7 +311,7 @@ class DerivClient extends EventEmitter {
   async subscribeTicks(symbol: string): Promise<string> {
     this.desiredSubscriptions.add(symbol);
     if (this.subscriptions.has(symbol)) {
-      return this.subscriptions.get(symbol)!;
+      return assertDefined(this.subscriptions.get(symbol));
     }
     const reqId = this.nextReqId();
     const response = await this.sendPublicRequest<{
@@ -317,7 +319,7 @@ class DerivClient extends EventEmitter {
       subscription?: { id: string };
     }>(buildSubscribeTicksRequest(symbol, reqId), reqId);
 
-    const subscriptionId = response.subscription?.id ?? `sub-${reqId}`;
+    const subscriptionId = response.subscription?.id ?? `sub-${String(reqId)}`;
     this.subscriptions.set(symbol, subscriptionId);
     log.info({ symbol, subscriptionId }, 'Subscribed to ticks');
     return subscriptionId;
@@ -385,18 +387,28 @@ class DerivClient extends EventEmitter {
     return BalanceSchema.parse(response.balance);
   }
 
-  async getContractResult(contractId: string): Promise<{ profit: number; isSettled: boolean }> {
+  async getContractResult(contractId: string): Promise<ContractState> {
+    const numericId = Number(contractId);
+    if (!Number.isSafeInteger(numericId) || numericId <= 0) throw new Error('Invalid contract ID');
     const reqId = this.nextReqId();
-    const response = await this.sendTradingRequest<{
-      proposal_open_contract: Record<string, unknown>;
-    }>(
-      { proposal_open_contract: 1, contract_id: Number(contractId), req_id: reqId },
-      reqId,
+    const response = await this.sendTradingRequest<{ proposal_open_contract: unknown }>(
+      { proposal_open_contract: 1, contract_id: numericId, req_id: reqId }, reqId,
     );
-    const contract = response.proposal_open_contract;
-    const profit = (contract.profit as number | undefined) ?? 0;
-    const isSettled = contract.status === 'sold' || contract.is_expired === 1;
-    return { profit, isSettled };
+    const state = normalizeContractState(response.proposal_open_contract);
+    if (state.contractId !== contractId) throw new Error('Contract response ID mismatch');
+    return state;
+  }
+
+  async getBalance(): Promise<Balance> {
+    const reqId = this.nextReqId();
+    const response = await this.sendTradingRequest<{ balance: unknown }>({ balance: 1, req_id: reqId }, reqId);
+    return BalanceSchema.parse(response.balance);
+  }
+
+  async getPortfolio(): Promise<ReturnType<typeof PortfolioSchema.parse>['contracts']> {
+    const reqId = this.nextReqId();
+    const response = await this.sendTradingRequest<{ portfolio: unknown }>({ portfolio: 1, req_id: reqId }, reqId);
+    return PortfolioSchema.parse(response.portfolio).contracts;
   }
 
   // ---------------------------------------------------------------------------
@@ -404,7 +416,7 @@ class DerivClient extends EventEmitter {
   // ---------------------------------------------------------------------------
 
   private async getAccount(mode: 'demo' | 'real'): Promise<TradingAccount> {
-    const env = getEnv();
+    const env = getTradingEnv();
     log.info({ mode }, 'Fetching Deriv account list');
 
     const res = await fetch(`${DERIV_REST_BASE}/trading/v1/options/accounts`, {
@@ -417,11 +429,11 @@ class DerivClient extends EventEmitter {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch accounts [${res.status}]. Check the API token, app ID, and trade scope.`);
+      throw accountRequestError(res.status, 'account discovery');
     }
 
     const data = await res.json() as {
-      data: { account_id: string; account_type: string; balance: string; currency: string; status: string }[];
+      data?: { account_id: string; account_type: string; balance: string; currency: string; status: string }[];
     };
 
     if (!data.data || data.data.length === 0) {
@@ -445,7 +457,7 @@ class DerivClient extends EventEmitter {
   }
 
   private async fetchOtpUrl(accountId: string, mode: 'demo' | 'real'): Promise<string> {
-    const env = getEnv();
+    const env = getTradingEnv();
     log.info({ accountId }, 'Fetching OTP WebSocket URL');
 
     const res = await fetch(
@@ -462,10 +474,10 @@ class DerivClient extends EventEmitter {
     );
 
     if (!res.ok) {
-      throw new Error(`Failed to get trading OTP [${res.status}]. Check account access and token permissions.`);
+      throw accountRequestError(res.status, 'OTP request');
     }
 
-    const data = await res.json() as { data: { url: string } };
+    const data = await res.json() as { data?: { url: string } };
     const url = data.data?.url;
     if (!url) throw new Error('OTP response missing WebSocket URL');
     let parsed: URL;
@@ -520,7 +532,7 @@ class DerivClient extends EventEmitter {
       });
       ws.once('close', (code: number) => {
         // Do not log the arbitrary server close reason: it may contain credentials.
-        if (!opened) reject(new Error(`${channel} WebSocket closed during connection (${code})`));
+        if (!opened) reject(new Error(`${channel} WebSocket closed during connection (${String(code)})`));
         const current = channel === 'public' ? this.publicWs : this.tradingWs;
         if (current !== ws) return;
         if (channel === 'public') {
@@ -531,7 +543,7 @@ class DerivClient extends EventEmitter {
           this.isAuthorized = false;
         }
         this.clearPing(channel);
-        const reason = `${channel} WebSocket disconnected (${code})`;
+        const reason = `${channel} WebSocket disconnected (${String(code)})`;
         this.rejectAllPending(pending, new Error(reason));
         log.warn({ channel, code }, 'WebSocket closed');
         if (channel === 'public') this.emit('disconnected', reason);
@@ -545,7 +557,8 @@ class DerivClient extends EventEmitter {
     if (this.isShuttingDown) return;
     if (channel === 'public' ? this.publicReconnectTimer : this.tradingReconnectTimer) return;
     const attempts = channel === 'public' ? this.reconnectAttempts : this.tradingReconnectAttempts;
-    if (DERIV_RECONNECT_MAX_ATTEMPTS > 0 && attempts >= DERIV_RECONNECT_MAX_ATTEMPTS) {
+    const maxAttempts = this.maxReconnectAttempts;
+    if (maxAttempts > 0 && attempts >= maxAttempts) {
       log.error({ channel, attempts }, 'Max reconnect attempts reached');
       return;
     }
@@ -561,7 +574,7 @@ class DerivClient extends EventEmitter {
       if (this.isShuttingDown) return;
       const connection = channel === 'public'
         ? this.connectPublic()
-        : this.connectTrading(this.tradingMode!);
+        : this.connectTrading(assertDefined(this.tradingMode));
       void connection.catch(() => {
         log.warn({ channel, attempt }, 'WebSocket reconnect failed');
         // Failure while restoring subscriptions must not leave a half-ready socket.
@@ -578,13 +591,12 @@ class DerivClient extends EventEmitter {
   // Private: Message Handling
   // ---------------------------------------------------------------------------
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private handleMessage(data: WebSocket.RawData, pending: Map<number, PendingRequest<any>>): void {
+  private handleMessage(data: WebSocket.RawData, pending: Map<number, PendingRequest<unknown>>): void {
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(data.toString()) as Record<string, unknown>;
+      parsed = z.record(z.unknown()).parse(JSON.parse((Array.isArray(data) ? Buffer.concat(data) : data instanceof ArrayBuffer ? Buffer.from(data) : data).toString('utf8')));
     } catch {
-      log.warn({ raw: data.toString().slice(0, 200) }, 'Malformed WebSocket message');
+      log.warn('Malformed WebSocket message discarded');
       return;
     }
 
@@ -598,7 +610,7 @@ class DerivClient extends EventEmitter {
         this.rejectPending(
           pending,
           reqId,
-          new Error(`Deriv API error [${error.code}]: ${error.message}`),
+          new DerivApiError(error.code, error.message),
         );
       }
       return;
@@ -607,17 +619,9 @@ class DerivClient extends EventEmitter {
     // Tick — resolve pending subscribe AND emit event
     if (msgType === 'tick') {
       if (reqId !== undefined) this.resolvePending(pending, reqId, parsed);
-      const tickData = parsed.tick as Record<string, unknown> | undefined;
-      if (tickData) {
-        const tick: DerivTick = {
-          symbol: tickData.symbol as string,
-          epoch: tickData.epoch as number,
-          quote: tickData.quote as number,
-          id: tickData.id as number | undefined,
-          pip_size: tickData.pip_size as number | undefined,
-        };
-        this.emit('tick', tick);
-      }
+      const tick = DerivTickSchema.safeParse(parsed.tick);
+      if (tick.success) this.emit('tick', tick.data);
+      else log.warn('Invalid tick discarded');
       return;
     }
 
@@ -638,14 +642,14 @@ class DerivClient extends EventEmitter {
   // ---------------------------------------------------------------------------
 
   private sendPublicRequest<T>(payload: Record<string, unknown>, reqId: number): Promise<T> {
-    if (!this.publicWs || this.publicWs.readyState !== WebSocket.OPEN) {
+    if (this.publicWs?.readyState !== WebSocket.OPEN) {
       return Promise.reject(new Error('Public WebSocket not connected. Call connectPublic() first.'));
     }
     return this.sendOn<T>(this.publicWs, this.publicPending, payload, reqId);
   }
 
   private sendTradingRequest<T>(payload: Record<string, unknown>, reqId: number): Promise<T> {
-    if (!this.tradingWs || this.tradingWs.readyState !== WebSocket.OPEN) {
+    if (this.tradingWs?.readyState !== WebSocket.OPEN) {
       return Promise.reject(
         new Error('Trading WebSocket not connected. Call connectTrading() first.'),
       );
@@ -655,31 +659,30 @@ class DerivClient extends EventEmitter {
 
   private sendOn<T>(
     ws: WebSocket,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    pending: Map<number, PendingRequest<any>>,
+      pending: Map<number, PendingRequest<unknown>>,
     payload: Record<string, unknown>,
     reqId: number,
   ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
+      const changesAccount = payload.buy !== undefined || payload.sell !== undefined || payload.cancel !== undefined;
       const timer = setTimeout(() => {
         pending.delete(reqId);
-        reject(new Error(`Request ${reqId} timed out after ${DERIV_REQUEST_TIMEOUT_MS}ms`));
+        reject(changesAccount ? new UncertainTradeError('Account-changing request timed out') : new Error(`Request ${String(reqId)} timed out after ${String(DERIV_REQUEST_TIMEOUT_MS)}ms`));
       }, DERIV_REQUEST_TIMEOUT_MS);
 
-      pending.set(reqId, { resolve: resolve as (v: unknown) => void, reject, timer, changesAccount: false });
+      pending.set(reqId, { resolve: resolve as (v: unknown) => void, reject, timer, changesAccount });
 
       try {
         ws.send(JSON.stringify(payload));
       } catch (err) {
         clearTimeout(timer);
         pending.delete(reqId);
-        reject(err instanceof Error ? err : new Error(String(err)));
+        reject(changesAccount ? new UncertainTradeError('Account-changing send failed') : err instanceof Error ? err : new Error('WebSocket send failed'));
       }
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private resolvePending(pending: Map<number, PendingRequest<any>>, reqId: number, data: unknown): void {
+  private resolvePending(pending: Map<number, PendingRequest<unknown>>, reqId: number, data: unknown): void {
     const p = pending.get(reqId);
     if (!p) return;
     clearTimeout(p.timer);
@@ -687,8 +690,7 @@ class DerivClient extends EventEmitter {
     p.resolve(data);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private rejectPending(pending: Map<number, PendingRequest<any>>, reqId: number, err: Error): void {
+  private rejectPending(pending: Map<number, PendingRequest<unknown>>, reqId: number, err: Error): void {
     const p = pending.get(reqId);
     if (!p) return;
     clearTimeout(p.timer);
@@ -696,11 +698,10 @@ class DerivClient extends EventEmitter {
     p.reject(err);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private rejectAllPending(pending: Map<number, PendingRequest<any>>, err: Error): void {
+  private rejectAllPending(pending: Map<number, PendingRequest<unknown>>, err: Error): void {
     for (const [reqId, p] of pending.entries()) {
       clearTimeout(p.timer);
-      p.reject(err);
+      p.reject(p.changesAccount ? new UncertainTradeError('Connection lost during account-changing request') : err);
       pending.delete(reqId);
     }
   }
@@ -748,9 +749,17 @@ class DerivClient extends EventEmitter {
 let _client: DerivClient | null = null;
 
 export function getDerivClient(): DerivClient {
-  if (_client === null) _client = new DerivClient();
+  _client ??= new DerivClient();
   return _client;
 }
 
 export { DerivClient };
 export type { ActiveSymbol, DerivTick, TickHistoryResponse, Proposal, BuyResponse, Balance };
+
+function accountRequestError(status: number, phase: string): Error {
+  const category = status === 401 ? 'AUTHENTICATION_FAILED' : status === 403 ? 'AUTHORIZATION_FAILED' :
+    status >= 500 ? 'DERIV_SERVICE_ERROR' : 'ACCOUNT_REQUEST_REJECTED';
+  return new Error(`${category}: ${phase} returned HTTP ${String(status)}. ` +
+    (status === 401 ? 'The provider did not distinguish an invalid, expired, or revoked token from application mismatch.' :
+      status === 403 ? 'Check application access, token scopes, and account permissions.' : 'Inspect the account request and provider availability.'));
+}

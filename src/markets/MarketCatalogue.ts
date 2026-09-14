@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { assertDefined } from '../utils/assertDefined.js';
 import { getDb } from '../data/database/sqlite.js';
 import type { DerivClient } from '../api/deriv/DerivClient.js';
 import type { ActiveSymbol } from '../api/deriv/DerivTypes.js';
@@ -15,8 +17,15 @@ export interface MarketInfo {
   lastProfiledAt?: Date;
 }
 
-export class MarketCatalogue {
-  static async discoverAll(client: DerivClient): Promise<MarketInfo[]> {
+const marketRowSchema = z.object({
+  symbol: z.string(), display_name: z.string(), market: z.string(), submarket: z.string(),
+  market_category: z.string(), exchange_is_open: z.number(),
+  tradability_score: z.number(), research_score: z.number(), spot: z.number().nullish(),
+  last_profiled_at: z.string().nullish(),
+});
+
+export const MarketCatalogue = {
+  async discoverAll(client: DerivClient): Promise<MarketInfo[]> {
     const activeSymbols = await client.getActiveSymbols();
     const marketInfos: MarketInfo[] = [];
 
@@ -47,8 +56,8 @@ export class MarketCatalogue {
 
     const transaction = db.transaction((infos: MarketInfo[], activeSyms: ActiveSymbol[]) => {
       for (let i = 0; i < infos.length; i++) {
-        const info = infos[i]!;
-        const sym = activeSyms[i]!;
+        const info = assertDefined(infos[i]);
+        const sym = assertDefined(activeSyms[i]);
         
         upsertSymbolStmt.run(
           sym.symbol,
@@ -115,8 +124,8 @@ export class MarketCatalogue {
 
       // We don't have exchange_is_open in the legacy ActiveSymbol wrapper directly unless it is exposed,
       // but let's assume 'exchange_is_open' is available in the original object or set it to true for now if missing.
-      const isOpen = (sym as any).exchange_is_open === 1;
-      const spot = (sym as any).spot !== undefined ? Number((sym as any).spot) : undefined;
+      const isOpen = (sym.exchange_is_open === 1 || sym.exchange_is_open === true) && !sym.is_trading_suspended;
+      const spot = sym.spot;
 
       const info: MarketInfo = {
         symbol: sym.symbol,
@@ -137,9 +146,9 @@ export class MarketCatalogue {
     transaction(marketInfos, activeSymbols);
 
     return marketInfos.sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }
+  },
 
-  static getByCategory(category: string): MarketInfo[] {
+  getByCategory(category: string): MarketInfo[] {
     const rows = getDb().prepare(`
       SELECT mp.*, s.display_name, s.market, s.submarket
       FROM market_profiles mp
@@ -147,20 +156,20 @@ export class MarketCatalogue {
       WHERE mp.market_category = ?
       ORDER BY mp.symbol ASC
     `).all(category);
-    return rows.map(this.mapRowToMarketInfo);
-  }
+    return rows.map(row => this.mapRowToMarketInfo(row));
+  },
 
-  static getAll(): MarketInfo[] {
+  getAll(): MarketInfo[] {
     const rows = getDb().prepare(`
       SELECT mp.*, s.display_name, s.market, s.submarket
       FROM market_profiles mp
       JOIN symbols s ON mp.symbol = s.symbol
       ORDER BY mp.symbol ASC
     `).all();
-    return rows.map(this.mapRowToMarketInfo);
-  }
+    return rows.map(row => this.mapRowToMarketInfo(row));
+  },
 
-  static getOpen(): MarketInfo[] {
+  getOpen(): MarketInfo[] {
     const rows = getDb().prepare(`
       SELECT mp.*, s.display_name, s.market, s.submarket
       FROM market_profiles mp
@@ -168,18 +177,19 @@ export class MarketCatalogue {
       WHERE mp.exchange_is_open = 1
       ORDER BY mp.symbol ASC
     `).all();
-    return rows.map(this.mapRowToMarketInfo);
-  }
+    return rows.map(row => this.mapRowToMarketInfo(row));
+  },
 
-  static refreshPeriodically(client: DerivClient, intervalMs: number): NodeJS.Timeout {
+  refreshPeriodically(client: DerivClient, intervalMs: number): NodeJS.Timeout {
     return setInterval(() => {
-      this.discoverAll(client).catch((err) => {
+      this.discoverAll(client).catch((err: unknown) => {
         console.error('[MarketCatalogue] Failed to discover markets:', err);
       });
     }, intervalMs);
-  }
+  },
 
-  private static mapRowToMarketInfo(row: any): MarketInfo {
+  mapRowToMarketInfo(input: unknown): MarketInfo {
+    const row = marketRowSchema.parse(input);
     const info: MarketInfo = {
       symbol: row.symbol,
       displayName: row.display_name,
@@ -190,8 +200,8 @@ export class MarketCatalogue {
       tradabilityScore: row.tradability_score,
       researchScore: row.research_score,
     };
-    if (row.spot !== undefined) info.spot = row.spot;
+    if (row.spot !== undefined && row.spot !== null) info.spot = row.spot;
     if (row.last_profiled_at) info.lastProfiledAt = new Date(row.last_profiled_at);
     return info;
   }
-}
+};

@@ -1,3 +1,4 @@
+import { assertDefined } from '../../utils/assertDefined.js';
 /**
  * Digit Analyzer for Deriv Synthetic Indices.
  * Extracts last digits from prices and computes rolling statistics & digit frequencies.
@@ -54,14 +55,14 @@ export class DigitAnalyzer {
     if (this.window.length < 10) return null;
 
     const sampleSize = this.window.length;
-    const lastDigit = this.window[this.window.length - 1]!;
+    const lastDigit = assertDefined(this.window[this.window.length - 1]);
 
     let evenCount = 0;
     let oddCount = 0;
-    const digitFrequencies = new Array(10).fill(0);
+    const digitFrequencies = new Array<number>(10).fill(0);
 
     for (const d of this.window) {
-      digitFrequencies[d]++;
+      digitFrequencies[d] = assertDefined(digitFrequencies[d]) + 1;
       if (d % 2 === 0) {
         evenCount++;
       } else {
@@ -73,13 +74,13 @@ export class DigitAnalyzer {
     const oddRatio = oddCount / sampleSize;
 
     // Over/Under counts for barriers 0..9
-    const overCounts = new Array(10).fill(0);
-    const underCounts = new Array(10).fill(0);
+    const overCounts = new Array<number>(10).fill(0);
+    const underCounts = new Array<number>(10).fill(0);
 
     for (let barrier = 0; barrier <= 9; barrier++) {
       for (const d of this.window) {
-        if (d > barrier) overCounts[barrier]++;
-        if (d < barrier) underCounts[barrier]++;
+        if (d > barrier) overCounts[barrier] = assertDefined(overCounts[barrier]) + 1;
+        if (d < barrier) underCounts[barrier] = assertDefined(underCounts[barrier]) + 1;
       }
     }
 

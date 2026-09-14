@@ -23,7 +23,7 @@ export class SpreadTracker {
   public readonly state: SpreadState;
   
   constructor(symbolA: string, symbolB: string, windowSize: number, initialState?: SpreadState) {
-    this.state = initialState || {
+    this.state = initialState ?? {
       pairId: `${symbolA}-${symbolB}`,
       symbolA,
       symbolB,
@@ -117,7 +117,11 @@ export class SpreadTracker {
   static load(symbolA: string, symbolB: string): SpreadTracker | null {
     const db = getDb();
     const pairId = `${symbolA}-${symbolB}`;
-    const row = db.prepare('SELECT * FROM pair_spread_state WHERE pair_id = ?').get(pairId) as any;
+    const row = db.prepare('SELECT * FROM pair_spread_state WHERE pair_id = ?').get(pairId) as {
+      pair_id: string; symbol_a: string; symbol_b: string; beta_hedge_ratio: number;
+      spread_mean: number; spread_std: number; cointegration_p: number;
+      last_z_score: number; window_size: number; updated_at: string;
+    } | undefined;
     
     if (!row) return null;
     

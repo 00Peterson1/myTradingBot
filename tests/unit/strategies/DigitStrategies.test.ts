@@ -80,7 +80,7 @@ describe('Digit Strategies', () => {
     const signal = strat.generateSignal(mockTickFeatures(100.02), []);
 
     expect(signal.direction).toBe('SELL'); // High EVEN ratio triggers DIGITODD (SELL)
-    expect(signal.metadata?.contractType).toBe('DIGITODD');
+    expect(signal.metadata.contractType).toBe('DIGITODD');
   });
 
   it('OverUnderStrategy emits DIGITOVER when digits exceed barrier', () => {
@@ -93,8 +93,8 @@ describe('Digit Strategies', () => {
     const signal = strat.generateSignal(mockTickFeatures(100.08), []);
 
     expect(signal.direction).toBe('BUY');
-    expect(signal.metadata?.contractType).toBe('DIGITOVER');
-    expect(signal.metadata?.barrier).toBe(5);
+    expect(signal.metadata.contractType).toBe('DIGITOVER');
+    expect(signal.metadata.barrier).toBe(5);
   });
 
   it('MatchesDiffersStrategy emits DIGITDIFF for low-frequency digits', () => {
@@ -107,7 +107,7 @@ describe('Digit Strategies', () => {
     const signal = strat.generateSignal(mockTickFeatures(100.03), []);
 
     expect(signal.direction).toBe('BUY');
-    expect(signal.metadata?.contractType).toBe('DIGITDIFF');
-    expect(signal.metadata?.barrier).toBeDefined();
+    expect(signal.metadata.contractType).toBe('DIGITDIFF');
+    expect(signal.metadata.barrier).toBeDefined();
   });
 });

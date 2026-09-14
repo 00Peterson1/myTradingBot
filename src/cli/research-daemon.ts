@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import { handleHelp } from './help.js';
+handleHelp('research:daemon', 'Public tick collector; persists batches. Configure SYMBOLS and collection slots.');
+import { print } from '../monitoring/print.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { configureLogger, createLogger } from '../monitoring/Logger.js';
 import { getEnv } from '../config/env.js';
 import { renderBanner, renderSafetyStatus } from '../monitoring/Dashboard.js';
@@ -21,9 +25,9 @@ let isShuttingDown = false;
 
 async function collectForSymbol(client: DerivClient, symbol: string, durationSecs: number): Promise<void> {
   const ticks: Tick[] = [];
-  let subFailed = false;
 
-  await new Promise<void>((resolve) => {
+
+  const subscribed = await new Promise<boolean>((resolve) => {
     const handler = (tick: DerivTick): void => {
       if (tick.symbol !== symbol) return;
       ticks.push({
@@ -37,27 +41,28 @@ async function collectForSymbol(client: DerivClient, symbol: string, durationSec
 
     client.on('tick', handler);
 
-    client.subscribeTicks(symbol).catch((err) => {
+    client.subscribeTicks(symbol).catch((err: unknown) => {
       log.warn({ symbol, err }, 'Subscription failed');
-      subFailed = true;
-      resolve();
+      clearTimeout(timer);
+      client.off('tick', handler);
+      resolve(false);
     });
 
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       client.off('tick', handler);
-      client.unsubscribeTicks(symbol).catch(() => {});
-      resolve();
+      client.unsubscribeTicks(symbol).catch((error: unknown) => { log.warn({ error, symbol }, 'Unsubscribe failed'); });
+      resolve(true);
     }, durationSecs * 1000);
   });
 
-  if (subFailed || ticks.length === 0) return;
+  if (!subscribed || ticks.length === 0) return;
 
   try {
     const tickInserts: TickInsert[] = ticks.map((t) => ({
       symbol: t.symbol,
       epoch: t.epoch,
       price: t.price,
-      tickId: (t as any).tickId,
+      ...(t.tickId !== undefined ? { tickId: t.tickId } : {}),
     }));
     bulkInsertTicks(tickInserts);
 
@@ -83,33 +88,33 @@ async function collectForSymbol(client: DerivClient, symbol: string, durationSec
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   const env = getEnv();
   configureLogger(env.LOG_LEVEL, env.LOG_PRETTY);
 
   renderBanner();
   renderSafetyStatus(env.DEMO_TRADING, env.LIVE_TRADING);
 
-  console.log('Daemon initializing database...');
+  print('Daemon initializing database...');
   getDb();
 
   const client = new DerivClient();
   await client.connectPublic();
 
-  console.log('Discovering markets...');
+  print('Discovering markets...');
   let markets = await MarketCatalogue.discoverAll(client);
 
   const categories = new Set(markets.map((m) => m.marketCategory));
-  console.log(`Discovered ${markets.length} markets across ${categories.size} categories`);
+  print(`Discovered ${String(markets.length)} markets across ${String(categories.size)} categories`);
 
-  setInterval(async () => {
+  setInterval(asyncHandler(async () => {
     try {
       log.info('Running periodic market discovery...');
       markets = await MarketCatalogue.discoverAll(client);
     } catch (err) {
       log.error({ err }, 'Failed periodic discovery');
     }
-  }, 6 * 60 * 60 * 1000); // 6 hours
+  }, (error: unknown) => { log.error({ error }, 'Asynchronous handler failed'); process.exitCode = 1; }), 6 * 60 * 60 * 1000); // 6 hours
 
   const scheduler = new MarketScheduler();
 
@@ -123,19 +128,19 @@ async function main() {
     if (isShuttingDown) return;
     try {
       const row = getDb().prepare('SELECT COUNT(*) as count FROM ticks').get() as { count: number };
-      const currentTicks = row?.count ?? 0;
-      
-      const fastStr = activeFast.length > 0 ? `${activeFast.join(',')} ${fastElapsed}/${env.SLOT_SECS_FAST}s` : 'none';
-      const slowStr = activeSlow ? `${activeSlow} ${slowElapsed}/${env.SLOT_SECS_SLOW}s` : 'none';
+      const currentTicks = row.count;
 
-      process.stdout.write(`\r[DAEMON] fast: ${fastStr} | slow: ${slowStr} | DB: ${currentTicks} ticks total\x1b[K`);
+      const fastStr = activeFast.length > 0 ? `${activeFast.join(',')} ${String(fastElapsed)}/${String(env.SLOT_SECS_FAST)}s` : 'none';
+      const slowStr = activeSlow ? `${activeSlow} ${String(slowElapsed)}/${String(env.SLOT_SECS_SLOW)}s` : 'none';
+
+      process.stdout.write(`\r[DAEMON] fast: ${fastStr} | slow: ${slowStr} | DB: ${String(currentTicks)} ticks total\x1b[K`);
     } catch {
       // ignore
     }
   }, 5000);
 
   // Fast loop
-  const runFastLoop = async () => {
+  const runFastLoop = async (): Promise<void> => {
     while (!isShuttingDown) {
       try {
         const { fast } = scheduler.nextBatch(markets);
@@ -146,7 +151,7 @@ async function main() {
 
         activeFast = fast;
         fastElapsed = 0;
-        
+
         const timer = setInterval(() => fastElapsed++, 1000);
         await Promise.all(fast.map(sym => collectForSymbol(client, sym, env.SLOT_SECS_FAST)));
         clearInterval(timer);
@@ -162,7 +167,7 @@ async function main() {
   };
 
   // Slow loop
-  const runSlowLoop = async () => {
+  const runSlowLoop = async (): Promise<void> => {
     while (!isShuttingDown) {
       try {
         const { slow } = scheduler.nextBatch(markets);
@@ -173,7 +178,7 @@ async function main() {
 
         activeSlow = slow;
         slowElapsed = 0;
-        
+
         const timer = setInterval(() => slowElapsed++, 1000);
         await collectForSymbol(client, slow, env.SLOT_SECS_SLOW);
         clearInterval(timer);
@@ -186,23 +191,23 @@ async function main() {
     }
   };
 
-  runFastLoop();
-  runSlowLoop();
+  void runFastLoop().catch((error: unknown) => { log.fatal({ error }, 'Fast loop stopped'); process.exitCode = 1; });
+  void runSlowLoop().catch((error: unknown) => { log.fatal({ error }, 'Slow loop stopped'); process.exitCode = 1; });
 
-  const shutdown = async () => {
+  const shutdown = async (): Promise<void> => {
     if (isShuttingDown) return;
     isShuttingDown = true;
-    console.log('\nShutting down gracefully...');
+    print('\nShutting down gracefully...');
     await client.disconnect();
     closeDb();
     process.exit(0);
   };
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', asyncHandler(shutdown, (error: unknown) => { log.error({ error }, 'Shutdown failed'); process.exitCode = 1; }));
+  process.on('SIGTERM', asyncHandler(shutdown, (error: unknown) => { log.error({ error }, 'Shutdown failed'); process.exitCode = 1; }));
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   log.fatal({ err }, 'Daemon crashed');
   process.exit(1);
 });

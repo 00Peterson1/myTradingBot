@@ -1,3 +1,4 @@
+import { assertDefined } from '../../utils/assertDefined.js';
 import type { Strategy} from '../base/Strategy.js';
 import { makeSignal } from '../base/Strategy.js';
 import type { TickFeatures } from '../../types/tick.js';
@@ -21,7 +22,7 @@ export class TDQNStrategy implements Strategy {
    * It MUST NOT be used in a standard walk-forward backtest — it adapts to
    * test data while being scored, invalidating OOS evaluation.
    */
-  readonly isOnlineLearner: true = true;
+  readonly isOnlineLearner = true as const;
   private epsilon: number;
   private readonly learningRate: number;
   private readonly discount: number;
@@ -48,22 +49,22 @@ export class TDQNStrategy implements Strategy {
     this.loadQTable();
   }
 
-  private loadQTable() {
+  private loadQTable(): void {
     try {
       const db = getDb();
-      const rows = db.prepare('SELECT state_key, action, q_value FROM rl_q_tables WHERE strategy_name = ? AND symbol = ?').all(this.name, this.symbol) as any[];
+      const rows = db.prepare('SELECT state_key, action, q_value FROM rl_q_tables WHERE strategy_name = ? AND symbol = ?').all(this.name, this.symbol) as { state_key: string; action: string; q_value: number }[];
       for (const row of rows) {
         if (!this.qTable.has(row.state_key)) {
           this.qTable.set(row.state_key, new Map());
         }
-        this.qTable.get(row.state_key)!.set(row.action, row.q_value);
+        assertDefined(this.qTable.get(row.state_key)).set(row.action, row.q_value);
       }
-    } catch (e) {
-      // ignore
+    } catch (error) {
+      throw new Error('Could not load Q-table', { cause: error });
     }
   }
 
-  private saveQTable() {
+  private saveQTable(): void {
     const db = getDb();
     const stmt = db.prepare(`
       INSERT INTO rl_q_tables (strategy_name, symbol, state_key, action, q_value, update_count, updated_at)
@@ -87,11 +88,11 @@ export class TDQNStrategy implements Strategy {
     return this.qTable.get(state)?.get(action) ?? 0;
   }
 
-  private setQ(state: string, action: string, value: number) {
+  private setQ(state: string, action: string, value: number): void {
     if (!this.qTable.has(state)) {
       this.qTable.set(state, new Map());
     }
-    this.qTable.get(state)!.set(action, value);
+    assertDefined(this.qTable.get(state)).set(action, value);
   }
 
   private discretizeState(current: TickFeatures): string | null {
@@ -122,7 +123,7 @@ export class TDQNStrategy implements Strategy {
     else if (z >= -2) zBin = 1;
     else zBin = 0;
 
-    return `${momBin}_${stdBin}_${zBin}`;
+    return `${String(momBin)}_${String(stdBin)}_${String(zBin)}`;
   }
 
   generateSignal(current: TickFeatures, _history: readonly TickFeatures[]): Signal {
@@ -155,7 +156,7 @@ export class TDQNStrategy implements Strategy {
     let chosenAction: 'BUY' | 'SELL' | 'HOLD';
 
     if (Math.random() < this.epsilon) {
-      chosenAction = actions[Math.floor(Math.random() * actions.length)]!;
+      chosenAction = assertDefined(actions[Math.floor(Math.random() * actions.length)]);
     } else {
       let maxQ = -Infinity;
       let bestActions: ('BUY' | 'SELL' | 'HOLD')[] = [];
@@ -168,7 +169,7 @@ export class TDQNStrategy implements Strategy {
           bestActions.push(a);
         }
       }
-      chosenAction = bestActions[Math.floor(Math.random() * bestActions.length)]!;
+      chosenAction = assertDefined(bestActions[Math.floor(Math.random() * bestActions.length)]);
     }
 
     this.epsilon = Math.max(this.minEpsilon, this.epsilon * this.epsilonDecay);

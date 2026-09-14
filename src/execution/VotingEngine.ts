@@ -102,6 +102,9 @@ export class VotingEngine {
     }));
 
     const tally = { buy: 0, sell: 0, none: 0, total: votes.length };
+    if (signals.some(signal => signal.product !== 'OPTIONS' || signal.symbol !== symbol)) {
+      return this.noConsensus(symbol, votes, tally, 'Mismatched product or symbol');
+    }
 
     for (const v of votes) {
       if (v.direction === 'BUY') tally.buy++;
@@ -127,7 +130,7 @@ export class VotingEngine {
       winningDir = 'SELL';
       winningFraction = sellFraction;
     } else {
-      const reason = `Split: ${tally.buy}↑ ${tally.sell}↓ ${tally.none}— (need ${Math.ceil(tally.total * this.config.minVoteFraction)} to agree)`;
+      const reason = `Split: ${String(tally.buy)}↑ ${String(tally.sell)}↓ ${String(tally.none)}— (need ${String(Math.ceil(tally.total * this.config.minVoteFraction))} to agree)`;
       return this.noConsensus(symbol, votes, tally, reason);
     }
 
@@ -151,13 +154,13 @@ export class VotingEngine {
         symbol,
         votes,
         tally,
-        `Low confidence: ${consensusConfidence.toFixed(3)} < ${this.config.minConsensusConfidence}`,
+        `Low confidence: ${consensusConfidence.toFixed(3)} < ${String(this.config.minConsensusConfidence)}`,
       );
     }
 
     const summary =
       `${symbol} ${winningDir} | ` +
-      `${agreeing.length}/${tally.total} agree (${(winningFraction * 100).toFixed(0)}%) | ` +
+      `${String(agreeing.length)}/${String(tally.total)} agree (${(winningFraction * 100).toFixed(0)}%) | ` +
       `conf=${consensusConfidence.toFixed(3)}`;
 
     return {
@@ -176,6 +179,7 @@ export class VotingEngine {
   toSignal(current: TickFeatures, signals: Signal[]): Signal {
     const vote = this.vote(current.symbol, signals);
     return {
+      product: 'OPTIONS', hypothesisId: null, strategyVersion: '1',
       id: crypto.randomUUID(), timestamp: current.timestamp, symbol: current.symbol,
       price: current.price, direction: vote.direction, confidence: vote.consensusConfidence,
       strategy: 'Consensus', metadata: vote.metadata,

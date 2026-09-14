@@ -1,3 +1,4 @@
+import { assertDefined } from '../../utils/assertDefined.js';
 /**
  * Statistical validation tools for quantitative research.
  *
@@ -63,21 +64,21 @@ export function normalInvCDF(p: number): number {
   if (p < pLow) {
     const q = Math.sqrt(-2 * Math.log(p));
     return (
-      (((((c[0]! * q + c[1]!) * q + c[2]!) * q + c[3]!) * q + c[4]!) * q + c[5]!) /
-      ((((d[0]! * q + d[1]!) * q + d[2]!) * q + d[3]!) * q + 1)
+      (((((assertDefined(c[0]) * q + assertDefined(c[1])) * q + assertDefined(c[2])) * q + assertDefined(c[3])) * q + assertDefined(c[4])) * q + assertDefined(c[5])) /
+      ((((assertDefined(d[0]) * q + assertDefined(d[1])) * q + assertDefined(d[2])) * q + assertDefined(d[3])) * q + 1)
     );
   } else if (p <= pHigh) {
     const q = p - 0.5;
     const r = q * q;
     return (
-      ((((((a[0]! * r + a[1]!) * r + a[2]!) * r + a[3]!) * r + a[4]!) * r + a[5]!) * q) /
-      (((((b[0]! * r + b[1]!) * r + b[2]!) * r + b[3]!) * r + b[4]!) * r + 1)
+      ((((((assertDefined(a[0]) * r + assertDefined(a[1])) * r + assertDefined(a[2])) * r + assertDefined(a[3])) * r + assertDefined(a[4])) * r + assertDefined(a[5])) * q) /
+      (((((assertDefined(b[0]) * r + assertDefined(b[1])) * r + assertDefined(b[2])) * r + assertDefined(b[3])) * r + assertDefined(b[4])) * r + 1)
     );
   } else {
     const q = Math.sqrt(-2 * Math.log(1 - p));
     return -(
-      (((((c[0]! * q + c[1]!) * q + c[2]!) * q + c[3]!) * q + c[4]!) * q + c[5]!) /
-      ((((d[0]! * q + d[1]!) * q + d[2]!) * q + d[3]!) * q + 1)
+      (((((assertDefined(c[0]) * q + assertDefined(c[1])) * q + assertDefined(c[2])) * q + assertDefined(c[3])) * q + assertDefined(c[4])) * q + assertDefined(c[5])) /
+      ((((assertDefined(d[0]) * q + assertDefined(d[1])) * q + assertDefined(d[2])) * q + assertDefined(d[3])) * q + 1)
     );
   }
 }

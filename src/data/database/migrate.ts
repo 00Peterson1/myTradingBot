@@ -19,7 +19,8 @@ const log = createLogger('Migrate');
  * Ensures the SQLite schema is initialised.
  * The schema is already applied by getDb() — this is a no-op validation call.
  */
-export async function runMigrations(_migrationsDir?: string): Promise<void> {
+export function runMigrations(_migrationsDir?: string): Promise<void> {
   getDb(); // triggers schema creation if DB didn't exist yet
   log.info('SQLite schema is up to date (managed by sqlite.ts)');
+  return Promise.resolve();
 }

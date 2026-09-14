@@ -32,10 +32,10 @@ export class BreakoutStrategy implements Strategy {
   readonly description: string;
 
   constructor(private readonly params: BreakoutStrategyParams) {
-    this.name = `Breakout(high=${params.highKey},low=${params.lowKey},confirm=${params.confirmationFraction})`;
+    this.name = `Breakout(high=${params.highKey},low=${params.lowKey},confirm=${String(params.confirmationFraction)})`;
     this.description =
-      `Breakout: BUY if price > rollingHigh * (1 + ${params.confirmationFraction}), ` +
-      `SELL if price < rollingLow * (1 - ${params.confirmationFraction})`;
+      `Breakout: BUY if price > rollingHigh * (1 + ${String(params.confirmationFraction)}), ` +
+      `SELL if price < rollingLow * (1 - ${String(params.confirmationFraction)})`;
   }
 
   generateSignal(current: TickFeatures, history: readonly TickFeatures[]): Signal {
@@ -49,7 +49,7 @@ export class BreakoutStrategy implements Strategy {
     const prevLow = prev[this.params.lowKey];
     const price = current.price;
 
-    if (prevHigh === null || prevHigh === undefined || prevLow === null || prevLow === undefined) {
+    if (prevHigh === null || prevLow === null) {
       return makeSignal(this.name, current, 'NONE', 0, { reason: 'insufficient_history' });
     }
 

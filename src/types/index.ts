@@ -13,3 +13,6 @@ export type {
   BacktestRun,
   WalkForwardResult,
 } from './backtest.js';
+
+export * from './product.js';
+export type { PortfolioEvent } from './portfolio.js';

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { print } from '../monitoring/print.js';
 /**
  * Quick smoke test for the Gemini context filter.
  * Run: tsx src/context/test-gemini.ts
@@ -7,7 +8,7 @@ import { getGeminiContextFilter } from './GeminiContextFilter.js';
 import { getEnv } from '../config/env.js';
 import { getDb } from '../data/database/sqlite.js';
 
-async function main() {
+async function main(): Promise<void> {
   const env = getEnv();
 
   if (!env.GEMINI_API_KEY) {
@@ -15,10 +16,10 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('✅ GEMINI_API_KEY detected (length:', env.GEMINI_API_KEY.length, 'chars)');
-  console.log('   Model: gemini-3.7-flash');
-  console.log('   Cache TTL:', env.LLM_CACHE_HOURS, 'hours');
-  console.log('   Suppress threshold: divergence_score ≥', env.LLM_DIVERGENCE_SUPPRESS_THRESHOLD, '\n');
+  print('✅ GEMINI_API_KEY detected (length:', env.GEMINI_API_KEY.length, 'chars)');
+  print('   Model: gemini-3.7-flash');
+  print('   Cache TTL:', env.LLM_CACHE_HOURS, 'hours');
+  print('   Suppress threshold: divergence_score ≥', env.LLM_DIVERGENCE_SUPPRESS_THRESHOLD, '\n');
 
   // Initialise DB (needed for cache writes)
   getDb();
@@ -26,7 +27,7 @@ async function main() {
   const filter = getGeminiContextFilter();
 
   // --- Test 1: EUR/GBP pair ---
-  console.log('🔍 Test 1: Assessing EUR/GBP + AUD/NZD pair...');
+  print('🔍 Test 1: Assessing EUR/GBP + AUD/NZD pair...');
   const result1 = await filter.assess(
     'frxEURGBP',
     {
@@ -38,17 +39,17 @@ async function main() {
     [], // No upcoming events for this test
   );
 
-  console.log('  divergence_score:', result1.divergenceScore, '/ 10');
-  console.log('  suppress_trade:  ', result1.suppressTrade);
-  console.log('  rationale:       ', result1.rationale);
-  console.log('  key_risk:        ', result1.keyRisk);
-  console.log('  from_llm:        ', result1.fromLLM);
+  print('  divergence_score:', result1.divergenceScore, '/ 10');
+  print('  suppress_trade:  ', result1.suppressTrade);
+  print('  rationale:       ', result1.rationale);
+  print('  key_risk:        ', result1.keyRisk);
+  print('  from_llm:        ', result1.fromLLM);
 
   const adj1 = filter.applyToConfidence(0.75, result1);
-  console.log(`  confidence adj:   0.75 → ${adj1.toFixed(3)}\n`);
+  print(`  confidence adj:   0.75 → ${adj1.toFixed(3)}\n`);
 
   // --- Test 2: AUD/NZD with simulated rate-decision event ---
-  console.log('🔍 Test 2: AUD/NZD with RBNZ rate decision tomorrow...');
+  print('🔍 Test 2: AUD/NZD with RBNZ rate decision tomorrow...');
   const result2 = await filter.assess(
     'frxAUDNZD',
     {
@@ -66,16 +67,16 @@ async function main() {
     ],
   );
 
-  console.log('  divergence_score:', result2.divergenceScore, '/ 10');
-  console.log('  suppress_trade:  ', result2.suppressTrade);
-  console.log('  rationale:       ', result2.rationale);
-  console.log('  key_risk:        ', result2.keyRisk);
-  console.log('  from_llm:        ', result2.fromLLM);
+  print('  divergence_score:', result2.divergenceScore, '/ 10');
+  print('  suppress_trade:  ', result2.suppressTrade);
+  print('  rationale:       ', result2.rationale);
+  print('  key_risk:        ', result2.keyRisk);
+  print('  from_llm:        ', result2.fromLLM);
 
   const adj2 = filter.applyToConfidence(0.65, result2);
-  console.log(`  confidence adj:   0.65 → ${adj2.toFixed(3)}`);
+  print(`  confidence adj:   0.65 → ${adj2.toFixed(3)}`);
 
-  console.log('\n✅ GeminiContextFilter is working correctly.');
+  print('\n✅ GeminiContextFilter is working correctly.');
   process.exit(0);
 }
 

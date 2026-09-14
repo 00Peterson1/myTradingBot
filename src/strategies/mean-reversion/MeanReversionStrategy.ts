@@ -32,16 +32,16 @@ export class MeanReversionStrategy implements Strategy {
   readonly description: string;
 
   constructor(private readonly params: MeanReversionParams) {
-    this.name = `MeanReversion(key=${params.zScoreKey},entry=${params.entryThreshold})`;
+    this.name = `MeanReversion(key=${params.zScoreKey},entry=${String(params.entryThreshold)})`;
     this.description =
-      `Mean reversion on Z-score: BUY if Z < -${params.entryThreshold}, ` +
-      `SELL if Z > ${params.entryThreshold}`;
+      `Mean reversion on Z-score: BUY if Z < -${String(params.entryThreshold)}, ` +
+      `SELL if Z > ${String(params.entryThreshold)}`;
   }
 
   generateSignal(current: TickFeatures, _history: readonly TickFeatures[]): Signal {
     const z = current[this.params.zScoreKey];
 
-    if (z === null || z === undefined) {
+    if (z === null) {
       return makeSignal(this.name, current, 'NONE', 0, { reason: 'insufficient_history' });
     }
 

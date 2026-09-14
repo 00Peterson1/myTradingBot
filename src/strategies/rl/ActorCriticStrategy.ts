@@ -1,3 +1,4 @@
+import { assertDefined } from '../../utils/assertDefined.js';
 import type { Strategy} from '../base/Strategy.js';
 import { makeSignal } from '../base/Strategy.js';
 import type { TickFeatures } from '../../types/tick.js';
@@ -11,23 +12,23 @@ export class ActorCriticStrategy implements Strategy {
    * It MUST NOT be used in a standard walk-forward backtest — it adapts to
    * test data while being scored, invalidating OOS evaluation.
    */
-  readonly isOnlineLearner: true = true;
+  readonly isOnlineLearner = true as const;
 
   private readonly learningRate = 0.01;
   private readonly gamma = 0.95;
 
   private weightsActor = {
-    BUY: new Array(6).fill(0),
-    SELL: new Array(6).fill(0),
-    HOLD: new Array(6).fill(0),
+    BUY: new Array<number>(6).fill(0),
+    SELL: new Array<number>(6).fill(0),
+    HOLD: new Array<number>(6).fill(0),
   };
-  private weightsCritic = new Array(6).fill(0);
+  private weightsCritic = new Array<number>(6).fill(0);
 
   private previousFeatureVec: number[] | null = null;
   private previousAction: 'BUY' | 'SELL' | 'HOLD' | null = null;
 
   private getFeatureVec(f: TickFeatures): number[] {
-    const clamp = (val: number | null) => {
+    const clamp = (val: number | null): number => {
       if (val === null) return 0;
       return Math.max(-1, Math.min(1, val));
     };
@@ -55,8 +56,8 @@ export class ActorCriticStrategy implements Strategy {
       const delta = reward + this.gamma * vState - this.dotProduct(this.weightsCritic, this.previousFeatureVec);
 
       for (let i = 0; i < 6; i++) {
-        this.weightsCritic[i] += this.learningRate * delta * (this.previousFeatureVec[i] ?? 0);
-        this.weightsActor[this.previousAction][i] += this.learningRate * delta * (this.previousFeatureVec[i] ?? 0);
+        this.weightsCritic[i] = assertDefined(this.weightsCritic[i]) + this.learningRate * delta * (this.previousFeatureVec[i] ?? 0);
+        this.weightsActor[this.previousAction][i] = assertDefined(this.weightsActor[this.previousAction][i]) + this.learningRate * delta * (this.previousFeatureVec[i] ?? 0);
       }
     }
 
@@ -76,7 +77,7 @@ export class ActorCriticStrategy implements Strategy {
         break;
       }
     }
-    const chosenAction = actions[chosenIndex]!;
+    const chosenAction = assertDefined(actions[chosenIndex]);
     const confidence = Math.max(...probs);
 
     this.previousFeatureVec = featureVec;

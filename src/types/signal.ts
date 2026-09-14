@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import type { OptionSpecification, ProductType } from './product.js';
 /**
  * Signal direction produced by a strategy.
  * A strategy ONLY produces a signal — it never sizes or executes.
@@ -9,6 +11,10 @@ export type SignalDirection = 'BUY' | 'SELL' | 'NONE';
  * Passed to the RiskEngine for approval/rejection.
  */
 export interface Signal {
+  readonly product: ProductType;
+  /** Null means an unregistered research candidate, never evidence of eligibility. */
+  readonly hypothesisId: string | null;
+  readonly strategyVersion: string;
   readonly id: string; // UUID
   readonly timestamp: Date;
   readonly symbol: string;
@@ -25,6 +31,7 @@ export interface Signal {
  */
 export interface ApprovedSignal {
   readonly signal: Signal;
+  readonly optionSpecification: OptionSpecification;
   readonly stakeAmount: number; // Amount determined by PositionSizer
   readonly contractDuration: number; // Contract duration value
   readonly contractDurationUnit: 't' | 's' | 'm' | 'h' | 'd'; // Duration unit (t=ticks)
@@ -36,6 +43,10 @@ export interface ApprovedSignal {
  * Reason a signal was rejected by the RiskEngine.
  */
 export type RejectionReason =
+  | 'MAX_TRADES_PER_HOUR'
+  | 'INVALID_SIGNAL'
+  | 'UNSUPPORTED_PRODUCT'
+  | 'INVALID_CONTRACT_SPECIFICATION'
   | 'MAX_DAILY_LOSS_HIT'
   | 'MAX_DRAWDOWN_HIT'
   | 'MAX_CONSECUTIVE_LOSSES'
@@ -59,6 +70,19 @@ export type RejectionReason =
 /**
  * Result of the RiskEngine evaluation of a signal.
  */
-export type RiskDecision =
+export type RiskOutcome =
   | { approved: true; approvedSignal: ApprovedSignal }
   | { approved: false; reason: RejectionReason; signal: Signal };
+
+export type RiskDecision = RiskOutcome & {
+  readonly portfolioSnapshotId: string;
+  readonly portfolioAuthority: 'SESSION_ONLY' | 'DURABLE_UNRECONCILED' | 'RECONCILED';
+};
+
+export const signalSchema = z.object({
+  id: z.string().min(1), product: z.enum(['OPTIONS', 'CFD']),
+  hypothesisId: z.string().min(1).nullable(), strategyVersion: z.string().min(1),
+  timestamp: z.date(), symbol: z.string().min(1), price: z.number().finite().positive(),
+  direction: z.enum(['BUY', 'SELL', 'NONE']), strategy: z.string().min(1),
+  confidence: z.number().finite().min(0).max(1), metadata: z.record(z.unknown()),
+});

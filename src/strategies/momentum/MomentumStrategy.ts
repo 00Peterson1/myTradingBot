@@ -38,16 +38,16 @@ export class MomentumStrategy implements Strategy {
   readonly description: string;
 
   constructor(private readonly params: MomentumStrategyParams) {
-    this.name = `Momentum(lookback=${params.lookback},threshold=${params.threshold})`;
+    this.name = `Momentum(lookback=${String(params.lookback)},threshold=${String(params.threshold)})`;
     this.description =
-      `Time-series momentum: BUY if R(${params.lookback}) > ${params.threshold}, ` +
-      `SELL if R(${params.lookback}) < -${params.threshold}`;
+      `Time-series momentum: BUY if R(${String(params.lookback)}) > ${String(params.threshold)}, ` +
+      `SELL if R(${String(params.lookback)}) < -${String(params.threshold)}`;
   }
 
   generateSignal(current: TickFeatures, _history: readonly TickFeatures[]): Signal {
     const mom = current[this.params.momentumKey];
 
-    if (mom === null || mom === undefined) {
+    if (mom === null) {
       return makeSignal(this.name, current, 'NONE', 0, {
         reason: 'insufficient_history',
         lookback: this.params.lookback,

@@ -87,12 +87,12 @@ export class RegimeStrategy implements Strategy {
     history: readonly TickFeatures[],
   ): VolatilityRegime {
     const vol = current.realizedVol20;
-    if (vol === null || vol === undefined) return 'UNKNOWN';
+    if (vol === null) return 'UNKNOWN';
 
     // Collect historical realized vols
     const historicalVols = history
       .map((f) => f.realizedVol20)
-      .filter((v): v is number => v !== null && v !== undefined);
+      .filter((v): v is number => v !== null);
 
     if (historicalVols.length < 20) return 'UNKNOWN';
 

@@ -1,105 +1,90 @@
-import { createLogger } from '../monitoring/Logger.js';
+import { OptionsLedger } from '../portfolio/OptionsLedger.js';
+import { money, optionSpecificationSchema, majorUnits } from '../types/product.js';
+import { contractWon } from '../backtest/contractOutcome.js';
 import type { ApprovedSignal } from '../types/signal.js';
-import type { Trade, TradeResult } from '../types/trade.js';
+import type { Tick } from '../types/tick.js';
 
-const log = createLogger('SimulatedExecution');
-
-/**
- * SimulatedExecutionEngine — Paper Trading (No Real Orders)
- *
- * Simulates trade outcomes using the NEXT tick price.
- * Used for:
- *   1. Paper trading (dry run before demo)
- *   2. Unit testing the execution pipeline
- *   3. Verifying risk engine behavior
- *
- * This engine NEVER communicates with Deriv API.
- * All outcomes are deterministic given the next price.
- *
- * Payout model: binary options
- *   - WIN: +stake * payoutMultiplier
- *   - LOSE: -stake (entire stake lost)
- */
 export interface SimulatedExecutionConfig {
-  payoutMultiplier: number; // e.g., 0.85 for 85% payout
-  feePerTrade: number; // Fixed fee per trade
+  payoutMultiplier: number;
+  feePerTrade: number;
+  pipSize?: number;
+}
+interface OpenSimulation {
+  approved: ApprovedSignal;
+  intentId: string;
+  entry: Tick;
+  remainingTicks: number;
+  expiryMs: number | null;
+  lastPrice: number;
+}
+export interface SimulatedSettlement {
+  intentId: string;
+  signalId: string;
+  symbol: string;
+  direction: 'BUY' | 'SELL';
+  entryPrice: number;
+  exitPrice: number;
+  entryTime: Date;
+  exitTime: Date;
+  stake: number;
+  profit: number;
+  payout: number;
+  won: boolean;
 }
 
+/** Deterministic fixed-quote assumption, with real ledger debits and expiry events. */
 export class SimulatedExecutionEngine {
-  private tradeCount = 0;
+  private open = new Map<string, OpenSimulation>();
 
-  constructor(private readonly config: SimulatedExecutionConfig) {
-    log.info({ config }, 'SimulatedExecutionEngine initialized (paper trading)');
+  constructor(readonly ledger: OptionsLedger, private readonly config: SimulatedExecutionConfig) {
+    if (!Number.isFinite(config.payoutMultiplier) || config.payoutMultiplier <= 0) throw new Error('Invalid payout assumption');
+    money(config.feePerTrade, 'USD', 2);
+    if (config.feePerTrade < 0) throw new Error('Execution fees cannot be negative');
   }
 
-  /**
-   * Simulates a trade execution given an approved signal and the next price.
-   *
-   * @param approved - Risk-approved signal with stake amount
-   * @param entryPrice - Price at signal time (current tick price)
-   * @param exitPrice - Price at trade expiry (next tick price)
-   * @returns Complete trade with profit/loss
-   */
-  execute(approved: ApprovedSignal, entryPrice: number, exitPrice: number): Trade & TradeResult {
-    this.tradeCount++;
-    const id = crypto.randomUUID();
-    const now = new Date();
+  execute(approved: ApprovedSignal, entry: Tick): string {
+    const spec = optionSpecificationSchema.parse(approved.optionSpecification);
+    if (approved.signal.direction === 'NONE' || approved.signal.product !== 'OPTIONS' || entry.symbol !== spec.symbol) throw new Error('Invalid Options entry');
+    if (!Number.isFinite(entry.price) || entry.price <= 0) throw new Error('Invalid entry price');
+    const intent = this.ledger.reserve(() => approved, this.config.feePerTrade);
+    this.ledger.markSubmitting(intent.intent_id);
+    const totalCost = (spec.stake.minorUnits + money(this.config.feePerTrade, 'USD', 2).minorUnits) / 100;
+    this.ledger.recordPurchase(intent.intent_id, `SIM:${intent.intent_id}`, totalCost, { entry });
+    const durationMs = spec.durationUnit === 't' ? null : spec.duration * { s: 1000, m: 60000, h: 3600000, d: 86400000 }[spec.durationUnit];
+    this.open.set(intent.intent_id, { approved, intentId: intent.intent_id, entry,
+      remainingTicks: spec.duration, expiryMs: durationMs === null ? null : entry.timestamp.getTime() + durationMs,
+      lastPrice: entry.price });
+    return intent.intent_id;
+  }
 
-    const direction = approved.signal.direction;
-    if (direction === 'NONE') {
-      throw new Error('Cannot execute signal with direction NONE');
+  /** Process expiries before considering new signals on this tick. No future prices are read. */
+  onTick(tick: Tick, onProfit: (profit: number) => void): SimulatedSettlement[] {
+    const settlements: SimulatedSettlement[] = [];
+    for (const position of this.open.values()) {
+      if (position.entry.symbol !== tick.symbol) continue;
+      position.remainingTicks--;
+      const due = position.expiryMs === null ? position.remainingTicks <= 0 : tick.timestamp.getTime() >= position.expiryMs;
+      if (!due) { position.lastPrice = tick.price; continue; }
+      const spec = position.approved.optionSpecification;
+      // For time contracts use the latest observed quote at/before expiry, never the later arrival's price.
+      const exitPrice = position.expiryMs !== null && tick.timestamp.getTime() > position.expiryMs ? position.lastPrice : tick.price;
+      const won = contractWon({ ...position.approved.signal, metadata: { contractType: spec.contractType, barrier: spec.barrier } },
+        position.entry.price, exitPrice, this.config.pipSize);
+      const stake = majorUnits(spec.stake);
+      // Explicit simulation assumption: fixed quoted payout, rounded to the nearest USD cent.
+      const payoutMinor = won ? Math.round(spec.stake.minorUnits * (1 + this.config.payoutMultiplier)) : 0;
+      const profitMinor = payoutMinor - spec.stake.minorUnits - money(this.config.feePerTrade, 'USD', 2).minorUnits;
+      const profit = profitMinor / 100;
+      this.ledger.recordSettlement(position.intentId, payoutMinor / 100, profit, () => { onProfit(profit); });
+      this.open.delete(position.intentId);
+      if (position.approved.signal.direction === 'NONE') throw new Error('Invalid open direction');
+      settlements.push({ intentId: position.intentId, signalId: position.approved.signal.id, symbol: tick.symbol,
+        direction: position.approved.signal.direction, entryPrice: position.entry.price, exitPrice,
+        entryTime: position.entry.timestamp, exitTime: new Date(position.expiryMs ?? tick.timestamp.getTime()),
+        stake, profit, payout: payoutMinor / 100, won });
     }
-    const stake = approved.stakeAmount;
-
-    // Determine outcome
-    const priceWentUp = exitPrice > entryPrice;
-    const won = (direction === 'BUY' && priceWentUp) || (direction === 'SELL' && !priceWentUp);
-
-    const grossProfit = won ? stake * this.config.payoutMultiplier : -stake;
-    const netProfit = grossProfit - this.config.feePerTrade;
-
-    const result: Trade & TradeResult = {
-      id,
-      signalId: approved.signal.id,
-      symbol: approved.signal.symbol,
-      strategy: approved.signal.strategy,
-      direction: direction,
-      stakeAmount: stake,
-      contractType: direction === 'BUY' ? 'CALL' : 'PUT',
-      contractDuration: approved.contractDuration,
-      contractDurationUnit: approved.contractDurationUnit,
-      entryPrice,
-      exitPrice,
-      entryTime: approved.approvedAt,
-      exitTime: now,
-      mode: 'PAPER',
-      status: 'SETTLED',
-      contractId: `SIM-${id}`,
-
-      // Result
-      profit: netProfit,
-      won,
-      returnPct: netProfit / stake,
-      riskNotes: approved.riskNotes,
-    };
-
-    log.info(
-      {
-        id,
-        direction,
-        entryPrice,
-        exitPrice,
-        stake,
-        won,
-        profit: netProfit,
-      },
-      `[PAPER] Trade ${won ? 'WON' : 'LOST'}`,
-    );
-
-    return result;
+    return settlements;
   }
 
-  getTradeCount(): number {
-    return this.tradeCount;
-  }
+  getOpenCount(): number { return this.open.size; }
 }

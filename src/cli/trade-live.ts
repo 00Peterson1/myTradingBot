@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import { handleHelp } from './help.js';
+handleHelp('trade:live', 'Real-account Options runner. Requires explicit live flags; readiness remains unverified.');
+import { print } from '../monitoring/print.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 /**
  * Live Trading — REAL MONEY Execution with Safety Controls.
  *
@@ -22,7 +26,10 @@ import { renderBanner, renderSafetyStatus } from '../monitoring/Dashboard.js';
 import { DerivClient } from '../api/deriv/DerivClient.js';
 import { FeatureEngine } from '../features/FeatureEngine.js';
 import { RiskEngine } from '../risk/RiskEngine.js';
-import { DerivExecutionEngine } from '../execution/DerivExecutionEngine.js';
+import { OptionsExecutionService } from '../execution/OptionsExecutionService.js';
+import { OptionsLedger } from '../portfolio/OptionsLedger.js';
+import { getDb } from '../data/database/sqlite.js';
+import { assertDefined } from '../utils/assertDefined.js';
 import { VotingEngine } from '../execution/VotingEngine.js';
 import { SymbolRanker } from '../execution/SymbolRanker.js';
 
@@ -89,7 +96,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log('\n⚠️  WARNING: LIVE TRADING MODE IS ACTIVE — REAL MONEY AT RISK! ⚠️\n');
+  print('\n⚠️  WARNING: LIVE TRADING MODE IS ACTIVE — REAL MONEY AT RISK! ⚠️\n');
 
   // Connect public WS for market data, then trading WS (real account) via OTP
   const client = new DerivClient();
@@ -105,7 +112,7 @@ async function main(): Promise<void> {
   const activeProfiles = ranker.getTop(topSymbols);
   const activeSymbols = activeProfiles.map((p) => p.symbol);
 
-  console.log(`\n📊 Trading Active Symbols (${activeSymbols.length}): ${activeSymbols.join(', ')}`);
+  print(`\n📊 Trading Active Symbols (${String(activeSymbols.length)}): ${activeSymbols.join(', ')}`);
 
   const featureEngines = new Map<string, FeatureEngine>();
   const featureHistory = new Map<string, TickFeatures[]>();
@@ -123,10 +130,20 @@ async function main(): Promise<void> {
     );
   }
 
-  const riskEngine = new RiskEngine(100);
-  const executionEngine = new DerivExecutionEngine(client);
+  const accountBalance = await client.subscribeBalance();
+  const ledger = new OptionsLedger(getDb(), assertDefined(client.getTradingAccount()).accountId, 'LIVE', accountBalance.balance);
+  const riskEngine = new RiskEngine(accountBalance.balance, accountBalance.currency, ledger);
+  const execution = new OptionsExecutionService(client, ledger, riskEngine, 'LIVE');
+  await execution.start();
+  const settlementTimer = setInterval(asyncHandler(async () => {
+    for (const { intent, state } of await execution.poll()) log.info({ contractId: intent.contract_id, profit: state.profit }, 'Confirmed settlement');
+  }, (error: unknown) => { log.error({ error }, 'Reconciliation failed; new orders blocked'); }), 5000);
+  const shutdown = asyncHandler(async () => { clearInterval(settlementTimer); await client.disconnect(); process.exit(0); },
+    (error: unknown) => { log.error({ error }, 'Shutdown failed'); process.exitCode = 1; });
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 
-  client.on('tick', async (derivTick: DerivTick) => {
+  client.on('tick', asyncHandler(async (derivTick: DerivTick) => {
     const symbol = derivTick.symbol;
     if (!activeSymbols.includes(symbol)) return;
 
@@ -152,38 +169,38 @@ async function main(): Promise<void> {
     const signals = strats.map((s) => s.generateSignal(features, prevHistory));
     const vote = ve.vote(symbol, signals);
 
-    if (vote.hasConsensus && vote.direction !== 'NONE') {
+    if (execution.isReady() && vote.hasConsensus && vote.direction !== 'NONE') {
       const syntheticSignal = {
+      product: 'OPTIONS' as const, hypothesisId: null, strategyVersion: '1',
         id: crypto.randomUUID(),
         symbol,
         price: tick.price,
         direction: vote.direction,
         confidence: vote.consensusConfidence,
-        strategy: `Vote(${vote.tally.buy}↑${vote.tally.sell}↓/${vote.tally.total})`,
+        strategy: `Vote(${String(vote.tally.buy)}↑${String(vote.tally.sell)}↓/${String(vote.tally.total)})`,
         timestamp: tick.timestamp,
-        metadata: { voteFraction: vote.voteFraction },
+        metadata: { ...vote.metadata },
       };
 
-      const decision = riskEngine.evaluate(syntheticSignal, 'LIVE');
-      if (decision.approved) {
+      {
         try {
-          const trade = await executionEngine.execute(decision.approvedSignal);
-          console.log(`\n🚀 [LIVE ORDER PLACED] ${trade.symbol} ${trade.direction} Stake=$${trade.stakeAmount}`);
-        } catch (err: any) {
-          log.error({ error: err.message }, 'Failed to place live order');
+          const trade = await execution.execute(syntheticSignal);
+          print(`\n🚀 [LIVE ORDER PLACED] ${trade.symbol} ${trade.direction} Stake=$${String(trade.stakeAmount)}`);
+        } catch (err) {
+          log.error({ error: err instanceof Error ? err.message : 'Unknown execution error' }, 'Failed to place live order');
         }
       }
     }
-  });
+  }, (error: unknown) => { log.error({ error }, 'Asynchronous handler failed'); process.exitCode = 1; }));
 
   for (const symbol of activeSymbols) {
     await client.subscribeTicks(symbol);
   }
 
-  console.log('\n🟢 Live trading runner connected and listening to market ticks...\n');
+  print('\n🟢 Live trading runner connected and listening to market ticks...\n');
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error('Fatal live trading error:', err);
   process.exit(1);
 });

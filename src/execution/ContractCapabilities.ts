@@ -27,10 +27,10 @@ function parseDuration(value: string | undefined): { value: number; ticks: boole
 function supports(contract: AvailableContract, duration: number, unit: DurationUnit): boolean {
   const min = parseDuration(contract.min_contract_duration);
   const max = parseDuration(contract.max_contract_duration);
-  if (!min || !max || min.ticks !== max.ticks || min.ticks !== (unit === 't')) return false;
+  if (!min || min.ticks !== max?.ticks || min.ticks !== (unit === 't')) return false;
   const value = duration * (unit === 't' ? 1 : SECONDS[unit]);
   // CALL/PUT with a required barrier represents Higher/Lower, not Rise/Fall.
-  if (['CALL', 'PUT'].includes(contract.contract_type) && Number(contract.barriers ?? 0) !== 0) return false;
+  if (['CALL', 'PUT'].includes(contract.contract_type) && (contract.barriers ?? 0) !== 0) return false;
   return value >= min.value && value <= max.value;
 }
 

@@ -8,12 +8,12 @@ export interface MacroContext {
 }
 
 export class MacroFeatures {
-  async getContext(symbol: string, calendar: EconomicCalendar): Promise<MacroContext> {
-    return {
+  getContext(symbol: string, calendar: EconomicCalendar): Promise<MacroContext> {
+    return Promise.resolve({
       rateDifferential: null,
       riskAppetite: 'NEUTRAL',
       upcomingEvents: calendar.getUpcoming(symbol, 4),
       isBlackout: calendar.isBlackout(symbol)
-    };
+    });
   }
 }

@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+import { handleHelp } from './help.js';
+handleHelp('trade:demo', 'Options demo runner. --symbols SYMBOL,... --list-markets. Trading readiness remains unverified.');
+import { print } from '../monitoring/print.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { assertDefined } from '../utils/assertDefined.js';
 /**
  * Demo Trading — Vote-based, market-aware, self-configuring.
  *
@@ -30,7 +35,9 @@ import { renderBanner, renderSafetyStatus } from '../monitoring/Dashboard.js';
 import { DerivClient } from '../api/deriv/DerivClient.js';
 import { FeatureEngine } from '../features/FeatureEngine.js';
 import { RiskEngine } from '../risk/RiskEngine.js';
-import { DerivExecutionEngine } from '../execution/DerivExecutionEngine.js';
+import { OptionsExecutionService } from '../execution/OptionsExecutionService.js';
+import { OptionsLedger } from '../portfolio/OptionsLedger.js';
+import { getDb } from '../data/database/sqlite.js';
 import { VotingEngine } from '../execution/VotingEngine.js';
 import { SymbolRanker } from '../execution/SymbolRanker.js';
 
@@ -120,9 +127,12 @@ class RateLimiter {
     const cutoff = now - 60 * 60 * 1000;
     const times = (this.timestamps.get(symbol) ?? []).filter((t) => t > cutoff);
     if (times.length >= this.maxPerHour) return false;
-    times.push(now);
     this.timestamps.set(symbol, times);
     return true;
+  }
+
+  recordSuccess(symbol: string): void {
+    this.timestamps.set(symbol, [...(this.timestamps.get(symbol) ?? []), Date.now()]);
   }
 
   remaining(symbol: string): number {
@@ -147,7 +157,7 @@ async function main(): Promise<void> {
   // ---------------------------------------------------------------------------
   const symIdx = process.argv.indexOf('--symbols');
   if (symIdx !== -1 && process.argv[symIdx + 1]) {
-    env.SYMBOLS = process.argv[symIdx + 1]!.split(',').map((s) => s.trim());
+    env.SYMBOLS = assertDefined(process.argv[symIdx + 1]).split(',').map((s) => s.trim());
   }
 
   // Logger: default is 'warn' (quiet). Only enable verbose if user explicitly
@@ -165,31 +175,31 @@ async function main(): Promise<void> {
   }
 
   if (process.argv.includes('--list-markets')) {
-    console.log('\n📊 DERIV MARKET CATALOG');
-    console.log('Market definitions are loaded dynamically from the Deriv active_symbols API.');
-    console.log('Run `npm run markets` to discover and display all available instruments.\n');
+    print('\n📊 DERIV MARKET CATALOG');
+    print('Market definitions are loaded dynamically from the Deriv active_symbols API.');
+    print('Run `npm run markets` to discover and display all available instruments.\n');
     process.exit(0);
   }
 
   // ---------------------------------------------------------------------------
   // Read vote config from env
   // ---------------------------------------------------------------------------
-  const voteThreshold = env.VOTE_THRESHOLD ?? 0.6;
-  const minConfidence = env.MIN_CONSENSUS_CONFIDENCE ?? 0.55;
-  const maxTradesPerHour = env.MAX_TRADES_PER_HOUR ?? 10;
+  const voteThreshold = env.VOTE_THRESHOLD;
+  const minConfidence = env.MIN_CONSENSUS_CONFIDENCE;
+  const maxTradesPerHour = env.MAX_TRADES_PER_HOUR;
   const topSymbols = env.TOP_SYMBOLS ?? env.SYMBOLS.length;
 
-  console.log('\n✅ DEMO MODE — virtual money, real market data, real contracts on Deriv demo\n');
-  console.log('📐 Trade Configuration:');
-  console.log(`   Stake per trade:    $${(env.STAKE_AMOUNT ?? 1.00).toFixed(2)} USD`);
-  console.log(`   Contract type:      ${env.CONTRACT_TYPE} ${env.CONTRACT_TYPE === 'OVER_UNDER' ? `(Barrier: ${env.DIGIT_BARRIER})` : ''}`);
-  console.log(`   Contract duration:  ${env.CONTRACT_DURATION} ${env.CONTRACT_DURATION_UNIT === 't' ? 'ticks' : env.CONTRACT_DURATION_UNIT}`);
-  console.log(`   Vote threshold:     ${(voteThreshold * 100).toFixed(0)}% of strategies must agree`);
-  console.log(`   Min confidence:     ${(minConfidence * 100).toFixed(0)}%`);
-  console.log(`   Max trades/hour:    ${maxTradesPerHour} per symbol`);
-  console.log(`   Watching:           ${env.SYMBOLS.join(', ')}`);
-  console.log(`   Trading top:        ${topSymbols} symbol(s) by research score`);
-  console.log('\n   Press Ctrl+C to stop.\n');
+  print('\n✅ DEMO MODE — virtual money, real market data, real contracts on Deriv demo\n');
+  print('📐 Trade Configuration:');
+  print(`   Stake per trade:    $${(env.STAKE_AMOUNT ?? 1.00).toFixed(2)} USD`);
+  print(`   Contract type:      ${env.CONTRACT_TYPE} ${env.CONTRACT_TYPE === 'OVER_UNDER' ? `(Barrier: ${String(env.DIGIT_BARRIER)})` : ''}`);
+  print(`   Contract duration:  ${String(env.CONTRACT_DURATION)} ${env.CONTRACT_DURATION_UNIT === 't' ? 'ticks' : env.CONTRACT_DURATION_UNIT}`);
+  print(`   Vote threshold:     ${(voteThreshold * 100).toFixed(0)}% of strategies must agree`);
+  print(`   Min confidence:     ${(minConfidence * 100).toFixed(0)}%`);
+  print(`   Max trades/hour:    ${String(maxTradesPerHour)} per symbol`);
+  print(`   Watching:           ${env.SYMBOLS.join(', ')}`);
+  print(`   Trading top:        ${String(topSymbols)} symbol(s) by research score`);
+  print('\n   Press Ctrl+C to stop.\n');
 
   // ---------------------------------------------------------------------------
   // Rank symbols using research data
@@ -205,15 +215,15 @@ async function main(): Promise<void> {
 
   const symbolsToTrade = ranked.map((p) => p.symbol);
 
-  console.log('🏆 Symbol Ranking (based on research data):');
+  print('🏆 Symbol Ranking (based on research data):');
   for (const p of ranked) {
-    console.log(
-      `   ${p.symbol.padEnd(12)} score=${p.score}/100  type=${p.marketType.padEnd(10)}  ` +
+    print(
+      `   ${p.symbol.padEnd(12)} score=${String(p.score)}/100  type=${p.marketType.padEnd(10)}  ` +
       `strategies=[${p.recommendedStrategies.join(', ')}]`,
     );
-    console.log(`   └─ ${p.reason}`);
+    print(`   └─ ${p.reason}`);
   }
-  console.log();
+  print();
 
   // ---------------------------------------------------------------------------
   // Build per-symbol strategy suites
@@ -232,9 +242,9 @@ async function main(): Promise<void> {
   // Connect public WS (market data — ticks, proposals)
   // ---------------------------------------------------------------------------
   const client = new DerivClient();
-  console.log('📡 Connecting to Deriv market data feed...');
+  print('📡 Connecting to Deriv market data feed...');
   await client.connectPublic();
-  console.log('✅ Market data connected\n');
+  print('✅ Market data connected\n');
 
   // ---------------------------------------------------------------------------
   // Authenticate for trading via OTP flow:
@@ -243,43 +253,25 @@ async function main(): Promise<void> {
   //   WS connect to that URL      → ready to buy/sell
   // ---------------------------------------------------------------------------
   let demoBalance: number;
+  let accountCurrency: string;
   try {
-    console.log('🔑 Authenticating trading account (demo)...');
+    print('🔑 Authenticating trading account (demo)...');
     await client.connectTrading('demo');
     // Fetch the real demo account balance — this is the authoritative starting
     // balance for the risk engine. Using a hard-coded value would decouple risk
     // limits from the actual account state.
     const bal = await client.subscribeBalance();
     demoBalance = bal.balance;
+    accountCurrency = bal.currency;
     if (!Number.isFinite(demoBalance) || demoBalance <= 0) {
       console.error('❌ Demo account balance is $0 or invalid. Fund the demo account before trading.');
       await client.disconnect();
       process.exit(1);
     }
-    console.log(`✅ Authenticated! Demo balance: $${demoBalance.toFixed(2)} ${bal.currency}`);
-    console.log('   Orders will appear at app.deriv.com → Reports → Statement\n');
+    print(`✅ Authenticated! Demo balance: $${demoBalance.toFixed(2)} ${bal.currency}`);
+    print('   Orders will appear at app.deriv.com → Reports → Statement\n');
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const isAuthErr = /401|403|unauthorized|forbidden|invalid.*token|token.*invalid/i.test(msg);
-
-    console.log();
-    console.log('╔══════════════════════════════════════════════════════════╗');
-    console.log('║  ❌  AUTHENTICATION FAILED                                ║');
-    console.log('╠══════════════════════════════════════════════════════════╣');
-    if (isAuthErr) {
-      console.log('║  Token rejected by Deriv API.                            ║');
-      console.log('║                                                          ║');
-      console.log('║  Check .env:                                             ║');
-      console.log('║    DERIV_API_TOKEN=pat_...   (your PAT from Deriv)        ║');
-      console.log('║    DERIV_APP_ID=<your app id>                            ║');
-    } else {
-      const lines = msg.match(/.{1,54}/g) ?? [msg];
-      for (const line of lines.slice(0, 3)) {
-        console.log(`║  ${line.padEnd(56)}║`);
-      }
-    }
-    console.log('╚══════════════════════════════════════════════════════════╝');
-    console.log();
+    console.error('Trading account connection failed:', err instanceof Error ? err.message : 'Unknown connection error');
     await client.disconnect();
     process.exit(1);
   }
@@ -307,8 +299,10 @@ async function main(): Promise<void> {
   // RiskEngine is initialised with the ACTUAL demo account balance fetched above.
   // This ensures risk limits (max daily loss, drawdown) are computed against the
   // real account state, not a fictional fixed amount.
-  const riskEngine = new RiskEngine(demoBalance);
-  const executor = new DerivExecutionEngine(client);
+  const ledger = new OptionsLedger(getDb(), assertDefined(client.getTradingAccount()).accountId, 'DEMO', demoBalance);
+  const riskEngine = new RiskEngine(demoBalance, accountCurrency, ledger);
+  const execution = new OptionsExecutionService(client, ledger, riskEngine, 'DEMO');
+  await execution.start();
   const rateLimiter = new RateLimiter(maxTradesPerHour);
 
   // ---------------------------------------------------------------------------
@@ -330,7 +324,7 @@ async function main(): Promise<void> {
   // ---------------------------------------------------------------------------
   log.info({ symbols: symbolsToTrade }, 'Demo trading loop started');
 
-  client.on('tick', async (rawTick: DerivTick) => {
+  client.on('tick', asyncHandler(async (rawTick: DerivTick) => {
     const symbol = rawTick.symbol;
     if (!symbolsToTrade.includes(symbol)) return;
 
@@ -341,8 +335,8 @@ async function main(): Promise<void> {
       price: rawTick.quote,
     };
 
-    const featureEngine = featureEngines.get(symbol)!;
-    const history = featureHistory.get(symbol)!;
+    const featureEngine = assertDefined(featureEngines.get(symbol));
+    const history = assertDefined(featureHistory.get(symbol));
     const strategies = symbolStrategies.get(symbol);
     if (!strategies || strategies.length === 0) return;
 
@@ -366,6 +360,8 @@ async function main(): Promise<void> {
 
     consensusHits++;
 
+    if (!execution.isReady()) return;
+
     // --- Rate limit ---
     if (!rateLimiter.isAllowed(symbol)) {
       log.debug({ symbol, remaining: rateLimiter.remaining(symbol) }, 'Rate limit — skipping');
@@ -374,75 +370,36 @@ async function main(): Promise<void> {
 
     // --- Risk check ---
     const syntheticSignal = {
+      product: 'OPTIONS' as const, hypothesisId: null, strategyVersion: '1',
       id: crypto.randomUUID(),
       symbol,
       price: tick.price,
       direction: vote.direction,
       confidence: vote.consensusConfidence,
-      strategy: `Vote(${vote.tally.buy}↑${vote.tally.sell}↓/${vote.tally.total})`,
+      strategy: `Vote(${String(vote.tally.buy)}↑${String(vote.tally.sell)}↓/${String(vote.tally.total)})`,
       timestamp: tick.timestamp,
-      metadata: { voteFraction: vote.voteFraction },
+      metadata: { ...vote.metadata },
     };
-    const decision = riskEngine.evaluate(syntheticSignal, 'DEMO');
-
-    if (!decision.approved) {
-      log.debug({ reason: decision.reason, symbol }, 'Risk engine rejected');
-      return;
-    }
-
-    // --- Log consensus ---
-    const tally = vote.tally;
-    const bar = '█'.repeat(Math.round(vote.voteFraction * 10)) + '░'.repeat(10 - Math.round(vote.voteFraction * 10));
-    console.log(
-      `\n🗳  CONSENSUS  ${symbol}  ${vote.direction === 'BUY' ? '📈 BUY ' : '📉 SELL'}` +
-      `  [${bar}] ${tally.buy}↑${tally.sell}↓${tally.none}— / ${tally.total}` +
-      `  conf=${vote.consensusConfidence.toFixed(3)}` +
-      `  stake=$${decision.approvedSignal.stakeAmount.toFixed(2)}`,
-    );
-
-
-    // --- Place order ---
-    ordersPlaced++;
     try {
-      const trade = await executor.execute(decision.approvedSignal);
-      console.log(
-        `   ↳ ✅ Contract #${trade.contractId} opened  entry=${trade.entryPrice}`,
-      );
-
-      // Wait for contract to settle, then show P&L.
-      // Duration is approximated from CONTRACT_DURATION_UNIT; Deriv synthetic tick
-      // rate is ~1s/tick. This is a best-effort heuristic — not event-driven.
-      // TODO Milestone 3: replace with proposal_open_contract subscription.
-      const unitMs: Record<string, number> = { t: 1000, s: 1000, m: 60000, h: 3600000, d: 86400000 };
-      const durationMs = env.CONTRACT_DURATION * (unitMs[env.CONTRACT_DURATION_UNIT] ?? 1000);
-
-      setTimeout(async () => {
-        try {
-          const result = await executor.settle(trade);
-          const symPnl = pnl.get(symbol) ?? 0;
-          pnl.set(symbol, symPnl + result.profit);
-          const counts = tradeCounts.get(symbol) ?? { wins: 0, losses: 0 };
-          if (result.won) counts.wins++; else counts.losses++;
-          tradeCounts.set(symbol, counts);
-          riskEngine.recordTradeResult(result.profit);
-
-          const sign = result.profit >= 0 ? '+' : '';
-          const emoji = result.won ? '✅ WON ' : '❌ LOST';
-          const totalPnl = [...pnl.values()].reduce((a, b) => a + b, 0);
-
-          console.log(
-            `   ↳ ${emoji}  ${symbol}  ${sign}$${result.profit.toFixed(2)}` +
-            `  (session P&L: ${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)})`,
-          );
-        } catch {
-          // Contract may still be open — ignore
-        }
-      }, durationMs + 2000);
-
+      const trade = await execution.execute(syntheticSignal);
+      ordersPlaced++;
+      rateLimiter.recordSuccess(symbol);
+      print(`Contract #${String(trade.contractId)} opened: ${symbol}, stake $${trade.stakeAmount.toFixed(2)}; awaiting confirmed settlement`);
     } catch (err) {
-      console.log(`   ↳ ❌ Order failed: ${(err as Error).message}`);
+      print(`   ↳ ❌ Order failed: ${(err as Error).message}`);
     }
-  });
+  }, (error: unknown) => { log.error({ error }, 'Asynchronous handler failed'); process.exitCode = 1; }));
+
+  const settlementTimer = setInterval(asyncHandler(async () => {
+    for (const { intent, state } of await execution.poll()) {
+      const profit = assertDefined(state.profit);
+      pnl.set(intent.symbol, (pnl.get(intent.symbol) ?? 0) + profit);
+      const counts = tradeCounts.get(intent.symbol) ?? { wins: 0, losses: 0 };
+      if (profit > 0) counts.wins++; else if (profit < 0) counts.losses++;
+      tradeCounts.set(intent.symbol, counts);
+      print(`Settled #${String(intent.contract_id)} ${intent.symbol}: $${profit.toFixed(2)}`);
+    }
+  }, (error: unknown) => { log.error({ error }, 'Reconciliation failed; new orders blocked'); }), 5000);
 
   // Subscribe to all symbols
   for (const symbol of symbolsToTrade) {
@@ -458,65 +415,66 @@ async function main(): Promise<void> {
     const totalPnl = [...pnl.values()].reduce((a, b) => a + b, 0);
     const pnlSign = totalPnl >= 0 ? '+' : '';
 
-    console.log('\n' + '─'.repeat(60));
-    console.log('📊 Status Report');
-    console.log('─'.repeat(60));
-    console.log(`   Balance:     $${state.currentBalance.toFixed(2)}  (P&L: ${pnlSign}$${totalPnl.toFixed(2)})`);
-    console.log(`   Orders:      ${ordersPlaced} placed`);
-    console.log(`   Consensus:   ${consensusHits} / ${totalSignals} ticks had consensus`);
-    console.log(`   Kill switch: ${state.killSwitchActive ? '🔴 ACTIVE' : '✅ OK'}`);
-    console.log('\n   Per-symbol breakdown:');
+    print('\n' + '─'.repeat(60));
+    print('📊 Status Report');
+    print('─'.repeat(60));
+    print(`   Balance:     $${state.currentBalance.toFixed(2)}  (P&L: ${pnlSign}$${totalPnl.toFixed(2)})`);
+    print(`   Orders:      ${String(ordersPlaced)} placed`);
+    print(`   Consensus:   ${String(consensusHits)} / ${String(totalSignals)} ticks had consensus`);
+    print(`   Kill switch: ${state.killSwitchActive ? '🔴 ACTIVE' : '✅ OK'}`);
+    print('\n   Per-symbol breakdown:');
     for (const s of symbolsToTrade) {
       const c = tradeCounts.get(s) ?? { wins: 0, losses: 0 };
       const sPnl = pnl.get(s) ?? 0;
       const total = c.wins + c.losses;
       const wr = total > 0 ? `${((c.wins / total) * 100).toFixed(0)}% WR` : 'no trades';
       const profile = ranker.getProfile(s);
-      console.log(
+      print(
         `   ${s.padEnd(12)} ${(sPnl >= 0 ? '+' : '')}$${sPnl.toFixed(2).padStart(7)}` +
-        `  W:${c.wins} L:${c.losses}  ${wr}` +
-        `  remaining: ${rateLimiter.remaining(s)}/hr` +
+        `  W:${String(c.wins)} L:${String(c.losses)}  ${wr}` +
+        `  remaining: ${String(rateLimiter.remaining(s))}/hr` +
         `  [type: ${profile?.marketType ?? '?'}]`,
       );
     }
-    console.log('─'.repeat(60));
+    print('─'.repeat(60));
   }, 60_000);
 
   // ---------------------------------------------------------------------------
   // Graceful shutdown
   // ---------------------------------------------------------------------------
-  process.on('SIGINT', async () => {
+  process.on('SIGINT', asyncHandler(async () => {
     log.info('Shutting down...');
+    clearInterval(settlementTimer);
     await client.disconnect();
     const state = riskEngine.getState();
     const totalPnl = [...pnl.values()].reduce((a, b) => a + b, 0);
     const pnlSign = totalPnl >= 0 ? '+' : '';
 
-    console.log('\n' + '═'.repeat(60));
-    console.log('📊 Session Summary');
-    console.log('═'.repeat(60));
-    console.log(`   Stake:         $${(env.STAKE_AMOUNT ?? 1.00).toFixed(2)} per trade`);
-    console.log(`   Vote threshold: ${(voteThreshold * 100).toFixed(0)}%`);
-    console.log(`   Orders placed: ${ordersPlaced}`);
-    console.log(`   Total P&L:     ${pnlSign}$${totalPnl.toFixed(2)}`);
-    console.log(`   Final balance: $${state.currentBalance.toFixed(2)}`);
-    console.log('\n   Per symbol:');
+    print('\n' + '═'.repeat(60));
+    print('📊 Session Summary');
+    print('═'.repeat(60));
+    print(`   Stake:         $${(env.STAKE_AMOUNT ?? 1.00).toFixed(2)} per trade`);
+    print(`   Vote threshold: ${(voteThreshold * 100).toFixed(0)}%`);
+    print(`   Orders placed: ${String(ordersPlaced)}`);
+    print(`   Total P&L:     ${pnlSign}$${totalPnl.toFixed(2)}`);
+    print(`   Final balance: $${state.currentBalance.toFixed(2)}`);
+    print('\n   Per symbol:');
     for (const s of symbolsToTrade) {
       const c = tradeCounts.get(s) ?? { wins: 0, losses: 0 };
       const sPnl = pnl.get(s) ?? 0;
       const total = c.wins + c.losses;
       const wr = total > 0 ? `${((c.wins / total) * 100).toFixed(0)}%` : 'n/a';
-      console.log(
+      print(
         `   ${s.padEnd(12)} ${(sPnl >= 0 ? '+' : '')}$${sPnl.toFixed(2).padStart(7)}` +
-        `  W=${c.wins} L=${c.losses}  WR=${wr}`,
+        `  W=${String(c.wins)} L=${String(c.losses)}  WR=${wr}`,
       );
     }
-    console.log('\n   Profits visible at: https://app.deriv.com → Reports → Statement');
-    console.log('═'.repeat(60));
+    print('\n   Profits visible at: https://app.deriv.com → Reports → Statement');
+    print('═'.repeat(60));
     process.exit(0);
-  });
+  }, (error: unknown) => { log.error({ error }, 'Asynchronous handler failed'); process.exitCode = 1; }));
 
-  await new Promise<never>(() => {});
+  await new Promise<never>(() => { /* Event subscriptions keep the process active. */ });
 }
 
 main().catch((err: unknown) => {
