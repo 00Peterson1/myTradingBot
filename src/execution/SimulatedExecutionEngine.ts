@@ -1,4 +1,4 @@
-import { OptionsLedger } from '../portfolio/OptionsLedger.js';
+import type { OptionsLedger } from '../portfolio/OptionsLedger.js';
 import { money, optionSpecificationSchema, majorUnits } from '../types/product.js';
 import { contractWon } from '../backtest/contractOutcome.js';
 import type { ApprovedSignal } from '../types/signal.js';
@@ -34,6 +34,7 @@ export interface SimulatedSettlement {
 
 /** Deterministic fixed-quote assumption, with real ledger debits and expiry events. */
 export class SimulatedExecutionEngine {
+  private readonly lastEventMs = new Map<string, number>();
   private open = new Map<string, OpenSimulation>();
 
   constructor(readonly ledger: OptionsLedger, private readonly config: SimulatedExecutionConfig) {
@@ -45,7 +46,10 @@ export class SimulatedExecutionEngine {
   execute(approved: ApprovedSignal, entry: Tick): string {
     const spec = optionSpecificationSchema.parse(approved.optionSpecification);
     if (approved.signal.direction === 'NONE' || approved.signal.product !== 'OPTIONS' || entry.symbol !== spec.symbol) throw new Error('Invalid Options entry');
-    if (!Number.isFinite(entry.price) || entry.price <= 0) throw new Error('Invalid entry price');
+    this.validateTick(entry);
+    if (spec.stake.currency !== 'USD' || spec.stake.decimals !== 2 || majorUnits(spec.stake) !== approved.stakeAmount) throw new Error('Inconsistent simulation stake');
+    // Reject unsupported outcome assumptions before debiting the account.
+    contractWon({ ...approved.signal, metadata: { contractType: spec.contractType, barrier: spec.barrier } }, entry.price, entry.price, this.config.pipSize);
     const intent = this.ledger.reserve(() => approved, this.config.feePerTrade);
     this.ledger.markSubmitting(intent.intent_id);
     const totalCost = (spec.stake.minorUnits + money(this.config.feePerTrade, 'USD', 2).minorUnits) / 100;
@@ -59,6 +63,8 @@ export class SimulatedExecutionEngine {
 
   /** Process expiries before considering new signals on this tick. No future prices are read. */
   onTick(tick: Tick, onProfit: (profit: number) => void): SimulatedSettlement[] {
+    this.validateTick(tick);
+    this.lastEventMs.set(tick.symbol, tick.timestamp.getTime());
     const settlements: SimulatedSettlement[] = [];
     for (const position of this.open.values()) {
       if (position.entry.symbol !== tick.symbol) continue;
@@ -84,6 +90,15 @@ export class SimulatedExecutionEngine {
         stake, profit, payout: payoutMinor / 100, won });
     }
     return settlements;
+  }
+
+  private validateTick(tick: Tick): void {
+    const timestamp = tick.timestamp.getTime();
+    if (!Number.isFinite(timestamp) || !Number.isFinite(tick.price) || tick.price <= 0 ||
+        timestamp < (this.lastEventMs.get(tick.symbol) ?? -Infinity)) throw new Error('Invalid or out-of-order simulation tick');
+    for (const position of this.open.values()) {
+      if (position.entry.symbol === tick.symbol && timestamp < position.entry.timestamp.getTime()) throw new Error('Tick precedes open position');
+    }
   }
 
   getOpenCount(): number { return this.open.size; }

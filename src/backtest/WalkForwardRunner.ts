@@ -91,7 +91,7 @@ export class WalkForwardRunner {
     if (!folds.length || profitable / folds.length < 0.6) notes.push('FAIL: Fewer than 60% of test folds are profitable');
     const passed = notes.length === 0;
     if (passed) notes.push(`PASS: Positive out-of-sample evidence across ${String(folds.length)} folds`);
-    notes.push('Simulation assumes zero execution latency and a fixed minimum payout; historical ticks cannot reproduce dealer quotes or guarantee future performance.');
+    notes.push('Simulation uses a declared tick entry delay and fixed payout assumption; historical ticks cannot reproduce dealer quotes or guarantee future performance.');
     return {
       strategy: config.strategyName,
       symbol: config.symbol,

@@ -1,3 +1,9 @@
+import Database from 'better-sqlite3';
+import { OptionsLedger } from '../portfolio/OptionsLedger.js';
+import { RiskEngine } from '../risk/RiskEngine.js';
+import { SimulatedExecutionEngine } from '../execution/SimulatedExecutionEngine.js';
+import { getEnv } from '../config/env.js';
+import type { Tick } from '../types/tick.js';
 import { assertDefined } from '../utils/assertDefined.js';
 import crypto from 'crypto';
 import { createLogger } from '../monitoring/Logger.js';
@@ -41,6 +47,8 @@ export interface BacktestConfig {
   initialCapital?: number;
   parameterHash?: string;
   maxTradesPerHour?: number;
+  maxOpenTrades?: number;
+  entryDelayTicks?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,16 +68,21 @@ export interface BacktestConfig {
  *   - NEVER uses test set for optimization
  *
  * LIMITATIONS (be honest about these):
- *   - Does not model execution delay (binary options execute instantly on Deriv)
+ *   - Models a declared tick entry delay, not measured broker latency
  *   - Does not model contract unavailability
  *   - Does not model slippage (binary options are priced by Deriv, not a market)
  *   - Does not model potential changes in payout ratios over time
  */
 export class BacktestEngine {
+  private readonly strategyInstances = new WeakSet<Strategy>();
   constructor(private readonly config: BacktestConfig) {
+    if (!Number.isInteger(config.contextWindow) || config.contextWindow < 1) throw new Error('Context window must be a positive integer');
+    if (!Number.isFinite(config.minConfidence) || config.minConfidence < 0 || config.minConfidence > 1) throw new Error('Confidence must be between zero and one');
     if (!Number.isFinite(config.payoutMultiplier) || config.payoutMultiplier <= 0) throw new Error('Payout multiplier must be positive');
     if (!Number.isFinite(config.initialCapital ?? 100) || (config.initialCapital ?? 100) <= 0) throw new Error('Initial capital must be positive');
-    if (!Number.isInteger(config.contractDuration ?? 1) || (config.contractDuration ?? 1) < 1) throw new Error('Contract duration must be a positive integer');
+    if (!Number.isInteger(config.entryDelayTicks ?? 1) || (config.entryDelayTicks ?? 1) < 0) throw new Error('Entry delay must be nonnegative ticks');
+    if (!Number.isFinite(config.feePerTrade) || config.feePerTrade < 0) throw new Error('Fee must be nonnegative');
+    if (!Number.isInteger(config.contractDuration ?? 5) || (config.contractDuration ?? 5) < 1) throw new Error('Contract duration must be a positive integer');
   }
 
   /**
@@ -93,6 +106,13 @@ export class BacktestEngine {
     testTo: Date,
   ): Promise<BacktestRun> {
     return Promise.resolve().then(() => {
+    for (let i = 0; i < features.length; i++) {
+      const tick = assertDefined(features[i]);
+      if (tick.symbol !== this.config.symbol || !Number.isFinite(tick.price) || tick.price <= 0 || !Number.isFinite(tick.timestamp.getTime())) throw new Error('Invalid backtest market event');
+      if (i > 0 && tick.timestamp < assertDefined(features[i - 1]).timestamp) throw new Error('Backtest events must be chronological');
+    }
+    if (!(trainFrom <= trainTo && trainTo < validateFrom && validateFrom <= validateTo && validateTo < testFrom && testFrom <= testTo)) throw new Error('Backtest periods must be disjoint and chronological');
+
     log.info(
       {
         strategy: this.config.strategyName,
@@ -136,10 +156,13 @@ export class BacktestEngine {
         payoutMultiplier: this.config.payoutMultiplier,
         feePerTrade: this.config.feePerTrade,
         minConfidence: this.config.minConfidence,
-        contractDuration: this.config.contractDuration ?? 1,
+        contractDuration: this.config.contractDuration ?? 5,
         contractDurationUnit: this.config.contractDurationUnit ?? 't',
         initialCapital: this.config.initialCapital ?? 100,
-        executionModel: 'Signal tick entry (zero latency), one open contract per symbol, fixed payout assumption',
+        executionModel: 'Ledger-backed Options simulation; fixed payout rounded to USD cents; latest observed quote at/before time expiry',
+        entryDelayTicks: this.config.entryDelayTicks ?? 1,
+        maxOpenTrades: this.config.maxOpenTrades ?? 1,
+        maxTradesPerHour: this.config.maxTradesPerHour ?? getEnv().MAX_TRADES_PER_HOUR,
       },
       trainFrom,
       trainTo,
@@ -171,76 +194,57 @@ export class BacktestEngine {
     const observations: BacktestObservation[] = [];
     const history: TickFeatures[] = [];
     const strategy = this.config.strategyFactory();
+    if (this.strategyInstances.has(strategy)) throw new Error('Strategy factory must return a fresh instance for every period');
+    this.strategyInstances.add(strategy);
     if (strategy.isOnlineLearner) {
       throw new Error('Online learners cannot be scored in a standard backtest; frozen evaluation is required');
     }
-    let openUntilIndex = -1;
-    const entryTimes: number[] = [];
-
-    for (let i = 0; i < periodFeatures.length - 1; i++) {
-      const current = periodFeatures[i];
-      if (!current) continue;
-
-      // Maintain context window (history = ticks BEFORE current)
-      if (history.length >= this.config.contextWindow) {
-        history.shift();
+    let now = from;
+    const db = new Database(':memory:');
+    const startingCapital = this.config.initialCapital ?? 100;
+    const ledger = new OptionsLedger(db, this.config.symbol, 'BACKTEST', startingCapital, (): Date => now);
+    const env = { ...getEnv(), CONTRACT_DURATION: this.config.contractDuration ?? 5,
+      CONTRACT_DURATION_UNIT: this.config.contractDurationUnit ?? 't',
+      MIN_CONSENSUS_CONFIDENCE: this.config.minConfidence,
+      MAX_OPEN_TRADES: this.config.maxOpenTrades ?? 1,
+      MAX_TRADES_PER_HOUR: this.config.maxTradesPerHour ?? getEnv().MAX_TRADES_PER_HOUR };
+    const risk = new RiskEngine(startingCapital, 'USD', ledger, { now: (): Date => now, env, executionFee: this.config.feePerTrade });
+    const executor = new SimulatedExecutionEngine(ledger, {
+      payoutMultiplier: this.config.payoutMultiplier, feePerTrade: this.config.feePerTrade,
+      ...(this.config.pipSize !== undefined ? { pipSize: this.config.pipSize } : {}),
+    });
+    const pending: { index: number; signal: Signal }[] = [];
+    const duration = env.CONTRACT_DURATION;
+    const unit = env.CONTRACT_DURATION_UNIT;
+    const durationMs = unit === 't' ? null : duration * { s: 1000, m: 60000, h: 3600000, d: 86400000 }[unit];
+    try {
+      for (let i = 0; i < periodFeatures.length; i++) {
+        const current = assertDefined(periodFeatures[i]);
+        now = current.timestamp;
+        const tick: Tick = { symbol: current.symbol, timestamp: now, epoch: now.getTime() / 1000, price: current.price };
+        for (const settlement of executor.onTick(tick, profit => { risk.recordTradeResult(profit); })) {
+          observations.push({ timestamp: settlement.entryTime, symbol: settlement.symbol,
+            entryPrice: settlement.entryPrice, exitPrice: settlement.exitPrice, direction: settlement.direction,
+            stake: settlement.stake, profit: settlement.profit, returnPct: settlement.profit / settlement.stake, won: settlement.won });
+        }
+        const signal = strategy.generateSignal(current, history);
+        history.push(current);
+        if (history.length > this.config.contextWindow) history.shift();
+        if (signal.direction !== 'NONE' && signal.confidence >= this.config.minConfidence) {
+          pending.push({ index: i + (this.config.entryDelayTicks ?? 1), signal });
+        }
+        for (const order of pending.filter(item => item.index === i)) {
+          // Predeclared period boundaries prohibit positions crossing train/validation/test.
+          const fits = durationMs === null ? i + duration < periodFeatures.length : now.getTime() + durationMs <= assertDefined(periodFeatures.at(-1)).timestamp.getTime();
+          if (!fits) continue;
+          const decision = risk.evaluate(order.signal, 'BACKTEST');
+          if (decision.approved) executor.execute(decision.approvedSignal, tick);
+        }
+        while (pending.length && assertDefined(pending[0]).index <= i) pending.shift();
       }
-
-      const signal = strategy.generateSignal(current, history);
-
-      // Add current to history AFTER signal generation (causal)
-      history.push(current);
-
-      if (i <= openUntilIndex) continue;
-      if (signal.direction === 'NONE') continue;
-      if (signal.confidence < this.config.minConfidence) continue;
-
-      const entryIndex = i;
-      const entry = periodFeatures[entryIndex];
-      if (!entry) continue;
-      const expiryIndex = this.expiryIndex(periodFeatures, entryIndex);
-      const expiry = periodFeatures[expiryIndex];
-      // Do not invent an outcome when history ends before the contract expires.
-      if (!expiry) continue;
-      while (entryTimes.length && assertDefined(entryTimes[0]) <= current.timestamp.getTime() - 3_600_000) entryTimes.shift();
-      if (entryTimes.length >= (this.config.maxTradesPerHour ?? Infinity)) continue;
-
-      const stake = 1.0; // Normalized stake for backtesting — risk engine handles real sizing
-      const entryPrice = entry.price;
-      const exitPrice = expiry.price;
-      const won = contractWon(signal, entryPrice, exitPrice, this.config.pipSize);
-      openUntilIndex = expiryIndex;
-      entryTimes.push(current.timestamp.getTime());
-
-      const grossProfit = won ? stake * this.config.payoutMultiplier : -stake;
-      const netProfit = grossProfit - this.config.feePerTrade;
-
-      observations.push({
-        timestamp: current.timestamp,
-        symbol: this.config.symbol,
-        entryPrice,
-        exitPrice,
-        direction: signal.direction,
-        stake,
-        profit: netProfit,
-        returnPct: netProfit / stake,
-        won,
-      });
-    }
-
-    return observations;
-  }
-
-  private expiryIndex(features: readonly TickFeatures[], entryIndex: number): number {
-    const duration = this.config.contractDuration ?? 1;
-    const unit = this.config.contractDurationUnit ?? 't';
-    if (unit === 't') return entryIndex + duration;
-    const seconds = { s: 1, m: 60, h: 3600, d: 86400 }[unit] * duration;
-    const expiryTime = assertDefined(features[entryIndex]).timestamp.getTime() + seconds * 1000;
-    for (let i = entryIndex + 1; i < features.length; i++) {
-      if (assertDefined(features[i]).timestamp.getTime() >= expiryTime) return i;
-    }
-    return features.length;
+      if (executor.getOpenCount() !== 0) throw new Error('Simulation ended with unresolved contracts');
+      return observations;
+    } finally { db.close(); }
   }
 
   // ---------------------------------------------------------------------------
