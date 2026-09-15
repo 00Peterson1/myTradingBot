@@ -38,6 +38,7 @@ export class SpreadTracker {
   }
   
   update(priceA: number, priceB: number, timestamp: Date): SpreadState {
+    if (!Number.isFinite(priceA) || !Number.isFinite(priceB) || priceA <= 0 || priceB <= 0 || !Number.isFinite(timestamp.getTime())) throw new Error('Invalid pair prices');
     const logA = Math.log(priceA);
     const logB = Math.log(priceB);
     
@@ -55,7 +56,8 @@ export class SpreadTracker {
       const coint = cointegrationTest(this.logPricesA, this.logPricesB);
       this.currentCointegration = coint;
       this.state.betaHedgeRatio = coint.betaHedgeRatio;
-      this.state.spreadMean = coint.spreadMean;
+      // Store mean of the uncentered spread to preserve the existing database schema.
+      this.state.spreadMean = coint.alpha + coint.spreadMean;
       this.state.spreadStd = coint.spreadStd;
       this.state.cointegrationP = coint.pValue;
     }

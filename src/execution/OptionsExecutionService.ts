@@ -1,3 +1,4 @@
+import { supportsOptionContract } from './ContractCapabilities.js';
 import { DerivApiError, type DerivClient } from '../api/deriv/DerivClient.js';
 import { DerivExecutionEngine } from './DerivExecutionEngine.js';
 import type { OptionsLedger, LedgerIntent } from '../portfolio/OptionsLedger.js';
@@ -48,6 +49,9 @@ export class OptionsExecutionService {
         return approved;
       });
       try {
+        const specification = assertDefined(approved).optionSpecification;
+        const available = await this.client.getContractsFor(specification.symbol);
+        if (!supportsOptionContract(available, specification.contractType, specification.duration, specification.durationUnit)) throw new Error('Approved contract is not currently advertised for this symbol and duration');
         const trade = await this.executor.execute(assertDefined(approved), () => { this.ledger.markSubmitting(intent.intent_id); });
         this.ledger.recordPurchase(intent.intent_id, assertDefined(trade.contractId), trade.stakeAmount, trade);
         return { ...trade, id: intent.intent_id };

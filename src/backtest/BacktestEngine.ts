@@ -1,3 +1,6 @@
+import { blockBootstrapMean, DEFAULT_BOOTSTRAP_POLICY, type BootstrapPolicy } from '../research/statistics/bootstrap.js';
+import type { ExperimentRegistry } from '../research/experiments/ExperimentRegistry.js';
+import { StrategyStream, DEFAULT_WARMUP_TICKS } from '../pipeline/StrategyStream.js';
 import Database from 'better-sqlite3';
 import { OptionsLedger } from '../portfolio/OptionsLedger.js';
 import { RiskEngine } from '../risk/RiskEngine.js';
@@ -7,7 +10,6 @@ import type { Tick } from '../types/tick.js';
 import { assertDefined } from '../utils/assertDefined.js';
 import crypto from 'crypto';
 import { createLogger } from '../monitoring/Logger.js';
-import { mean, stddev } from '../features/indicators/indicators.js';
 import {
   computeSharpe,
   computeSortino,
@@ -33,7 +35,7 @@ export interface BacktestConfig {
   symbol: string;
   /** Contract payout multiplier — e.g. 0.85 means 85c payout per $1 stake on win */
   payoutMultiplier: number;
-  /** Fee deducted from each stake regardless of outcome */
+  /** Additional execution fee charged at entry regardless of outcome */
   feePerTrade: number;
   /** Minimum confidence threshold — signals below this are not traded */
   minConfidence: number;
@@ -49,6 +51,11 @@ export interface BacktestConfig {
   maxTradesPerHour?: number;
   maxOpenTrades?: number;
   entryDelayTicks?: number;
+  bootstrapPolicy?: BootstrapPolicy;
+  registry?: ExperimentRegistry;
+  strategyDeclaration?: Record<string, unknown>;
+  warmupTicks?: number;
+  maxTickGapMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,6 +112,7 @@ export class BacktestEngine {
     testFrom: Date,
     testTo: Date,
   ): Promise<BacktestRun> {
+    let registration: { experimentId: string; attemptId: string } | undefined;
     return Promise.resolve().then(() => {
     for (let i = 0; i < features.length; i++) {
       const tick = assertDefined(features[i]);
@@ -112,6 +120,15 @@ export class BacktestEngine {
       if (i > 0 && tick.timestamp < assertDefined(features[i - 1]).timestamp) throw new Error('Backtest events must be chronological');
     }
     if (!(trainFrom <= trainTo && trainTo < validateFrom && validateFrom <= validateTo && validateTo < testFrom && testFrom <= testTo)) throw new Error('Backtest periods must be disjoint and chronological');
+
+    if (this.config.registry) {
+      if (!this.config.strategyDeclaration) throw new Error('Registered experiments require an explicit strategy declaration');
+      registration = this.config.registry.begin(
+        features.map(tick => ({ symbol: tick.symbol, timestamp: tick.timestamp.toISOString(), price: tick.price })),
+        { strategy: this.config.strategyName, symbol: this.config.symbol, declaration: this.config.strategyDeclaration, parameters: this.parameters(),
+          numTrials: this.config.numTrials ?? 1,
+          periods: [trainFrom, trainTo, validateFrom, validateTo, testFrom, testTo].map(date => date.toISOString()) });
+    }
 
     log.info(
       {
@@ -147,23 +164,13 @@ export class BacktestEngine {
       'Backtest complete',
     );
 
-    return {
+    const result: BacktestRun = {
+      ...(registration ? { experimentId: registration.experimentId, attemptId: registration.attemptId } : {}),
       id: crypto.randomUUID(),
       createdAt: new Date(),
       strategy: this.config.strategyName,
       symbol: this.config.symbol,
-      parameters: {
-        payoutMultiplier: this.config.payoutMultiplier,
-        feePerTrade: this.config.feePerTrade,
-        minConfidence: this.config.minConfidence,
-        contractDuration: this.config.contractDuration ?? 5,
-        contractDurationUnit: this.config.contractDurationUnit ?? 't',
-        initialCapital: this.config.initialCapital ?? 100,
-        executionModel: 'Ledger-backed Options simulation; fixed payout rounded to USD cents; latest observed quote at/before time expiry',
-        entryDelayTicks: this.config.entryDelayTicks ?? 1,
-        maxOpenTrades: this.config.maxOpenTrades ?? 1,
-        maxTradesPerHour: this.config.maxTradesPerHour ?? getEnv().MAX_TRADES_PER_HOUR,
-      },
+      parameters: this.parameters(),
       trainFrom,
       trainTo,
       validateFrom,
@@ -175,7 +182,53 @@ export class BacktestEngine {
       testMetrics,
       observations: [...trainObs, ...validateObs, ...testObs],
     };
+    if (registration) this.config.registry?.finish(registration.attemptId, 'COMPLETED', {
+      observations: result.observations.map(observation => ({ ...observation, timestamp: observation.timestamp.toISOString() })),
+      note: 'Raw outcomes retained; statistical metrics are not certified by registration',
     });
+    return result;
+    }).catch((error: unknown) => {
+      if (registration) this.config.registry?.finish(registration.attemptId, 'FAILED', { error: error instanceof Error ? error.message : 'Unknown backtest failure' });
+      throw error;
+    });
+  }
+
+  declaration(): Record<string, unknown> {
+    return { strategy: this.config.strategyName, symbol: this.config.symbol, declaration: this.config.strategyDeclaration ?? null, parameters: this.parameters() };
+  }
+
+  private parameters(): Record<string, unknown> {
+    return {
+        bootstrap: this.config.bootstrapPolicy ?? DEFAULT_BOOTSTRAP_POLICY,
+        payoutMultiplier: this.config.payoutMultiplier,
+        feePerTrade: this.config.feePerTrade,
+        minConfidence: this.config.minConfidence,
+        contractDuration: this.config.contractDuration ?? 5,
+        contractDurationUnit: this.config.contractDurationUnit ?? 't',
+        initialCapital: this.config.initialCapital ?? 100,
+        executionModel: 'Ledger-backed Options simulation; fixed payout rounded to USD cents; latest observed quote at/before time expiry',
+        entryDelayTicks: this.config.entryDelayTicks ?? 1,
+        maxOpenTrades: this.config.maxOpenTrades ?? 1,
+        maxTradesPerHour: this.config.maxTradesPerHour ?? getEnv().MAX_TRADES_PER_HOUR,
+        contextWindow: this.config.contextWindow,
+        warmupTicks: this.config.warmupTicks ?? DEFAULT_WARMUP_TICKS,
+        maxTickGapMs: this.config.maxTickGapMs ?? getEnv().MAX_TICK_GAP_SECONDS * 1000,
+        gapPolicy: 'Reject interrupted periods; no carry-forward across gaps exceeding policy',
+        featureInitialization: 'Cold start per period; features recomputed from raw prices',
+        pipSize: this.config.pipSize ?? null,
+        riskPolicy: {
+          maxSymbolExposureFraction: getEnv().MAX_SYMBOL_EXPOSURE_FRACTION,
+          maxStrategyExposureFraction: getEnv().MAX_STRATEGY_EXPOSURE_FRACTION,
+          stakeAmount: getEnv().STAKE_AMOUNT ?? null,
+          maxStakePercent: getEnv().MAX_STAKE_PERCENT,
+          maxPerTradeFraction: getEnv().RISK_MAX_PER_TRADE_FRACTION,
+          maxDailyLossFraction: getEnv().RISK_MAX_DAILY_LOSS_FRACTION,
+          maxDailyLossPercent: getEnv().MAX_DAILY_LOSS_PERCENT,
+          maxDrawdownFraction: getEnv().RISK_MAX_DRAWDOWN_FRACTION,
+          maxConsecutiveLosses: getEnv().RISK_MAX_CONSECUTIVE_LOSSES,
+          cooldownSeconds: getEnv().RISK_COOLDOWN_SECONDS,
+        },
+      };
   }
 
   // ---------------------------------------------------------------------------
@@ -192,13 +245,13 @@ export class BacktestEngine {
     if (periodFeatures.length < 2) return [];
 
     const observations: BacktestObservation[] = [];
-    const history: TickFeatures[] = [];
     const strategy = this.config.strategyFactory();
     if (this.strategyInstances.has(strategy)) throw new Error('Strategy factory must return a fresh instance for every period');
     this.strategyInstances.add(strategy);
     if (strategy.isOnlineLearner) {
       throw new Error('Online learners cannot be scored in a standard backtest; frozen evaluation is required');
     }
+    const stream = new StrategyStream(this.config.symbol, [strategy], this.config.contextWindow, this.config.warmupTicks ?? DEFAULT_WARMUP_TICKS, this.config.maxTickGapMs ?? getEnv().MAX_TICK_GAP_SECONDS * 1000);
     let now = from;
     const db = new Database(':memory:');
     const startingCapital = this.config.initialCapital ?? 100;
@@ -225,12 +278,10 @@ export class BacktestEngine {
         for (const settlement of executor.onTick(tick, profit => { risk.recordTradeResult(profit); })) {
           observations.push({ timestamp: settlement.entryTime, symbol: settlement.symbol,
             entryPrice: settlement.entryPrice, exitPrice: settlement.exitPrice, direction: settlement.direction,
-            stake: settlement.stake, profit: settlement.profit, returnPct: settlement.profit / settlement.stake, won: settlement.won });
+            stake: settlement.stake, profit: settlement.profit, returnPct: settlement.profit / settlement.stake, won: settlement.profit > 0 });
         }
-        const signal = strategy.generateSignal(current, history);
-        history.push(current);
-        if (history.length > this.config.contextWindow) history.shift();
-        if (signal.direction !== 'NONE' && signal.confidence >= this.config.minConfidence) {
+        const signal = stream.process(tick).signals[0];
+        if (signal && signal.direction !== 'NONE' && signal.confidence >= this.config.minConfidence) {
           pending.push({ index: i + (this.config.entryDelayTicks ?? 1), signal });
         }
         for (const order of pending.filter(item => item.index === i)) {
@@ -307,13 +358,10 @@ export class BacktestEngine {
     const sortino = computeSortino(returns);
     const dsr = deflatedSharpeRatio(returns, numTrials);
     const netReturn = totalStaked > 0 ? totalProfit / totalStaked : 0;
-    const calmar = maxDrawdownPct !== 0 ? netReturn / Math.abs(maxDrawdownPct) : null;
+    // Trades are irregularly spaced; no annualized return series supports Calmar here.
+    const calmar = null;
 
-    // Confidence interval (±1.96 SE on expectancy)
-    const retStd = stddev(returns);
-    const se = retStd / Math.sqrt(returns.length);
-    const meanRet = mean(returns);
-    const ci95: [number, number] = [meanRet - 1.96 * se, meanRet + 1.96 * se];
+    const ci95 = blockBootstrapMean([returns], this.config.bootstrapPolicy ?? DEFAULT_BOOTSTRAP_POLICY);
 
     // Edge status
     const edgeStatus = this.determineEdgeStatus(observations.length, dsr, ci95, maxDrawdownPct);
@@ -356,12 +404,12 @@ export class BacktestEngine {
   private determineEdgeStatus(
     tradeCount: number,
     dsr: ReturnType<typeof deflatedSharpeRatio>,
-    ci95: [number, number],
+    ci95: [number, number] | null,
     maxDrawdownPct: number,
   ): PerformanceMetrics['edgeStatus'] {
     if (tradeCount < MIN_TRADES_FOR_SHARPE) return 'INSUFFICIENT_EVIDENCE';
 
-    if (dsr === null) return 'INSUFFICIENT_EVIDENCE';
+    if (dsr === null || ci95 === null) return 'INSUFFICIENT_EVIDENCE';
 
     // Catastrophic drawdown = likely overfit or broken
     if (maxDrawdownPct < -0.5) return 'OVERFIT_RISK_HIGH';

@@ -225,7 +225,7 @@ function analyzeJump(returns: number[]): Record<string, number | string | boolea
 // ─────────────────────────────────────────────────────────────────────────────
 
 function printSymbolResult(r: SymbolResult): void {
-  const typeEmoji: Record<MarketType, string> = {
+  const typeEmoji: Partial<Record<MarketType, string>> = {
     volatility: '📈',
     boom: '🚀',
     crash: '💥',
@@ -239,7 +239,7 @@ function printSymbolResult(r: SymbolResult): void {
   };
 
   print(`\n${'─'.repeat(64)}`);
-  print(`  ${typeEmoji[r.marketType]} ${r.symbol}  [${r.marketType.toUpperCase()}]  ${String(r.tickCount)} ticks  Score: ${String(r.score)}/100`);
+  print(`  ${typeEmoji[r.marketType] ?? '📊'} ${r.symbol}  [${r.marketType.toUpperCase()}]  ${String(r.tickCount)} ticks  Score: ${String(r.score)}/100`);
   print('─'.repeat(64));
 
   // Distribution

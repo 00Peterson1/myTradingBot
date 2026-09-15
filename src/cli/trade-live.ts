@@ -24,7 +24,7 @@ import { configureLogger, createLogger } from '../monitoring/Logger.js';
 import { getEnv, isLiveTradingEnabled } from '../config/env.js';
 import { renderBanner, renderSafetyStatus } from '../monitoring/Dashboard.js';
 import { DerivClient } from '../api/deriv/DerivClient.js';
-import { FeatureEngine } from '../features/FeatureEngine.js';
+import { StrategyStream, DEFAULT_CONTEXT_WINDOW, DEFAULT_WARMUP_TICKS } from '../pipeline/StrategyStream.js';
 import { RiskEngine } from '../risk/RiskEngine.js';
 import { OptionsExecutionService } from '../execution/OptionsExecutionService.js';
 import { OptionsLedger } from '../portfolio/OptionsLedger.js';
@@ -41,7 +41,7 @@ import { WaveletStrategy } from '../strategies/signal/WaveletStrategy.js';
 import { EWMSStrategy } from '../strategies/signal/EWMSStrategy.js';
 
 import type { Strategy } from '../strategies/base/Strategy.js';
-import type { TickFeatures, Tick } from '../types/tick.js';
+import type { Tick } from '../types/tick.js';
 import type { DerivTick } from '../api/deriv/DerivTypes.js';
 
 function buildStrategiesForSymbol(
@@ -114,16 +114,12 @@ async function main(): Promise<void> {
 
   print(`\n📊 Trading Active Symbols (${String(activeSymbols.length)}): ${activeSymbols.join(', ')}`);
 
-  const featureEngines = new Map<string, FeatureEngine>();
-  const featureHistory = new Map<string, TickFeatures[]>();
-  const symbolStrategies = new Map<string, Strategy[]>();
+  const streams = new Map<string, StrategyStream>();
   const votingEngines = new Map<string, VotingEngine>();
 
   for (const profile of activeProfiles) {
-    featureEngines.set(profile.symbol, new FeatureEngine(profile.symbol));
-    featureHistory.set(profile.symbol, []);
     const strats = buildStrategiesForSymbol(profile.symbol, profile.recommendedStrategies);
-    symbolStrategies.set(profile.symbol, strats);
+    streams.set(profile.symbol, new StrategyStream(profile.symbol, strats, DEFAULT_CONTEXT_WINDOW, DEFAULT_WARMUP_TICKS, env.MAX_TICK_GAP_SECONDS * 1000));
     votingEngines.set(
       profile.symbol,
       new VotingEngine({ minVoteFraction: env.VOTE_THRESHOLD, minConsensusConfidence: env.MIN_CONSENSUS_CONFIDENCE }),
@@ -143,6 +139,11 @@ async function main(): Promise<void> {
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
+  client.on('disconnected', (reason: string) => {
+    for (const stream of streams.values()) stream.suspend('Market feed disconnected; restart required with fresh strategy state');
+    log.error({ reason }, 'Market feed interrupted: new signals blocked; settlement reconciliation remains active');
+  });
+
   client.on('tick', asyncHandler(async (derivTick: DerivTick) => {
     const symbol = derivTick.symbol;
     if (!activeSymbols.includes(symbol)) return;
@@ -154,33 +155,15 @@ async function main(): Promise<void> {
       price: derivTick.quote,
     };
 
-    const fe = featureEngines.get(symbol);
-    const history = featureHistory.get(symbol);
-    const strats = symbolStrategies.get(symbol);
+    const stream = streams.get(symbol);
     const ve = votingEngines.get(symbol);
-    if (!fe || !history || !strats || !ve) return;
-
-    const features = fe.process(tick);
-    history.push(features);
-    if (history.length > 100) history.shift();
-    if (history.length < 50) return;
-
-    const prevHistory = history.slice(0, -1);
-    const signals = strats.map((s) => s.generateSignal(features, prevHistory));
+    if (!stream || !ve || stream.getBlockedReason()) return;
+    const { features, signals } = stream.process(tick);
+    if (!signals.length) return;
     const vote = ve.vote(symbol, signals);
 
     if (execution.isReady() && vote.hasConsensus && vote.direction !== 'NONE') {
-      const syntheticSignal = {
-      product: 'OPTIONS' as const, hypothesisId: null, strategyVersion: '1',
-        id: crypto.randomUUID(),
-        symbol,
-        price: tick.price,
-        direction: vote.direction,
-        confidence: vote.consensusConfidence,
-        strategy: `Vote(${String(vote.tally.buy)}↑${String(vote.tally.sell)}↓/${String(vote.tally.total)})`,
-        timestamp: tick.timestamp,
-        metadata: { ...vote.metadata },
-      };
+      const syntheticSignal = ve.toSignal(features, signals);
 
       {
         try {

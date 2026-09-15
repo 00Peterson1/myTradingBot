@@ -45,7 +45,7 @@ export const AvailableContractSchema = z.object({
   contract_category: z.string().optional(),
   expiry_type: z.string().optional(),
   barriers: z.number().optional(),
-  barrier: z.string().optional(),
+  barrier: z.string().nullish(),
   barrier_category: z.string().optional(),
   start_type: z.string().optional(),
   underlying_symbol: z.string().optional(),

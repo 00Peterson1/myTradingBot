@@ -33,7 +33,7 @@ import { configureLogger, createLogger } from '../monitoring/Logger.js';
 import { getEnv } from '../config/env.js';
 import { renderBanner, renderSafetyStatus } from '../monitoring/Dashboard.js';
 import { DerivClient } from '../api/deriv/DerivClient.js';
-import { FeatureEngine } from '../features/FeatureEngine.js';
+import { StrategyStream, DEFAULT_CONTEXT_WINDOW, DEFAULT_WARMUP_TICKS } from '../pipeline/StrategyStream.js';
 import { RiskEngine } from '../risk/RiskEngine.js';
 import { OptionsExecutionService } from '../execution/OptionsExecutionService.js';
 import { OptionsLedger } from '../portfolio/OptionsLedger.js';
@@ -53,10 +53,9 @@ import { OverUnderStrategy } from '../strategies/digit/OverUnderStrategy.js';
 import { MatchesDiffersStrategy } from '../strategies/digit/MatchesDiffersStrategy.js';
 
 import type { Strategy } from '../strategies/base/Strategy.js';
-import type { TickFeatures, Tick } from '../types/tick.js';
+import type { Tick } from '../types/tick.js';
 import type { DerivTick } from '../api/deriv/DerivTypes.js';
 
-const CONTEXT_WINDOW = 200;
 
 // ---------------------------------------------------------------------------
 // Strategy factory — builds the suite for a symbol based on market type
@@ -111,36 +110,6 @@ function buildStrategiesForSymbol(
     seen.add(s.name);
     return true;
   });
-}
-
-// ---------------------------------------------------------------------------
-// Rate limiter — max N trades per symbol per hour
-// ---------------------------------------------------------------------------
-
-class RateLimiter {
-  private timestamps = new Map<string, number[]>();
-
-  constructor(private readonly maxPerHour: number) {}
-
-  isAllowed(symbol: string): boolean {
-    const now = Date.now();
-    const cutoff = now - 60 * 60 * 1000;
-    const times = (this.timestamps.get(symbol) ?? []).filter((t) => t > cutoff);
-    if (times.length >= this.maxPerHour) return false;
-    this.timestamps.set(symbol, times);
-    return true;
-  }
-
-  recordSuccess(symbol: string): void {
-    this.timestamps.set(symbol, [...(this.timestamps.get(symbol) ?? []), Date.now()]);
-  }
-
-  remaining(symbol: string): number {
-    const now = Date.now();
-    const cutoff = now - 60 * 60 * 1000;
-    const times = (this.timestamps.get(symbol) ?? []).filter((t) => t > cutoff);
-    return Math.max(0, this.maxPerHour - times.length);
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -279,12 +248,10 @@ async function main(): Promise<void> {
   // ---------------------------------------------------------------------------
   // Per-symbol state
   // ---------------------------------------------------------------------------
-  const featureEngines = new Map<string, FeatureEngine>();
-  const featureHistory = new Map<string, TickFeatures[]>();
+  const streams = new Map<string, StrategyStream>();
 
   for (const symbol of symbolsToTrade) {
-    featureEngines.set(symbol, new FeatureEngine(symbol));
-    featureHistory.set(symbol, []);
+    streams.set(symbol, new StrategyStream(symbol, assertDefined(symbolStrategies.get(symbol)), DEFAULT_CONTEXT_WINDOW, DEFAULT_WARMUP_TICKS, env.MAX_TICK_GAP_SECONDS * 1000));
   }
 
   // ---------------------------------------------------------------------------
@@ -303,7 +270,6 @@ async function main(): Promise<void> {
   const riskEngine = new RiskEngine(demoBalance, accountCurrency, ledger);
   const execution = new OptionsExecutionService(client, ledger, riskEngine, 'DEMO');
   await execution.start();
-  const rateLimiter = new RateLimiter(maxTradesPerHour);
 
   // ---------------------------------------------------------------------------
   // P&L tracking per symbol
@@ -324,6 +290,11 @@ async function main(): Promise<void> {
   // ---------------------------------------------------------------------------
   log.info({ symbols: symbolsToTrade }, 'Demo trading loop started');
 
+  client.on('disconnected', (reason: string) => {
+    for (const stream of streams.values()) stream.suspend('Market feed disconnected; restart required with fresh strategy state');
+    log.error({ reason }, 'Market feed interrupted: new signals blocked; settlement reconciliation remains active');
+  });
+
   client.on('tick', asyncHandler(async (rawTick: DerivTick) => {
     const symbol = rawTick.symbol;
     if (!symbolsToTrade.includes(symbol)) return;
@@ -335,22 +306,10 @@ async function main(): Promise<void> {
       price: rawTick.quote,
     };
 
-    const featureEngine = assertDefined(featureEngines.get(symbol));
-    const history = assertDefined(featureHistory.get(symbol));
-    const strategies = symbolStrategies.get(symbol);
-    if (!strategies || strategies.length === 0) return;
-
-    const features = featureEngine.process(tick);
-    history.push(features);
-    if (history.length > CONTEXT_WINDOW) history.shift();
-
-    // Need at least 50 bars of history for reliable signals
-    if (history.length < 50) return;
-
-    const prevHistory = history.slice(0, -1);
-
-    // --- Run all strategies, collect signals ---
-    const signals = strategies.map((s) => s.generateSignal(features, prevHistory));
+    const stream = assertDefined(streams.get(symbol));
+    if (stream.getBlockedReason()) return;
+    const { features, signals } = stream.process(tick);
+    if (!signals.length) return;
     totalSignals += signals.length;
 
     // --- Vote ---
@@ -362,28 +321,11 @@ async function main(): Promise<void> {
 
     if (!execution.isReady()) return;
 
-    // --- Rate limit ---
-    if (!rateLimiter.isAllowed(symbol)) {
-      log.debug({ symbol, remaining: rateLimiter.remaining(symbol) }, 'Rate limit — skipping');
-      return;
-    }
-
     // --- Risk check ---
-    const syntheticSignal = {
-      product: 'OPTIONS' as const, hypothesisId: null, strategyVersion: '1',
-      id: crypto.randomUUID(),
-      symbol,
-      price: tick.price,
-      direction: vote.direction,
-      confidence: vote.consensusConfidence,
-      strategy: `Vote(${String(vote.tally.buy)}↑${String(vote.tally.sell)}↓/${String(vote.tally.total)})`,
-      timestamp: tick.timestamp,
-      metadata: { ...vote.metadata },
-    };
+    const syntheticSignal = votingEngine.toSignal(features, signals);
     try {
       const trade = await execution.execute(syntheticSignal);
       ordersPlaced++;
-      rateLimiter.recordSuccess(symbol);
       print(`Contract #${String(trade.contractId)} opened: ${symbol}, stake $${trade.stakeAmount.toFixed(2)}; awaiting confirmed settlement`);
     } catch (err) {
       print(`   ↳ ❌ Order failed: ${(err as Error).message}`);
@@ -432,7 +374,7 @@ async function main(): Promise<void> {
       print(
         `   ${s.padEnd(12)} ${(sPnl >= 0 ? '+' : '')}$${sPnl.toFixed(2).padStart(7)}` +
         `  W:${String(c.wins)} L:${String(c.losses)}  ${wr}` +
-        `  remaining: ${String(rateLimiter.remaining(s))}/hr` +
+        `  remaining: ${String(Math.max(0, maxTradesPerHour - ledger.countPurchasesSince(s, new Date(Date.now() - 3600_000))))}/hr` +
         `  [type: ${profile?.marketType ?? '?'}]`,
       );
     }

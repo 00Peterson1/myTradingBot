@@ -12,7 +12,7 @@ try {
     throw new Error('SQLite integrity check failed');
   }
   db.close();
-  process.stdout.write('SQLite schema initialized. Versioned migrations remain pending.\n');
+  process.stdout.write('Versioned SQLite migrations applied; integrity check passed.\n');
 } catch (error) {
   console.error('Migration failed:', error);
   process.exitCode = 1;

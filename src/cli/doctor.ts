@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { handleHelp } from './help.js';
-handleHelp('doctor', 'Read-only local diagnostics. --verbose --connectivity (public connection only)');
+handleHelp('doctor', 'Read-only local diagnostics. --verbose --connectivity --demo-connectivity --proposal SYMBOL (read-only requests; no orders)');
 import { print } from '../monitoring/print.js';
 /**
  * doctor — Diagnostic report for the quantitative trading workstation.
@@ -79,6 +79,10 @@ function warn(condition: boolean, label: string, msg: string): void {
 async function main(): Promise<void> {
   const verbose = process.argv.includes('--verbose');
   const doConnectivity = process.argv.includes('--connectivity');
+  const doDemoConnectivity = process.argv.includes('--demo-connectivity');
+  const proposalIndex = process.argv.indexOf('--proposal');
+  const proposalSymbol = proposalIndex >= 0 ? process.argv[proposalIndex + 1] : undefined;
+  if (proposalIndex >= 0 && (!proposalSymbol || proposalSymbol.startsWith('--') || !doDemoConnectivity)) throw new Error('--proposal SYMBOL requires --demo-connectivity');
 
   print('\n╔════════════════════════════════════════════════════════════╗');
   print('║   myTradingBot — System Diagnostic Report                  ║');
@@ -212,29 +216,44 @@ async function main(): Promise<void> {
   // ─────────────────────────────────────────────────────────────
 
   row(INFO, 'RL strategies in backtest', 'Standard engine rejects declared online learners; no frozen RL protocol implemented');
-  row(INFO, 'Configured horizon', `Both use ${String(env.CONTRACT_DURATION)} ${env.CONTRACT_DURATION_UNIT === 't' ? 'tick(s)' : env.CONTRACT_DURATION_UNIT} (execution parity not verified)`);
+  row(INFO, 'Configured horizon', `Both use ${String(env.CONTRACT_DURATION)} ${env.CONTRACT_DURATION_UNIT === 't' ? 'tick(s)' : env.CONTRACT_DURATION_UNIT} (broker quote equivalence is not certified)`);
   row(INFO, 'Payout assumption', `${String(env.BACKTEST_PAYOUT_MULTIPLIER)}x — verify against actual Deriv contract pricing`);
-  row(WARN, 'Experiment registry', 'Not yet implemented — experiments are not versioned or hash-identified');
-  warnings++;
+  row(INFO, 'Experiment registry', 'Backtest CLI records immutable inputs, code, hypotheses and attempts; inspect storage for actual runs');
   row(INFO, 'Risk engine persistence', 'Trading runners use the SQLite Options ledger; inspect account state before resuming');
   row(INFO, 'Settlement mechanism', 'Polls provider terminal state; unknown purchases and reconciliation drift block orders');
   row(INFO, 'Feature parity', 'Not checked by doctor; deterministic replay tests are required');
 
   // ─────────────────────────────────────────────────────────────
-  if (doConnectivity) {
-    section('6. Network Connectivity (--connectivity)');
-
+  if (doConnectivity || doDemoConnectivity) {
+    section('6. Read-only Deriv Connectivity');
+    const { DerivClient } = await import('../api/deriv/DerivClient.js');
+    const client = new DerivClient();
     try {
-      const { DerivClient } = await import('../api/deriv/DerivClient.js');
-      const client = new DerivClient();
-      row(INFO, 'Connecting public WS', 'Attempting connection...');
-      await client.connectPublic();
-      row(PASS, 'Deriv public WS', 'Connected OK');
-      await client.disconnect();
-    } catch (err) {
-      row(FAIL, 'Deriv public WS', (err as Error).message);
+      if (doConnectivity) {
+        await client.connectPublic();
+        row(PASS, 'Deriv public WS', 'Connected');
+      }
+      if (doDemoConnectivity) {
+        await client.connectTrading('demo');
+        const account = client.getTradingAccount();
+        if (account?.accountType !== 'demo') throw new Error('Expected a demo account');
+        const balance = await client.getBalance();
+        const portfolio = await client.getPortfolio();
+        row(PASS, 'Demo auth/balance/portfolio', `Verified ${balance.currency} account; ${String(portfolio.length)} open contracts; no orders placed`);
+        if (proposalSymbol) {
+          const available = await client.getContractsFor(proposalSymbol);
+          if (verbose) print(JSON.stringify(available.filter(contract => contract.contract_type === 'CALL'), null, 2));
+          const { supportsOptionContract } = await import('../execution/ContractCapabilities.js');
+          if (!supportsOptionContract(available, 'CALL', env.CONTRACT_DURATION, env.CONTRACT_DURATION_UNIT)) throw new Error('Configured CALL duration is not advertised for the diagnostic symbol');
+          const proposal = await client.requestProposal({ symbol: proposalSymbol, contractType: 'CALL', basis: 'stake',
+            stake: env.STAKE_AMOUNT ?? 1, currency: balance.currency, duration: env.CONTRACT_DURATION, durationUnit: env.CONTRACT_DURATION_UNIT });
+          row(PASS, 'Read-only CALL proposal', `${proposalSymbol}: ask ${String(proposal.ask_price)}, payout ${String(proposal.payout)} ${balance.currency}; not purchased`);
+        }
+      }
+    } catch (error) {
+      row(FAIL, 'Deriv connectivity', error instanceof Error ? error.message : 'Unknown connection error');
       errors++;
-    }
+    } finally { await client.disconnect(); }
   }
 
   // ─────────────────────────────────────────────────────────────

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { handleHelp } from './help.js';
 handleHelp('backtest', 'Preliminary Options simulation. --symbols SYMBOL,...; no account orders.');
+import { fileURLToPath } from 'node:url';
+import { ExperimentRegistry, captureResearchCode } from '../research/experiments/ExperimentRegistry.js';
 import { print } from '../monitoring/print.js';
 import { assertDefined } from '../utils/assertDefined.js';
 
@@ -17,7 +19,7 @@ import { EWMSStrategy } from '../strategies/signal/EWMSStrategy.js';
 // Both have isOnlineLearner = true — they update weights inside generateSignal(),
 // meaning they adapt to the test set while being scored on it. This invalidates
 // OOS evaluation. A prequential (interleaved train-then-test) protocol is required.
-import { WalkForwardRunner } from '../backtest/WalkForwardRunner.js';
+import { ValidationStudy } from '../backtest/ValidationStudy.js';
 import { getDb } from '../data/database/sqlite.js';
 import { getTickCount, getRecentTicks } from '../data/repository/TickRepository.js';
 import { FeatureEngine } from '../features/FeatureEngine.js';
@@ -25,7 +27,7 @@ import type { Strategy } from '../strategies/base/Strategy.js';
 import type { TickFeatures } from '../types/tick.js';
 
 const MAX_TICKS = parseInt(process.env.BACKTEST_MAX_TICKS ?? '100000', 10);
-const MIN_TICKS_REQUIRED = 200;
+const MIN_TICKS_REQUIRED = 500;
 
 async function main(): Promise<void> {
   const env = getEnv();
@@ -88,7 +90,7 @@ async function main(): Promise<void> {
     minTradesPerFold: 10,
   };
 
-  const runner = new WalkForwardRunner(walkForwardConfig);
+  const registry = new ExperimentRegistry(getDb(), captureResearchCode(fileURLToPath(new URL('../../', import.meta.url))));
 
   // ---------------------------------------------------------------------------
   // Strategy factories — each provides a FACTORY FUNCTION so BacktestEngine
@@ -109,7 +111,6 @@ async function main(): Promise<void> {
     { name: 'EWMS',                                  factory: () => new EWMSStrategy() },
   ];
 
-  const numStrategiesTried = strategyFactories.length;
 
   const results: {
     strategy: string;
@@ -147,55 +148,31 @@ async function main(): Promise<void> {
     }
     print(`  ✅ Feature replay complete: ${String(features.length)} rows\n`);
 
-    for (const { name, factory } of strategyFactories) {
-      log.info({ strategy: name, symbol }, 'Running walk-forward');
-
-      try {
-        const wfResult = await runner.run(
-          features,
-          {
-            strategyFactory: factory,
-            strategyName: name,
-            symbol,
-            payoutMultiplier,
-            feePerTrade: 0,
-            minConfidence: 0.3,
-            contextWindow: 200,
-            numTrials: numStrategiesTried,
-            contractDuration,
-            contractDurationUnit,
-          },
-          numStrategiesTried,
-        );
-
-        const sharpe = wfResult.aggregatedTestMetrics?.sharpeRatio ?? 0;
-        const winRate = wfResult.aggregatedTestMetrics?.winRate ?? 0;
-        const trades = wfResult.aggregatedTestMetrics?.totalTrades ?? 0;
-
-        if (verbose) {
-        if (wfResult.aggregatedTestMetrics) {
-          renderMetricsTable(
-            wfResult.aggregatedTestMetrics,
-            `Walk-Forward Test: ${name} on ${symbol}`,
-          );
+    try {
+      const study = await new ValidationStudy(registry, walkForwardConfig).run(features, strategyFactories.map(({ name, factory }) => ({
+        id: name, family: name.split('(')[0] ?? name,
+        config: { strategyFactory: factory, registry, strategyDeclaration: { name, factorySource: factory.toString() },
+          strategyName: name, symbol, payoutMultiplier, feePerTrade: 0, minConfidence: env.MIN_CONSENSUS_CONFIDENCE,
+          contextWindow: 200, contractDuration, contractDurationUnit },
+      })));
+      print(`  Study: ${study.verdict}; recorded hypotheses: ${String(study.trials)}; selected: ${study.selectedId ?? 'none'}`);
+      for (const candidate of study.candidates) {
+        const metrics = candidate.development.aggregatedTestMetrics;
+        const supported = study.verdict === 'HOLDOUT_SUPPORTED' && study.selectedId === candidate.id;
+        results.push({ strategy: candidate.id, symbol, passes: supported, pbo: null,
+          notes: candidate.development.validationNotes, sharpe: metrics?.sharpeRatio ?? 0,
+          winRate: metrics?.winRate ?? 0, trades: metrics?.totalTrades ?? 0 });
+        if (verbose && metrics) {
+          renderMetricsTable(metrics, `Development walk-forward: ${candidate.id}`);
+          print(`  BY-adjusted selection p-value: ${String(candidate.adjustedPValue)}`);
+          for (const fold of candidate.development.folds) print(`  Experiment ${fold.run.experimentId ?? 'unregistered'}`);
         }
-
-        print(`\n  PBO: ${wfResult.pbo !== null ? `${(wfResult.pbo * 100).toFixed(1)}%` : 'N/A'}`);
-        print(`  ${wfResult.pboInterpretation}`);
-        print(`\n  Validation: ${wfResult.passesRigorousValidation ? '✅ PASSES' : '❌ FAILS'}`);
-        for (const note of wfResult.validationNotes) {
-          print(`    ${note}`);
-        }
-
-        }
-
-        results.push({ strategy: name, symbol, passes: wfResult.passesRigorousValidation, pbo: wfResult.pbo, notes: wfResult.validationNotes, sharpe, winRate, trades });
-      } catch (err) {
-        errorsThisRun++;
-        const msg = (err as Error).message;
-        log.error({ strategy: name, symbol, error: msg }, 'Strategy evaluation failed');
-        console.error(`  ❌ ERROR: ${name} on ${symbol}: ${msg}`);
       }
+      if (study.finalRun && verbose) renderMetricsTable(study.finalRun.testMetrics, 'One-time final holdout');
+    } catch (error) {
+      errorsThisRun++;
+      log.error({ symbol, error: error instanceof Error ? error.message : 'Unknown study failure' }, 'Validation study failed');
+      console.error(`Study failed for ${symbol}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -210,7 +187,7 @@ async function main(): Promise<void> {
     print(`┌──────────────────────────┬──────────┬──────────┬─────────┬───────┬──────────┐`);
     print(`│ Strategy                 │ Symbol   │  Sharpe  │ WinRate │Trades │ Verdict  │`);
     print(`├──────────────────────────┼──────────┼──────────┼─────────┼───────┼──────────┤`);
-    const sorted = [...results].sort((a, b) => b.sharpe - a.sharpe);
+    const sorted = results;
     for (const r of sorted) {
       const s  = r.strategy.padEnd(24).substring(0, 24);
       const sy = r.symbol.padEnd(8).substring(0, 8);
@@ -249,7 +226,7 @@ async function main(): Promise<void> {
   }
 
   print('\n  ⚠️  Backtest results are not guarantees of future performance.');
-  print('  Payout assumptions and zero-latency execution cannot be exactly replicated.');
+  print('  Fixed payouts and declared entry delay are simulation assumptions, not historical broker quotes.');
   process.exit(errorsThisRun > 0 ? 1 : 0);
 }
 

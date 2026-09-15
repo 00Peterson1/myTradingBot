@@ -1,23 +1,4 @@
-"""
-Spread Reversion LSTM Model
-===========================
-Predicts short-horizon probability that a diverged pair spread will
-revert toward the mean (|z| → 0) within the next 20 ticks.
-
-Architecture (grounded in arXiv:2111.04709 + arXiv:2103.09750):
-  Input:  50-tick window of [spread_z, spread_delta, vol_20, regime]
-  Model:  LSTM(hidden=64, layers=2) → Dropout(0.2) → Linear(64→1) → Sigmoid
-  Output: P(spread reverts to |z| < 0.5 within 20 ticks)
-  Loss:   Binary cross-entropy (balanced by positive/negative ratio)
-  Task:   Binary classification: reversion (1) vs non-reversion (0)
-
-Training data comes from pair_spread_state + tick_features tables in
-data/trading.db (produced by npm run research:daemon).
-
-Build this AFTER the rule-based CorrelationPairStrategy has a baseline
-Sharpe to beat. The model's job is to refine timing/confidence on top
-of the z-score signal — not to replace it.
-"""
+"""Research LSTM over frozen pair-normalized windows. No trading eligibility is implied."""
 
 import torch
 import torch.nn as nn
@@ -35,8 +16,8 @@ class SpreadReversionLSTM(nn.Module):
       0. spread_z       — spread z-score (continuous)
       1. spread_delta   — change in spread z from prior tick
       2. vol_20         — 20-period rolling std of spread
-      3. cointegration  — rolling cointegration p-value (lower = stronger)
-      4. regime         — 0=trending, 1=mean-reverting (from HMM or ATR)
+      3. cointegration  — unavailable channel fixed to zero in shared preprocessing
+      4. regime         — unavailable channel fixed to zero in shared preprocessing
     """
 
     SEQ_LEN = 50

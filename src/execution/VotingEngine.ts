@@ -17,6 +17,8 @@
  *   1.0 = unanimous (all agree)
  */
 
+import { createHash } from 'node:crypto';
+import { signalSchema } from '../types/signal.js';
 import type { Signal } from '../types/signal.js';
 import type { TickFeatures } from '../types/tick.js';
 
@@ -85,6 +87,7 @@ export class VotingEngine {
 
   constructor(config: Partial<VotingEngineConfig> = {}) {
     this.config = { ...DEFAULTS, ...config };
+    this.validateConfig(this.config);
   }
 
   /**
@@ -102,7 +105,8 @@ export class VotingEngine {
     }));
 
     const tally = { buy: 0, sell: 0, none: 0, total: votes.length };
-    if (signals.some(signal => signal.product !== 'OPTIONS' || signal.symbol !== symbol)) {
+    if (signals.some(signal => !signalSchema.safeParse(signal).success || signal.product !== 'OPTIONS' || signal.symbol !== symbol ||
+        signal.timestamp.getTime() !== signals[0]?.timestamp.getTime() || signal.price !== signals[0].price)) {
       return this.noConsensus(symbol, votes, tally, 'Mismatched product or symbol');
     }
 
@@ -177,16 +181,22 @@ export class VotingEngine {
   }
 
   toSignal(current: TickFeatures, signals: Signal[]): Signal {
+    if (signals.some(signal => signal.timestamp.getTime() !== current.timestamp.getTime() || signal.price !== current.price)) {
+      throw new Error('Consensus signals do not match the current event');
+    }
     const vote = this.vote(current.symbol, signals);
     return {
       product: 'OPTIONS', hypothesisId: null, strategyVersion: '1',
-      id: crypto.randomUUID(), timestamp: current.timestamp, symbol: current.symbol,
+      id: createHash('sha256').update(JSON.stringify([current.symbol, current.timestamp.toISOString(),
+        current.price, signals.map(signal => signal.id), this.config])).digest('hex'),
+      timestamp: current.timestamp, symbol: current.symbol,
       price: current.price, direction: vote.direction, confidence: vote.consensusConfidence,
       strategy: 'Consensus', metadata: vote.metadata,
     };
   }
 
   updateConfig(update: Partial<VotingEngineConfig>): void {
+    this.validateConfig({ ...this.config, ...update });
     Object.assign(this.config, update);
   }
 
@@ -197,6 +207,13 @@ export class VotingEngine {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  private validateConfig(config: VotingEngineConfig): void {
+    for (const value of [config.minVoteFraction, config.minConsensusConfidence]) {
+      if (!Number.isFinite(value) || value < 0 || value > 1) throw new Error('Invalid consensus threshold');
+    }
+    if (typeof config.weightByConfidence !== 'boolean') throw new Error('Invalid voting weight policy');
+  }
 
   private weightedAvgConfidence(votes: StrategyVote[]): number {
     if (votes.length === 0) return 0;

@@ -24,10 +24,12 @@
     "backtest": "tsx src/cli/backtest.ts",
     "trade:demo": "tsx src/cli/trade-demo.ts",
     "trade:live": "tsx src/cli/trade-live.ts",
-    "sidecar:train": "cd python && python spread_model/train.py",
+    "sidecar:train": "cd python && python3 -m spread_model.train",
     "sidecar:serve": "cd python && uvicorn spread_model.serve:app --port 8765 --reload",
     "typecheck": "tsc --noEmit",
-    "doctor": "tsx src/cli/doctor.ts"
+    "doctor": "tsx src/cli/doctor.ts",
+    "test:python": "cd python && python3 -m unittest discover -s tests",
+    "experiments": "tsx src/cli/experiments.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

@@ -9,7 +9,7 @@ const run = (name: string, args: string[], extra: Record<string, string> = {}): 
 );
 
 describe('CLI startup boundaries (no account or network requests)', () => {
-  it.each(['doctor', 'migrate', 'markets', 'research', 'research-daemon', 'backtest', 'trade-demo', 'trade-live'])(
+  it.each(['experiments', 'doctor', 'migrate', 'markets', 'research', 'research-daemon', 'backtest', 'trade-demo', 'trade-live'])(
     '%s help starts without credentials or database access', name => {
       const result = run(name, ['--help']);
       expect(result.error).toBeUndefined();

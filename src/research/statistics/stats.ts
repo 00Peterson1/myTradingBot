@@ -173,7 +173,7 @@ export interface DeflatedSharpeResult {
   sharpeObs: number; // Observed Sharpe ratio
   sharpeRef: number; // Reference (expected max Sharpe under H0)
   dsr: number; // Deflated Sharpe Ratio ∈ [0,1]
-  pValue: number; // Probability that true Sharpe > 0
+  pValue: number; // One-sided approximate p-value against zero Sharpe
   skew: number | null;
   excessKurtosis: number | null;
 }
@@ -184,12 +184,19 @@ export interface DeflatedSharpeResult {
  * @param returns - Out-of-sample returns of the selected strategy
  * @param numTrials - Number of strategies/parameters tried (selection bias)
  * @param sharpeRef - Expected Sharpe of best strategy under H0 (if known)
+ * @param trialSharpeVariance - Variance across trial Sharpe estimates; required for N > 1 unless reference supplied.
+ * N=1 returns the probabilistic Sharpe ratio against zero (no selection correction).
  */
 export function deflatedSharpeRatio(
   returns: readonly number[],
   numTrials = 1,
   sharpeRef?: number,
+  trialSharpeVariance?: number,
 ): DeflatedSharpeResult | null {
+  if (!Number.isInteger(numTrials) || numTrials < 1) throw new Error('Trial count must be a positive integer');
+  if (returns.some(value => !Number.isFinite(value))) return null;
+  if (sharpeRef !== undefined && !Number.isFinite(sharpeRef)) throw new Error('Invalid Sharpe reference');
+  if (trialSharpeVariance !== undefined && (!Number.isFinite(trialSharpeVariance) || trialSharpeVariance < 0)) throw new Error('Invalid trial Sharpe variance');
   const n = returns.length;
   if (n < MIN_TRADES_FOR_SHARPE) return null;
 
@@ -205,24 +212,26 @@ export function deflatedSharpeRatio(
   // Expected maximum Sharpe under H0 across numTrials strategies
   // Using the Euler-Mascheroni approximation for E[max(Z_1,...,Z_N)]
   const gamma = 0.5772156649; // Euler-Mascheroni constant
-  const ref =
-    sharpeRef ??
+  // Multiple-trial correction requires the variance ACROSS trial Sharpe estimates.
+  // Do not silently assume unit variance or infer it from the selected return path.
+  if (numTrials > 1 && sharpeRef === undefined && trialSharpeVariance === undefined) return null;
+  const ref = sharpeRef ?? (numTrials === 1 ? 0 : Math.sqrt(trialSharpeVariance ?? 0) * (
     (1 - gamma) * normalInvCDF(1 - 1 / numTrials) +
-      gamma * normalInvCDF(1 - 1 / (numTrials * Math.E));
+    gamma * normalInvCDF(1 - 1 / (numTrials * Math.E))));
 
   // Variance of the Sharpe estimator corrected for non-normality
-  // V[SR] = (1 + (1/2)*SR²*(k-1) - SR*skew) / (n-1)
+  // V[SR] = (1 + (1/4)*SR²*(k-1) - SR*skew) / (n-1)
   // where k = excess kurtosis + 3 (full kurtosis)
   const fullKurtosis = (exKurt ?? 0) + 3;
   const skewVal = skew ?? 0;
   const varSharpe =
-    (1 + 0.5 * Math.pow(sharpeObs, 2) * (fullKurtosis - 1) - sharpeObs * skewVal) / (n - 1);
+    (1 + 0.25 * Math.pow(sharpeObs, 2) * (fullKurtosis - 1) - sharpeObs * skewVal) / (n - 1);
 
-  if (varSharpe <= 0) return null;
+  if (!Number.isFinite(varSharpe) || varSharpe <= 0) return null;
 
   const z = (sharpeObs - ref) / Math.sqrt(varSharpe);
   const dsr = normalCDF(z);
-  const pValue = 1 - normalCDF(sharpeObs / Math.sqrt((1 + 0.5 * sharpeObs * sharpeObs) / (n - 1)));
+  const pValue = 1 - normalCDF(sharpeObs / Math.sqrt(varSharpe));
 
   return {
     sharpeObs,
@@ -254,7 +263,10 @@ export function deflatedSharpeRatio(
 
 export interface PBOResult {
   pbo: number; // Probability of backtest overfitting ∈ [0, 1]
-  partitions: number; // Number of CSCV partitions used
+  partitions: number; // Number of equal chronological blocks
+  combinations: number; // Number of train/test assignments evaluated
+  logits: readonly number[];
+  tiePolicy: 'UNAVAILABLE';
   numStrategies: number; // Number of strategies evaluated
   interpretaton: string;
 }
@@ -263,86 +275,58 @@ export interface PBOResult {
  * Computes PBO using Combinatorially Symmetric Cross Validation.
  *
  * @param strategyReturns - Matrix [strategy][period] of per-period returns
- * @param numPartitions - Number of time partitions (S, must be even, default 16)
+ * @param numPartitions - Equal chronological blocks (even, 2–16; exhaustive work is capped).
+ * Undefined Sharpe or tied selected rankings make the entire estimate unavailable.
+ * Columns must refer to the same observation times; this numeric API cannot verify timestamps.
  */
 export function probabilityOfBacktestOverfitting(
   strategyReturns: readonly (readonly number[])[],
   numPartitions = 16,
 ): PBOResult | null {
+  if (!Number.isInteger(numPartitions) || numPartitions < 2 || numPartitions > 16 || numPartitions % 2 !== 0) {
+    throw new Error('CSCV requires an even block count from 2 to 16');
+  }
   const numStrategies = strategyReturns.length;
   if (numStrategies < 2) return null;
-
-  const T = strategyReturns[0]?.length ?? 0;
-  if (T < numPartitions) return null;
-
-  const S = numPartitions;
-  const halfS = S / 2;
-
-  // Divide time series into S blocks
-  const blockSize = Math.floor(T / S);
-  const blocks: number[][] = [];
-
-  for (let s = 0; s < S; s++) {
-    const start = s * blockSize;
-    const end = s === S - 1 ? T : start + blockSize;
-    blocks.push(Array.from({ length: end - start }, (_, i) => start + i));
+  const T = assertDefined(strategyReturns[0]).length;
+  if (strategyReturns.some(row => row.length !== T || Array.from(row).some(value => !Number.isFinite(value)))) {
+    throw new Error('CSCV requires aligned finite return series; missing observations cannot be padded');
   }
-
-  // All combinations of S/2 blocks for training
-  const trainCombinations = combinations(
-    Array.from({ length: S }, (_, i) => i),
-    halfS,
-  );
-
-  let overfit = 0;
-
-  for (const trainIdx of trainCombinations) {
-    const testIdx = Array.from({ length: S }, (_, i) => i).filter((i) => !trainIdx.includes(i));
-
-    const trainPeriods = trainIdx.flatMap((i) => blocks[i] ?? []);
-    const testPeriods = testIdx.flatMap((i) => blocks[i] ?? []);
-
-    // Compute Sharpe for each strategy on train set
-    const trainSharpes = strategyReturns.map((r) => {
-      const trainReturns = trainPeriods.map((t) => r[t] ?? 0);
-      const m = mean(trainReturns);
-      const s = stddev(trainReturns);
-      return s === 0 ? 0 : m / s;
+  if (T < numPartitions || T / 2 < 2) return null;
+  if (T % numPartitions !== 0) throw new Error('CSCV requires equal blocks; explicitly segment data before evaluation');
+  const blockSize = T / numPartitions;
+  const allBlocks = Array.from({ length: numPartitions }, (_, i) => i);
+  const assignments = combinations(allBlocks, numPartitions / 2);
+  const logits: number[] = [];
+  const equalScore = (a: number, b: number): boolean => Math.abs(a - b) <= 1e-12 * Math.max(1, Math.abs(a), Math.abs(b));
+  for (const training of assignments) {
+    const testing = allBlocks.filter(block => !training.includes(block));
+    const scores = (blocks: number[]): number[] => strategyReturns.map(row => {
+      const sample = blocks.flatMap(block => row.slice(block * blockSize, (block + 1) * blockSize));
+      const deviation = stddev(sample);
+      return deviation > 0 ? mean(sample) / deviation : NaN;
     });
-
-    // Find best strategy on train set
-    const bestStrategyIdx = trainSharpes.indexOf(Math.max(...trainSharpes));
-
-    // Compute Sharpe for each strategy on test set
-    const testSharpes = strategyReturns.map((r) => {
-      const testReturns = testPeriods.map((t) => r[t] ?? 0);
-      const m = mean(testReturns);
-      const s = stddev(testReturns);
-      return s === 0 ? 0 : m / s;
-    });
-
-    // Check if best train strategy is above median on test
-    const bestTestSharpe = testSharpes[bestStrategyIdx] ?? 0;
-    const sortedTestSharpes = [...testSharpes].sort((a, b) => a - b);
-    const medianTestSharpe = sortedTestSharpes[Math.floor(sortedTestSharpes.length / 2)] ?? 0;
-
-    if (bestTestSharpe < medianTestSharpe) {
-      overfit++;
-    }
+    const train = scores(training);
+    const test = scores(testing);
+    // Do not drop problematic assignments or manufacture zero Sharpe for constant returns.
+    if ([...train, ...test].some(score => !Number.isFinite(score))) return null;
+    const best = Math.max(...train);
+    const winners = train.flatMap((score, index) => equalScore(score, best) ? [index] : []);
+    if (winners.length !== 1) return null;
+    const selected = assertDefined(test[assertDefined(winners[0])]);
+    if (test.filter(score => equalScore(score, selected)).length !== 1) return null;
+    const rank = 1 + test.filter(score => score < selected).length;
+    const relativeRank = rank / (numStrategies + 1);
+    logits.push(Math.log(relativeRank / (1 - relativeRank)));
   }
+  const pbo = logits.filter(logit => logit <= 0).length / logits.length;
+  return { pbo, partitions: numPartitions, combinations: assignments.length, logits,
+    tiePolicy: 'UNAVAILABLE', numStrategies, interpretaton: interpretPBO(pbo) };
 
-  const pbo = overfit / trainCombinations.length;
-
-  return {
-    pbo,
-    partitions: S,
-    numStrategies,
-    interpretaton: interpretPBO(pbo),
-  };
 }
 
 function interpretPBO(pbo: number): string {
-  if (pbo < 0.1) return 'LOW OVERFIT RISK — Strategy appears robust';
+  if (pbo < 0.1) return 'LOW ESTIMATED SELECTION OVERFIT — Not proof of strategy validity';
   if (pbo < 0.25) return 'MODERATE OVERFIT RISK — Some caution warranted';
   if (pbo < 0.5) return 'ELEVATED OVERFIT RISK — Strong caution warranted';
   return 'HIGH OVERFIT RISK — Strategy likely overfit to training data';
@@ -560,42 +544,23 @@ export function benjaminiHochbergYekutieli(
   pValues: readonly number[],
   alpha = 0.05,
 ): { original: number; corrected: number; rejected: boolean }[] {
+  if (!Number.isFinite(alpha) || alpha <= 0 || alpha >= 1 ||
+      pValues.some(value => !Number.isFinite(value) || value < 0 || value > 1)) throw new Error('Invalid multiple-testing input');
   const n = pValues.length;
   const harmonicSum = Array.from({ length: n }, (_, i) => 1 / (i + 1)).reduce((a, b) => a + b, 0);
-  const adjustedAlpha = alpha / harmonicSum;
-
-  const indexed = pValues.map((p, i) => ({ p, i }));
-  indexed.sort((a, b) => a.p - b.p);
-
+  const indexed = pValues.map((p, i) => ({ p, i })).sort((a, b) => a.p - b.p);
   const corrected = new Array<number>(n);
-  let maxRejected = -1;
-
-  for (let rank = 0; rank < n; rank++) {
-    const criticalValue = ((rank + 1) / n) * adjustedAlpha;
-    const item = indexed[rank];
-    if (item && item.p <= criticalValue) {
-      maxRejected = rank;
-    }
+  let runningMinimum = 1;
+  for (let rank = n - 1; rank >= 0; rank--) {
+    const item = assertDefined(indexed[rank]);
+    runningMinimum = Math.min(runningMinimum, item.p * n * harmonicSum / (rank + 1));
+    corrected[item.i] = runningMinimum;
   }
-
-  for (let rank = 0; rank < n; rank++) {
-    const item = indexed[rank];
-    if (!item) continue;
-    corrected[item.i] = Math.min(1, (item.p * n * harmonicSum) / (rank + 1));
-  }
-
-  return pValues.map((p, i) => {
-    const rank = indexed.findIndex((item) => item.i === i);
-    return {
-      original: p,
-      corrected: corrected[i] ?? 1,
-      rejected: rank <= maxRejected,
-    };
-  });
+  return pValues.map((original, i) => ({ original, corrected: assertDefined(corrected[i]), rejected: assertDefined(corrected[i]) <= alpha }));
 }
 
 /**
- * Bonferroni correction — conservative, assumes independence.
+ * Bonferroni correction — conservative, valid under arbitrary dependence.
  * corrected p = original p * n_tests
  */
 export function bonferroniCorrection(

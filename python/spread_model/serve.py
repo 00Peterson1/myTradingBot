@@ -1,176 +1,80 @@
+"""Research inference using the checkpoint's frozen training normalizer.
+
+Set MODEL_CHECKPOINT to an explicit new-format checkpoint. Legacy checkpoints
+and externally normalized spreadHistory inputs are intentionally unsupported.
 """
-FastAPI inference server for the SpreadReversionLSTM model.
-Start with: uvicorn spread_model.serve:app --port 8765 --reload
-
-The TypeScript bot calls POST /predict with:
-  { spreadHistory: number[], features: object }
-
-Returns:
-  { reversionProb: number, confidence: number, modelLoaded: boolean }
-
-If no checkpoint is available (model not yet trained), returns safe defaults
-(reversionProb=0.5, confidence=0.0, modelLoaded=false) — the TypeScript
-side checks modelLoaded and ignores the DL confidence when false.
-"""
-
+from contextlib import asynccontextmanager
+import math
 import os
-import json
-import numpy as np
 from pathlib import Path
-from typing import Any
-
-try:
-    import torch
-    from spread_model.model import SpreadReversionLSTM, create_model
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-
-app = FastAPI(
-    title="Spread Reversion Model Sidecar",
-    description="Predicts P(spread reversion) for EUR/GBP + AUD/NZD correlation basket",
-    version="0.1.0",
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:*"],
-    allow_methods=["POST", "GET"],
-    allow_headers=["*"],
-)
-
-# ---------------------------------------------------------------------------
-# Model loading
-# ---------------------------------------------------------------------------
-
-CHECKPOINT_DIR = Path(__file__).parent.parent / "checkpoints"
-CHECKPOINT_PATH = CHECKPOINT_DIR / "spread_reversion_best.pt"
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
+from spread_model.preprocessing import SCHEMA, Normalizer, feature_window, z_scores
 
 _model = None
-_model_loaded = False
+_metadata = None
+_normalizer = None
 
 
-def load_model() -> bool:
-    global _model, _model_loaded
-    if not TORCH_AVAILABLE:
+def load_model():
+    global _model, _metadata, _normalizer
+    _model = _metadata = _normalizer = None
+    path = os.environ.get('MODEL_CHECKPOINT')
+    if not path:
         return False
-    if not CHECKPOINT_PATH.exists():
-        print(f"[sidecar] No checkpoint at {CHECKPOINT_PATH} — run `npm run sidecar:train` first")
-        return False
-    try:
-        _model = create_model()
-        state = torch.load(str(CHECKPOINT_PATH), map_location="cpu")
-        _model.load_state_dict(state["model_state_dict"])
-        _model.eval()
-        _model_loaded = True
-        print(f"[sidecar] Model loaded from {CHECKPOINT_PATH}")
-        return True
-    except Exception as e:
-        print(f"[sidecar] Failed to load model: {e}")
-        return False
+    import torch
+    from spread_model.model import create_model
+    state = torch.load(Path(path), map_location='cpu', weights_only=True)
+    metadata = state['metadata']
+    if metadata['schema'] != SCHEMA or metadata.get('research_only') is not True:
+        raise ValueError('Unsupported checkpoint metadata')
+    normalizer = Normalizer(**metadata['normalizer'])
+    if normalizer.identity != metadata['normalizer_id']:
+        raise ValueError('Checkpoint normalization identity mismatch')
+    candidate = create_model()
+    candidate.load_state_dict(state['model_state_dict'])
+    candidate.eval()
+    _model, _metadata, _normalizer = candidate, metadata, normalizer
+    return True
 
 
-@app.on_event("startup")
-async def startup_event():
-    load_model()
-    print(f"[sidecar] Spread reversion sidecar ready. Model loaded: {_model_loaded}")
+@asynccontextmanager
+async def lifespan(app):
+    load_model()  # An explicitly configured invalid checkpoint fails startup visibly.
+    yield
 
 
-# ---------------------------------------------------------------------------
-# Request / Response schemas
-# ---------------------------------------------------------------------------
+app = FastAPI(title='Research spread inference', version='0.2.0', lifespan=lifespan)
+
 
 class PredictRequest(BaseModel):
-    # Last N spread z-score values (oldest first)
-    spreadHistory: list[float]
-    # Optional signal metadata from the strategy
-    features: dict[str, Any] = {}
+    model_config = ConfigDict(extra='forbid')
+    pairId: str
+    # Exactly 50 ordered (epoch, priceA, priceB) observations, without padding.
+    observations: list[tuple[float, float, float]] = Field(min_length=50, max_length=50)
 
 
-class PredictResponse(BaseModel):
-    reversionProb: float    # P(reversion) in [0, 1]
-    confidence: float       # Model confidence (0 if model not loaded)
-    modelLoaded: bool       # Whether a trained checkpoint is available
-    inputLength: int        # Actual input length used
-
-
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
-
-@app.get("/health")
+@app.get('/health')
 async def health():
-    return {"status": "ok", "modelLoaded": _model_loaded, "torchAvailable": TORCH_AVAILABLE}
+    return {'modelLoaded': _model is not None, 'researchOnly': True,
+            'pairId': _metadata['pair_id'] if _metadata else None,
+            'normalizerId': _normalizer.identity if _normalizer else None}
 
 
-@app.post("/predict", response_model=PredictResponse)
-async def predict(request: PredictRequest) -> PredictResponse:
-    if not _model_loaded or _model is None:
-        return PredictResponse(
-            reversionProb=0.5,   # Neutral — no model to consult
-            confidence=0.0,
-            modelLoaded=False,
-            inputLength=len(request.spreadHistory),
-        )
-
-    seq_len = SpreadReversionLSTM.SEQ_LEN
-    n_features = SpreadReversionLSTM.N_FEATURES
-
-    # Build feature matrix from spread history
-    # Features: [spread_z, spread_delta, vol_20, cointegration_p, regime]
-    spread = np.array(request.spreadHistory[-seq_len:], dtype=np.float32)
-    n = len(spread)
-
-    if n < 5:
-        return PredictResponse(
-            reversionProb=0.5,
-            confidence=0.0,
-            modelLoaded=True,
-            inputLength=n,
-        )
-
-    # Pad if shorter than seq_len
-    if n < seq_len:
-        spread = np.pad(spread, (seq_len - n, 0), mode="edge")
-
-    # Build feature vector per timestep
-    delta = np.diff(spread, prepend=spread[0])
-    vol = _rolling_std(spread, 20)
-    cointegp = float(request.features.get("cointegP", 0.5))
-    regime = float(request.features.get("regime", 0.5))  # 0=trending, 1=reverting
-
-    features = np.stack([
-        spread,
-        delta,
-        vol,
-        np.full_like(spread, cointegp),
-        np.full_like(spread, regime),
-    ], axis=-1)  # (seq_len, n_features)
-
-    # Inference
-    x = torch.tensor(features[np.newaxis], dtype=torch.float32)  # (1, seq_len, n_features)
+@app.post('/predict')
+async def predict(request: PredictRequest):
+    if _model is None or _metadata is None or _normalizer is None:
+        raise HTTPException(503, 'No research checkpoint loaded')
+    if request.pairId != _metadata['pair_id']:
+        raise HTTPException(422, 'Checkpoint pair mismatch')
+    try:
+        features = feature_window(z_scores(request.observations, _normalizer))
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
+    import torch
     with torch.no_grad():
-        prob = _model(x).item()
-
-    # Confidence: how far from 0.5 (uncertain) the prediction is
-    confidence = min(1.0, abs(prob - 0.5) * 2.0)
-
-    return PredictResponse(
-        reversionProb=float(prob),
-        confidence=float(confidence),
-        modelLoaded=True,
-        inputLength=seq_len,
-    )
-
-
-def _rolling_std(arr: np.ndarray, window: int) -> np.ndarray:
-    """Causal rolling standard deviation."""
-    result = np.zeros_like(arr)
-    for i in range(len(arr)):
-        window_data = arr[max(0, i - window + 1):i + 1]
-        result[i] = float(np.std(window_data)) if len(window_data) > 1 else 0.0
-    return result
+        probability = _model(torch.tensor([features], dtype=torch.float32)).item()
+    if not math.isfinite(probability) or not 0 <= probability <= 1:
+        raise HTTPException(500, 'Invalid model output')
+    return {'reversionProb': probability, 'modelLoaded': True, 'researchOnly': True,
+            'normalizerId': _normalizer.identity, 'inputLength': 50}

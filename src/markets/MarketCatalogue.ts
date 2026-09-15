@@ -1,3 +1,4 @@
+import { classifyMarket } from '../config/markets.js';
 import { z } from 'zod';
 import { assertDefined } from '../utils/assertDefined.js';
 import { getDb } from '../data/database/sqlite.js';
@@ -37,9 +38,6 @@ export const MarketCatalogue = {
         market_category = excluded.market_category,
         exchange_is_open = excluded.exchange_is_open,
         spot = excluded.spot,
-        tradability_score = excluded.tradability_score,
-        research_score = excluded.research_score,
-        last_profiled_at = excluded.last_profiled_at,
         last_seen_at = datetime('now')
     `);
     const upsertSymbolStmt = db.prepare(`
@@ -82,48 +80,7 @@ export const MarketCatalogue = {
     for (const sym of activeSymbols) {
       if (!sym.symbol) continue;
 
-      let category = 'stocks';
-      const sLower = sym.symbol.toLowerCase();
-      const mLower = sym.market ? sym.market.toLowerCase() : '';
-
-      if (
-        sym.symbol.startsWith('1HZ') ||
-        sym.symbol.startsWith('BOOM') ||
-        sym.symbol.startsWith('CRASH') ||
-        sym.symbol.startsWith('stpRNG') ||
-        sym.symbol.startsWith('JD') ||
-        mLower.includes('synthetic')
-      ) {
-        category = 'synthetic';
-      } else if (
-        sym.symbol.startsWith('frx') ||
-        mLower.includes('forex') ||
-        /^(eur|gbp|usd|aud|nzd|jpy|chf|cad){2}$/i.test(sym.symbol)
-      ) {
-        category = 'forex';
-      } else if (
-        sym.symbol.startsWith('cry') ||
-        mLower.includes('crypto') ||
-        sLower.includes('btc') ||
-        sLower.includes('eth') ||
-        sLower.includes('ltc') ||
-        sLower.includes('xrp')
-      ) {
-        category = 'crypto';
-      } else if (
-        sLower.includes('xau') ||
-        sLower.includes('xag') ||
-        sLower.includes('oil') ||
-        sLower.includes('bco') ||
-        sLower.includes('brent') ||
-        sLower.includes('wti') ||
-        mLower.includes('commodit')
-      ) {
-        category = 'commodities';
-      }
-
-      // We don't have exchange_is_open in the legacy ActiveSymbol wrapper directly unless it is exposed,
-      // but let's assume 'exchange_is_open' is available in the original object or set it to true for now if missing.
+      const category = classifyMarket(sym.symbol, { market: sym.market, submarket: sym.submarket, display_name: sym.display_name, ...(sym.symbol_type ? { symbol_type: sym.symbol_type } : {}) });
       const isOpen = (sym.exchange_is_open === 1 || sym.exchange_is_open === true) && !sym.is_trading_suspended;
       const spot = sym.spot;
 
@@ -134,11 +91,10 @@ export const MarketCatalogue = {
         submarket: sym.submarket || '',
         marketCategory: category,
         exchangeIsOpen: isOpen,
-        tradabilityScore: 50,
-        researchScore: 50,
+        tradabilityScore: 0,
+        researchScore: 0,
       };
       if (spot !== undefined) info.spot = spot;
-      info.lastProfiledAt = new Date();
       
       marketInfos.push(info);
     }

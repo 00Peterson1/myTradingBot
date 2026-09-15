@@ -136,7 +136,7 @@ describe('deflatedSharpeRatio', () => {
     // This ensures the selection bias correction has room to reduce DSR
     const returns = Array.from({ length: 200 }, () => 0.003 + (Math.random() - 0.4) * 0.01);
     const resultFew = deflatedSharpeRatio(returns, 1);
-    const resultMany = deflatedSharpeRatio(returns, 100);
+    const resultMany = deflatedSharpeRatio(returns, 100, undefined, 0.01);
     // DSR with more trials must be <= DSR with fewer trials
     // (it can be equal if both are at boundary 0 or 1)
     if (resultFew && resultMany) {

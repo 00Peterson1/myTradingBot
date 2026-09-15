@@ -1,270 +1,102 @@
-"""
-Training script for SpreadReversionLSTM.
-
-Usage: python spread_model/train.py [--db PATH] [--epochs N] [--pair SYMBOL_A-SYMBOL_B]
-
-Loads historical spread data from data/trading.db,
-trains the LSTM model, saves best checkpoint to python/checkpoints/.
-
-Run this AFTER you have collected enough data with npm run research:daemon
-and have a baseline Sharpe from the rule-based CorrelationPairStrategy to beat.
-
-Minimum training data: 10,000 spread observations (~3h of continuous collection)
-Recommended: 100,000+ spread observations (~30h of daemon running)
-"""
-
+"""Research-only training with frozen normalization and isolated raw-time splits."""
 import argparse
-import sqlite3
-import os
-import sys
-import numpy as np
+from dataclasses import asdict
+from datetime import datetime, timezone
+import hashlib
+import json
 from pathlib import Path
-from datetime import datetime
+import sqlite3
+import uuid
+from spread_model.preprocessing import SCHEMA, split_dataset
 
-try:
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def load_rows(db_path, pair_id):
+    with sqlite3.connect(Path(db_path).resolve().as_uri() + '?mode=ro', uri=True) as conn:
+        pair = conn.execute('SELECT symbol_a,symbol_b FROM pair_spread_state WHERE pair_id=?', (pair_id,)).fetchone()
+        if not pair:
+            raise ValueError('Unknown pair')
+        rows = conn.execute('SELECT a.epoch,a.price,b.price FROM ticks a JOIN ticks b ON a.epoch=b.epoch WHERE a.symbol=? AND b.symbol=? ORDER BY a.epoch', pair).fetchall()
+    return pair, rows
+
+
+def train(db_path, pair_id, epochs=50, batch_size=256, lr=0.001, seed=1729):
+    if epochs < 1 or batch_size < 1 or not 0 < lr < 1:
+        raise ValueError('Invalid training settings')
+    import numpy as np
     import torch
-    import torch.nn as nn
     from torch.utils.data import DataLoader, TensorDataset
-    from spread_model.model import SpreadReversionLSTM, create_model
-except ImportError as e:
-    print(f"Missing dependencies: {e}")
-    print("Install with: pip install -r requirements.txt")
-    sys.exit(1)
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
-SEQ_LEN = SpreadReversionLSTM.SEQ_LEN   # 50
-N_FEATURES = SpreadReversionLSTM.N_FEATURES  # 5
-REVERSION_HORIZON = 20    # ticks: label=1 if |z| < 0.5 within 20 ticks
-REVERSION_TARGET_Z = 0.5  # threshold for "reverted"
-
-PROJECT_ROOT = Path(__file__).parent.parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "trading.db"
-CHECKPOINT_DIR = Path(__file__).parent.parent / "checkpoints"
-CHECKPOINT_DIR.mkdir(exist_ok=True)
-
-
-# ---------------------------------------------------------------------------
-# Data loading
-# ---------------------------------------------------------------------------
-
-def load_spread_data(db_path: Path, pair_id: str) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Load spread z-scores for a pair from SQLite.
-    Returns (features, labels) for training.
-    """
-    if not db_path.exists():
-        raise FileNotFoundError(
-            f"Database not found at {db_path}\n"
-            "Run `npm run research:daemon` first to collect data."
-        )
-
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-
-    # Get pair state
-    cursor.execute(
-        "SELECT symbol_a, symbol_b, beta_hedge_ratio, spread_mean, spread_std FROM pair_spread_state WHERE pair_id = ?",
-        (pair_id,),
-    )
-    state_row = cursor.fetchone()
-    if not state_row:
-        conn.close()
-        raise ValueError(
-            f"No spread state found for pair '{pair_id}'.\n"
-            "Run npm run research:daemon with EUR/GBP and AUD/NZD in DAEMON_CATEGORIES."
-        )
-
-    symbol_a, symbol_b, beta, spread_mean, spread_std = state_row
-
-    # Get synchronized tick prices for both symbols
-    cursor.execute(
-        """
-        SELECT a.epoch, a.price as price_a, b.price as price_b
-        FROM ticks a
-        JOIN ticks b ON a.epoch = b.epoch
-        WHERE a.symbol = ? AND b.symbol = ?
-        ORDER BY a.epoch ASC
-        """,
-        (symbol_a, symbol_b),
-    )
-    rows = cursor.fetchall()
-    conn.close()
-
-    if len(rows) < SEQ_LEN + REVERSION_HORIZON + 100:
-        raise ValueError(
-            f"Insufficient data: {len(rows)} synchronized ticks (need ≥{SEQ_LEN + REVERSION_HORIZON + 100}).\n"
-            "Run npm run research:daemon for longer to collect more data."
-        )
-
-    print(f"Loaded {len(rows):,} synchronized tick pairs for {symbol_a}/{symbol_b}")
-
-    # Compute spread z-scores
-    import math
-    spreads = []
-    for _, price_a, price_b in rows:
-        if price_a > 0 and price_b > 0:
-            spread = math.log(price_a) - beta * math.log(price_b)
-            z = (spread - spread_mean) / (spread_std + 1e-10)
-            spreads.append(z)
-
-    spreads_arr = np.array(spreads, dtype=np.float32)
-
-    # Build features and labels
-    X, y = [], []
-    for i in range(SEQ_LEN, len(spreads_arr) - REVERSION_HORIZON):
-        window = spreads_arr[i - SEQ_LEN:i]
-        delta = np.diff(window, prepend=window[0])
-        vol = _rolling_std(window, 20)
-
-        features = np.stack([
-            window,
-            delta,
-            vol,
-            np.zeros(SEQ_LEN),  # cointegration (placeholder, no per-tick data)
-            np.zeros(SEQ_LEN),  # regime (placeholder)
-        ], axis=-1)
-
-        # Label: 1 if |z| < REVERSION_TARGET_Z within next REVERSION_HORIZON ticks
-        future_z = spreads_arr[i:i + REVERSION_HORIZON]
-        label = int(np.any(np.abs(future_z) < REVERSION_TARGET_Z))
-
-        X.append(features)
-        y.append(label)
-
-    X_arr = np.array(X, dtype=np.float32)
-    y_arr = np.array(y, dtype=np.float32)
-
-    pos_rate = y_arr.mean()
-    print(f"Dataset: {len(X_arr):,} samples, {pos_rate:.1%} reversion (positive) labels")
-
-    return X_arr, y_arr
-
-
-def _rolling_std(arr: np.ndarray, window: int) -> np.ndarray:
-    result = np.zeros_like(arr)
-    for i in range(len(arr)):
-        slice_ = arr[max(0, i - window + 1):i + 1]
-        result[i] = float(np.std(slice_)) if len(slice_) > 1 else 0.0
-    return result
-
-
-# ---------------------------------------------------------------------------
-# Training
-# ---------------------------------------------------------------------------
-
-def train(db_path: Path, pair_id: str, epochs: int = 50, batch_size: int = 256, lr: float = 1e-3):
-    print(f"\n{'='*60}")
-    print(f"SpreadReversionLSTM Training")
-    print(f"Pair: {pair_id}")
-    print(f"Epochs: {epochs}, Batch size: {batch_size}, LR: {lr}")
-    print(f"{'='*60}\n")
-
-    X, y = load_spread_data(db_path, pair_id)
-
-    # Train/val split (80/20, time-ordered — no shuffling)
-    split = int(len(X) * 0.8)
-    X_train, X_val = X[:split], X[split:]
-    y_train, y_val = y[:split], y[split:]
-
-    # Class-balanced sampling
-    pos_weight = torch.tensor([(y_train == 0).sum() / max((y_train == 1).sum(), 1)])
-
-    train_ds = TensorDataset(torch.from_numpy(X_train), torch.from_numpy(y_train))
-    val_ds = TensorDataset(torch.from_numpy(X_val), torch.from_numpy(y_val))
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Device: {device}")
-
-    model = create_model().to(device)
+    from spread_model.model import create_model
+    torch.manual_seed(seed)
+    torch.use_deterministic_algorithms(True)
+    torch.set_num_threads(1)
+    np.random.seed(seed)
+    pair, rows = load_rows(db_path, pair_id)
+    if len(rows) < 10000:
+        raise ValueError('At least 10000 synchronized observations are required')
+    normalizer, splits = split_dataset(rows)
+    loaders = [DataLoader(TensorDataset(torch.tensor(np.asarray(x), dtype=torch.float32), torch.tensor(y, dtype=torch.float32)),
+                          batch_size=batch_size, shuffle=False) for x, y in splits]
+    model = create_model()  # CPU reference path; no nondeterministic accelerator assumptions.
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5)
-    criterion = nn.BCELoss(reduction="none")
+    criterion = torch.nn.BCELoss(reduction='sum')
 
-    best_val_loss = float("inf")
-    checkpoint_path = CHECKPOINT_DIR / "spread_reversion_best.pt"
+    def evaluate(loader):
+        model.eval()
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for x, y in loader:
+                total += criterion(model(x).reshape(-1), y).item()
+                count += len(y)
+        return total / count
 
-    for epoch in range(1, epochs + 1):
-        # Train
+    best_loss, best_state = float('inf'), None
+    for epoch in range(epochs):
         model.train()
-        train_loss = 0.0
-        for X_batch, y_batch in train_loader:
-            X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+        for x, y in loaders[0]:
             optimizer.zero_grad()
-            pred = model(X_batch).squeeze()
-            # Apply pos_weight for class imbalance
-            weights = torch.where(y_batch == 1, pos_weight.to(device), torch.ones(1, device=device))
-            loss = (criterion(pred, y_batch) * weights).mean()
+            loss = criterion(model(x).reshape(-1), y) / len(y)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
-            train_loss += loss.item()
-
-        # Validate
-        model.eval()
-        val_loss = 0.0
-        val_correct = 0
-        val_total = 0
-        with torch.no_grad():
-            for X_batch, y_batch in val_loader:
-                X_batch, y_batch = X_batch.to(device), y_batch.to(device)
-                pred = model(X_batch).squeeze()
-                loss = criterion(pred, y_batch).mean()
-                val_loss += loss.item()
-                predicted = (pred > 0.5).float()
-                val_correct += (predicted == y_batch).sum().item()
-                val_total += len(y_batch)
-
-        avg_train = train_loss / len(train_loader)
-        avg_val = val_loss / len(val_loader)
-        accuracy = val_correct / max(val_total, 1) * 100
-        scheduler.step(avg_val)
-
-        print(f"Epoch {epoch:3d}/{epochs} | train_loss={avg_train:.4f} | val_loss={avg_val:.4f} | val_acc={accuracy:.1f}%")
-
-        if avg_val < best_val_loss:
-            best_val_loss = avg_val
-            torch.save({
-                "epoch": epoch,
-                "model_state_dict": model.state_dict(),
-                "optimizer_state_dict": optimizer.state_dict(),
-                "val_loss": avg_val,
-                "pair_id": pair_id,
-                "trained_at": datetime.utcnow().isoformat(),
-            }, str(checkpoint_path))
-            print(f"  ✓ New best checkpoint saved ({avg_val:.4f})")
-
-    print(f"\nTraining complete. Best val loss: {best_val_loss:.4f}")
-    print(f"Checkpoint: {checkpoint_path}")
-    print("\nStart the sidecar: npm run sidecar:serve")
+        validation_loss = evaluate(loaders[1])
+        if validation_loss < best_loss:
+            best_loss = validation_loss
+            best_state = {key: value.detach().clone() for key, value in model.state_dict().items()}
+        print(f'Epoch {epoch + 1}/{epochs}: validation BCE={validation_loss:.6f}')
+    if best_state is None:
+        raise ValueError('Training produced no finite checkpoint')
+    model.load_state_dict(best_state)
+    dataset_id = hashlib.sha256(json.dumps(rows, allow_nan=False).encode()).hexdigest()
+    folder = ROOT / 'python' / 'checkpoints'
+    folder.mkdir(exist_ok=True)
+    # An interrupted or previously evaluated holdout must not be silently reused.
+    with (folder / f'holdout-{dataset_id}.json').open('x') as claim:
+        json.dump({'dataset_id': dataset_id, 'pair_id': pair_id, 'seed': seed, 'epochs': epochs, 'batch_size': batch_size, 'lr': lr}, claim)
+    test_loss = evaluate(loaders[2])  # Read once, after selection; never selects an epoch.
+    metadata = {'schema': SCHEMA, 'pair_id': pair_id, 'symbols': list(pair), 'seed': seed,
+                'normalizer': asdict(normalizer), 'normalizer_id': normalizer.identity,
+                'dataset_id': dataset_id,
+                'code_id': hashlib.sha256(b''.join((Path(__file__).parent / file).read_bytes() for file in ['train.py', 'preprocessing.py', 'model.py'])).hexdigest(),
+                'torch_version': str(torch.__version__), 'numpy_version': str(np.__version__),
+                'split_policy': '70/15/15 raw chronological; independent feature and label windows',
+                'epochs': epochs, 'batch_size': batch_size, 'lr': lr, 'validation_loss': best_loss,
+                'test_loss': test_loss, 'created_at': datetime.now(timezone.utc).isoformat(),
+                'research_only': True}
+    checkpoint = folder / f'{uuid.uuid4()}.pt'
+    torch.save({'model_state_dict': best_state, 'metadata': metadata}, checkpoint)
+    print(f'Research checkpoint: {checkpoint}. Test BCE={test_loss:.6f}; not trading eligibility.')
+    return checkpoint
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train SpreadReversionLSTM")
-    parser.add_argument("--db", type=str, default=str(DB_PATH), help="Path to trading.db")
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--batch-size", type=int, default=256)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument(
-        "--pair",
-        type=str,
-        default="frxEURGBP-frxAUDNZD",
-        help="Pair ID (must match pair_spread_state.pair_id in DB)",
-    )
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--db', type=Path, default=ROOT / 'data' / 'trading.db')
+    parser.add_argument('--pair', default='frxEURGBP-frxAUDNZD')
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--batch-size', type=int, default=256)
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--seed', type=int, default=1729)
     args = parser.parse_args()
-
-    train(
-        db_path=Path(args.db),
-        pair_id=args.pair,
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        lr=args.lr,
-    )
+    train(args.db, args.pair, args.epochs, args.batch_size, args.lr, args.seed)

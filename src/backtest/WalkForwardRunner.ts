@@ -1,3 +1,4 @@
+import { blockBootstrapMean, DEFAULT_BOOTSTRAP_POLICY } from '../research/statistics/bootstrap.js';
 import { assertDefined } from '../utils/assertDefined.js';
 import { BacktestEngine, type BacktestConfig } from './BacktestEngine.js';
 import type { TickFeatures } from '../types/tick.js';
@@ -78,7 +79,20 @@ export class WalkForwardRunner {
     // Include ALL test trades, even from sparse or losing folds; excluding those
     // trades biases the result. Compute totals/CI/drawdown from the combined path.
     const observations = folds.flatMap((f) => f.run.observations.filter((o) => o.timestamp >= f.testFrom && o.timestamp <= f.testTo));
-    const aggregated = folds.length ? engine.computeMetrics(observations, 'BACKTEST', assertDefined(folds[0]).testFrom, assertDefined(folds[folds.length - 1]).testTo, numStrategiesTried) : null;
+    const pooled = folds.length ? engine.computeMetrics(observations, 'BACKTEST', assertDefined(folds[0]).testFrom, assertDefined(folds[folds.length - 1]).testTo, numStrategiesTried) : null;
+    const aggregated = pooled ? { ...pooled,
+      // Fold accounts restart at their initial capital; never invent a concatenated account path.
+      maxDrawdown: Math.min(...folds.map(fold => fold.run.testMetrics.maxDrawdown)),
+      maxDrawdownPct: Math.min(...folds.map(fold => fold.run.testMetrics.maxDrawdownPct)),
+      longestWinningStreak: Math.max(...folds.map(fold => fold.run.testMetrics.longestWinningStreak)),
+      longestLosingStreak: Math.max(...folds.map(fold => fold.run.testMetrics.longestLosingStreak)),
+      maxConsecutiveLosses: Math.max(...folds.map(fold => fold.run.testMetrics.maxConsecutiveLosses)),
+      calmarRatio: null,
+      confidenceInterval95: blockBootstrapMean(folds.map(fold => fold.run.observations
+        .filter(observation => observation.timestamp >= fold.testFrom && observation.timestamp <= fold.testTo)
+        .map(observation => observation.returnPct)), config.bootstrapPolicy ?? DEFAULT_BOOTSTRAP_POLICY),
+      edgeStatus: 'INSUFFICIENT_EVIDENCE' as const,
+    } : null;
     const notes: string[] = [];
     if (folds.length < this.config.numFolds) notes.push(`FAIL: Only ${String(folds.length)}/${String(this.config.numFolds)} usable folds`);
     const sparse = folds.filter((f) => f.run.testMetrics.totalTrades < this.config.minTradesPerFold).length;
@@ -89,6 +103,8 @@ export class WalkForwardRunner {
     if (aggregated && aggregated.maxDrawdownPct < -0.3) notes.push('FAIL: Maximum drawdown exceeds 30% of simulated starting capital');
     const profitable = folds.filter((f) => f.run.testMetrics.totalProfit > 0).length;
     if (!folds.length || profitable / folds.length < 0.6) notes.push('FAIL: Fewer than 60% of test folds are profitable');
+    if (aggregated?.deflatedSharpe === null || aggregated?.deflatedSharpe === undefined) notes.push('FAIL: Selection-adjusted Sharpe evidence unavailable; trial variance/reference and search history are required');
+    else if (aggregated.deflatedSharpe < 0.95) notes.push('FAIL: Selection-adjusted Sharpe evidence below 0.95');
     const passed = notes.length === 0;
     if (passed) notes.push(`PASS: Positive out-of-sample evidence across ${String(folds.length)} folds`);
     notes.push('Simulation uses a declared tick entry delay and fixed payout assumption; historical ticks cannot reproduce dealer quotes or guarantee future performance.');

@@ -43,6 +43,15 @@ describe('durable Options accounting', () => {
     expect(ledger.snapshot()).toMatchObject({ cashMinor: 100000, reservedMinor: 100, availableMinor: 99900 });
     expect(() => reserve()).toThrow('OPEN_EXPOSURE_LIMIT');
   });
+  it.each(['symbol', 'strategy'])('enforces durable %s exposure limits independently', group => {
+    vi.stubEnv('MAX_OPEN_TRADES', '10');
+    vi.stubEnv(group === 'symbol' ? 'MAX_SYMBOL_EXPOSURE_FRACTION' : 'MAX_STRATEGY_EXPOSURE_FRACTION', '0.001');
+    resetEnvForTesting();
+    reserve();
+    expect(() => reserve()).toThrow('OPEN_EXPOSURE_LIMIT');
+    const other = { ...signal(), symbol: 'OTHER', strategy: 'other' };
+    expect(risk.evaluate(other, 'DEMO').approved).toBe(true);
+  });
   it('posts purchase and settlement once, with consistent integer cash', () => {
     const intent = reserve();
     ledger.markSubmitting(intent.intent_id);

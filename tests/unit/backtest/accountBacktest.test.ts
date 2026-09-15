@@ -15,7 +15,7 @@ function rows(): TickFeatures[] {
 function engine(factory = strategy, maxTradesPerHour = 100): BacktestEngine {
   return new BacktestEngine({ strategyFactory: factory, strategyName: 'always-rise', symbol: 'TEST',
     payoutMultiplier: 0.85, feePerTrade: 0, minConfidence: 0.5, contextWindow: 2,
-    initialCapital: 1000, contractDuration: 2, maxOpenTrades: 1, maxTradesPerHour, entryDelayTicks: 1 });
+    warmupTicks: 0, initialCapital: 1000, contractDuration: 2, maxOpenTrades: 1, maxTradesPerHour, entryDelayTicks: 1 });
 }
 function run(backtest: BacktestEngine): ReturnType<BacktestEngine['run']> {
   return backtest.run(rows(), new Date(0), new Date(9000), new Date(10000), new Date(19000), new Date(20000), new Date(29000));
@@ -38,6 +38,11 @@ describe('backtest account and period integration', () => {
     expect(result.trainMetrics.totalTrades).toBe(1);
     expect(result.validateMetrics.totalTrades).toBe(1);
     expect(result.testMetrics.totalTrades).toBe(1);
+  });
+  it('rejects interrupted periods instead of reporting partial results', async () => {
+    const backtest = new BacktestEngine({ strategyFactory: strategy, strategyName: 'always-rise', symbol: 'TEST',
+      payoutMultiplier: 0.85, feePerTrade: 0, minConfidence: 0.5, contextWindow: 2, maxTickGapMs: 500 });
+    await expect(run(backtest)).rejects.toThrow('Tick gap');
   });
   it('rejects reused strategy state and overlapping evaluation periods', async () => {
     const shared = strategy();

@@ -45,32 +45,7 @@ export class OptionsLedger {
     if (openingMinor < 0) throw new Error('Opening balance must not be negative');
     this.accountKey = `${mode}:OPTIONS:${accountId}`;
     this.db.pragma('foreign_keys = ON');
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS options_accounts (
-        account_key TEXT PRIMARY KEY, account_id TEXT NOT NULL, mode TEXT NOT NULL,
-        currency TEXT NOT NULL CHECK(currency='USD'), cash_minor INTEGER NOT NULL CHECK(cash_minor>=0),
-        initial_minor INTEGER NOT NULL, revision INTEGER NOT NULL DEFAULT 0,
-        risk_json TEXT, blocked_reason TEXT
-      );
-      CREATE TABLE IF NOT EXISTS options_intents (
-        intent_id TEXT PRIMARY KEY, account_key TEXT NOT NULL REFERENCES options_accounts(account_key),
-        signal_id TEXT NOT NULL, symbol TEXT NOT NULL, strategy TEXT NOT NULL,
-        specification TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('RESERVED','SUBMITTING','UNKNOWN','OPEN','SETTLED','CANCELLED')),
-        reserved_minor INTEGER NOT NULL CHECK(reserved_minor>0), cost_minor INTEGER,
-        contract_id TEXT, payout_minor INTEGER, profit_minor INTEGER, updated_at TEXT NOT NULL,
-        UNIQUE(account_key, signal_id), UNIQUE(account_key, contract_id)
-      );
-      CREATE TABLE IF NOT EXISTS options_ledger_events (
-        sequence INTEGER PRIMARY KEY AUTOINCREMENT,
-        account_key TEXT NOT NULL REFERENCES options_accounts(account_key),
-        intent_id TEXT, event_type TEXT NOT NULL, payload TEXT NOT NULL, occurred_at TEXT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_options_intents_account ON options_intents(account_key, status);
-      CREATE TRIGGER IF NOT EXISTS options_events_no_update BEFORE UPDATE ON options_ledger_events
-        BEGIN SELECT RAISE(ABORT, 'Ledger events are immutable'); END;
-      CREATE TRIGGER IF NOT EXISTS options_events_no_delete BEFORE DELETE ON options_ledger_events
-        BEGIN SELECT RAISE(ABORT, 'Ledger events are immutable'); END;
-    `);
+    ensureOptionsSchema(this.db);
     this.db.transaction(() => {
       const result = this.db.prepare(`INSERT OR IGNORE INTO options_accounts
         (account_key,account_id,mode,currency,cash_minor,initial_minor) VALUES (?,?,?,'USD',?,?)`)
@@ -233,4 +208,33 @@ export class OptionsLedger {
     this.db.prepare('INSERT INTO options_ledger_events(account_key,intent_id,event_type,payload,occurred_at) VALUES (?,?,?,?,?)')
       .run(this.accountKey, intentId, type, JSON.stringify(payload), this.now().toISOString());
   }
+}
+
+export function ensureOptionsSchema(db: Database.Database): void {
+  db.exec(`
+      CREATE TABLE IF NOT EXISTS options_accounts (
+        account_key TEXT PRIMARY KEY, account_id TEXT NOT NULL, mode TEXT NOT NULL,
+        currency TEXT NOT NULL CHECK(currency='USD'), cash_minor INTEGER NOT NULL CHECK(cash_minor>=0),
+        initial_minor INTEGER NOT NULL, revision INTEGER NOT NULL DEFAULT 0,
+        risk_json TEXT, blocked_reason TEXT
+      );
+      CREATE TABLE IF NOT EXISTS options_intents (
+        intent_id TEXT PRIMARY KEY, account_key TEXT NOT NULL REFERENCES options_accounts(account_key),
+        signal_id TEXT NOT NULL, symbol TEXT NOT NULL, strategy TEXT NOT NULL,
+        specification TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('RESERVED','SUBMITTING','UNKNOWN','OPEN','SETTLED','CANCELLED')),
+        reserved_minor INTEGER NOT NULL CHECK(reserved_minor>0), cost_minor INTEGER,
+        contract_id TEXT, payout_minor INTEGER, profit_minor INTEGER, updated_at TEXT NOT NULL,
+        UNIQUE(account_key, signal_id), UNIQUE(account_key, contract_id)
+      );
+      CREATE TABLE IF NOT EXISTS options_ledger_events (
+        sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_key TEXT NOT NULL REFERENCES options_accounts(account_key),
+        intent_id TEXT, event_type TEXT NOT NULL, payload TEXT NOT NULL, occurred_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_options_intents_account ON options_intents(account_key, status);
+      CREATE TRIGGER IF NOT EXISTS options_events_no_update BEFORE UPDATE ON options_ledger_events
+        BEGIN SELECT RAISE(ABORT, 'Ledger events are immutable'); END;
+      CREATE TRIGGER IF NOT EXISTS options_events_no_delete BEFORE DELETE ON options_ledger_events
+        BEGIN SELECT RAISE(ABORT, 'Ledger events are immutable'); END;
+    `);
 }

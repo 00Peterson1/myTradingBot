@@ -223,6 +223,13 @@ export class RiskEngine {
       ? Math.floor(Math.min(rawStake - fee, configuredStake) * 100) / 100
       : Math.floor((rawStake - fee) * 100) / 100;
     if (stake < MIN_STAKE_USD) return { approved: false, reason: 'POSITION_SIZE_TOO_SMALL', signal };
+    const activeIntents = this.ledger?.snapshot().intents.filter(intent => ['RESERVED', 'SUBMITTING', 'UNKNOWN', 'OPEN'].includes(intent.status)) ?? [];
+    const symbolExposure = activeIntents.filter(intent => intent.symbol === signal.symbol).reduce((sum, intent) => sum + (intent.cost_minor ?? intent.reserved_minor), 0) / 100;
+    const strategyExposure = activeIntents.filter(intent => intent.strategy === signal.strategy).reduce((sum, intent) => sum + (intent.cost_minor ?? intent.reserved_minor), 0) / 100;
+    if (symbolExposure + stake + fee > this.state.currentBalance * env.MAX_SYMBOL_EXPOSURE_FRACTION ||
+        strategyExposure + stake + fee > this.state.currentBalance * env.MAX_STRATEGY_EXPOSURE_FRACTION) {
+      return { approved: false, reason: 'OPEN_EXPOSURE_LIMIT', signal };
+    }
     const reserved = this.getReservedExposure();
     const dailyBudget = this.state.dailyStartBalance * Math.min(env.RISK_MAX_DAILY_LOSS_FRACTION, env.MAX_DAILY_LOSS_PERCENT);
     const drawdownBudget = this.state.peakBalance * maxDDFraction;

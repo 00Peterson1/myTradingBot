@@ -27,11 +27,13 @@ export class FeatureEngine {
   private readonly priceBuffer: number[] = [];
   private readonly maxBuffer: number;
   private tickCount = 0;
+  private lastTimestamp = -Infinity;
 
   constructor(
     readonly symbol: string,
     maxBufferSize = 500,
   ) {
+    if (!symbol || !Number.isInteger(maxBufferSize) || maxBufferSize < 1) throw new Error('Invalid feature engine configuration');
     this.maxBuffer = maxBufferSize;
     log.info({ symbol, maxBufferSize }, 'FeatureEngine initialized');
   }
@@ -44,6 +46,13 @@ export class FeatureEngine {
    * @returns TickFeatures with all computed indicators
    */
   process(tick: Tick): TickFeatures {
+    const timestamp = tick.timestamp.getTime();
+    if (tick.symbol !== this.symbol || !Number.isFinite(tick.price) || tick.price <= 0 ||
+        !Number.isFinite(timestamp) || !Number.isFinite(tick.epoch) ||
+        Math.abs(timestamp - tick.epoch * 1000) > 0.001 || timestamp < this.lastTimestamp) {
+      throw new Error('Invalid or out-of-order feature tick');
+    }
+    this.lastTimestamp = timestamp;
     this.tickCount++;
 
     // Update rolling buffer BEFORE computing features (causal)
@@ -88,6 +97,7 @@ export class FeatureEngine {
   reset(): void {
     this.priceBuffer.length = 0;
     this.tickCount = 0;
+    this.lastTimestamp = -Infinity;
     log.info({ symbol: this.symbol }, 'FeatureEngine reset');
   }
 }

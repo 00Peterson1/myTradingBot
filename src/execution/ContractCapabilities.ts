@@ -29,8 +29,8 @@ function supports(contract: AvailableContract, duration: number, unit: DurationU
   const max = parseDuration(contract.max_contract_duration);
   if (!min || min.ticks !== max?.ticks || min.ticks !== (unit === 't')) return false;
   const value = duration * (unit === 't' ? 1 : SECONDS[unit]);
-  // CALL/PUT with a required barrier represents Higher/Lower, not Rise/Fall.
-  if (['CALL', 'PUT'].includes(contract.contract_type) && (contract.barriers ?? 0) !== 0) return false;
+  // `barriers` counts contract barriers; it does not require a user-supplied offset.
+  // At-the-money CALL/PUT contracts also advertise one barrier.
   return value >= min.value && value <= max.value;
 }
 
@@ -46,16 +46,9 @@ export function resolveContractSpec(
   const accepts = (d: number, u: DurationUnit): boolean =>
     types.every(type => available.some(c => c.contract_type === type && supports(c, d, u)));
   if (accepts(duration, unit)) return { family, duration, durationUnit: unit };
-  // Financial markets commonly offer time-based contracts only. Resolve this
-  // before research validation, and use the same resolved expiry in execution.
-  if (unit === 't' && family === 'RISE_FALL') {
-    const candidates = available.filter(c => types.includes(c.contract_type))
-      .map(c => parseDuration(c.min_contract_duration))
-      .filter((d): d is { value: number; ticks: boolean } => d !== null && !d.ticks)
-      .sort((a, b) => a.value - b.value);
-    for (const candidate of candidates) {
-      if (accepts(candidate.value, 's')) return { family, duration: candidate.value, durationUnit: 's' };
-    }
-  }
   return null;
+}
+
+export function supportsOptionContract(available: readonly AvailableContract[], contractType: string, duration: number, unit: DurationUnit): boolean {
+  return available.some(contract => contract.contract_type === contractType && supports(contract, duration, unit));
 }

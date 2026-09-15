@@ -1,21 +1,34 @@
 # Quantitative research workstation
 
-The intended workflow is research → backtesting → validated demo evaluation → explicitly eligible live execution. The current implementation does **not** enforce all of these gates. See [the milestone review](docs/MILESTONE_REVIEW.md) for verified capabilities and remaining defects.
+The intended workflow is research → backtesting → validated demo evaluation → explicitly eligible live execution. Lifecycle promotion gates are still pending. See [the milestone review](docs/MILESTONE_REVIEW.md) for evidence and remaining work.
 
-| Command | Current behavior |
+| Command | Behavior |
 |---|---|
-| `npm run doctor` | Local configuration and read-only database diagnostics; does not certify trading readiness |
-| `npm run doctor -- --connectivity` | Also checks the public market-data connection; no account authorization or orders |
-| `npm run migrate` | Initializes the existing SQLite schema; versioned migrations are not implemented |
-| `npm run markets` | Lists cached markets; discovers them through the public API when the cache is empty |
-| `npm run research:daemon` | Collects and persists tick batches and derived features |
-| `npm run research` | Samples ticks in memory and saves exploratory summary profiles |
-| `npm run backtest` | Runs preliminary chronological simulations using configured duration/payout assumptions |
-| `npm run trade:demo` | Existing Options execution runner; lifecycle, durable accounting and reconciliation remain incomplete |
-| `npm run trade:live` | Existing real-account Options runner; not ready for validated deployment |
+| `npm run doctor` | Read-only configuration and database diagnostics |
+| `npm run doctor -- --connectivity` | Public market-data connection check |
+| `npm run doctor -- --demo-connectivity --proposal 1HZ10V` | Demo authentication, balance, portfolio and configured CALL quote; no orders |
+| `npm run migrate` | Transactional, versioned SQLite migrations and integrity check |
+| `npm run markets` | Cached catalogue or public discovery; distinct market categories |
+| `npm run research:daemon` | Persist tick batches and derived features |
+| `npm run research` | Exploratory survey; saves profiles, not raw survey ticks |
+| `npm run backtest -- --symbols 1HZ10V` | Registered validation study with development walk-forward, declared parameter neighbors and a one-time final holdout |
+| `npm run experiments` | List recent experiment/study IDs |
+| `npm run experiments -- --id HASH --output PATH` | Export a verified input/code/attempt bundle without overwriting an existing file |
+| `npm run trade:demo` | Options runner with durable accounting, capability checks and settlement reconciliation; eligibility gates still pending |
+| `npm run trade:live` | Options runner requiring explicit live switches; deployment validation remains incomplete |
 
-`SYMBOLS` selects instruments. Instrument discovery does not guarantee availability of a particular contract, duration, account or product. The code includes directional and digit Options strategies with incomplete capability integration. CFD trading is not implemented.
+`SYMBOLS` selects instruments. Discovery does not establish contract availability, strategy suitability or CFD access. Options capabilities are checked for the requested type and duration before quoting. Unsupported durations are rejected; there is no automatic duration substitution. CFD execution requires a separate adapter and is not implemented.
 
-`CONTRACT_DURATION`, `CONTRACT_DURATION_UNIT` and `BACKTEST_PAYOUT_MULTIPLIER` configure simulation assumptions. The executor still contains a duration fallback, so configured equality is not proof of execution parity. Fixed payouts are assumptions, not observed historical quotes.
+`CONTRACT_DURATION`, `CONTRACT_DURATION_UNIT` and `BACKTEST_PAYOUT_MULTIPLIER` define simulation assumptions. A fixed payout and declared tick entry delay do not reproduce historical broker quotes. Operational money/risk handling currently supports USD. `MAX_SYMBOL_EXPOSURE_FRACTION` and `MAX_STRATEGY_EXPOSURE_FRACTION` cap combined reserved/open costs; both default to 0.05.
 
-Run `npm run typecheck`, `npm test`, and `npm run lint` to check engineering health. Passing tests or a preliminary backtest check does not establish an edge, demo eligibility, or live eligibility. Keep credentials in the untracked `.env`; diagnostics redact the token completely.
+`MAX_TICK_GAP_SECONDS` defaults to 60. Larger gaps block a symbol, and a public-feed disconnect blocks all active streams. Restarting creates fresh state and repeats warm-up; settlement reconciliation continues while the runner stays open. Backtests reject interrupted periods. Segment or recollect data deliberately; increasing the threshold to obtain a pass does not repair missing ticks.
+
+The validation CLI reserves the last 20% of observations before development evaluation. It requires sufficient trades, a positive block-bootstrap lower confidence bound, declared family-neighbor robustness, and DSR/BY selection correction before consuming the holdout. A holdout interval cannot be reused by changing its prices or taking an overlapping subset. Attempts and failures remain recorded. Missing search history or undefined statistics yields insufficient evidence. The registry counts recorded hypotheses conservatively; it cannot account for experiments performed outside it. PBO remains unavailable without aligned multi-candidate return paths. Results do not automatically promote a strategy.
+
+## Python research model
+
+Use a Python 3 virtual environment, install `python/requirements.txt`, then activate it before running the npm sidecar commands. `npm run sidecar:train -- --pair PAIR_ID` fits normalization only on the raw chronological training split. Validation selects the epoch; the separate final split is evaluated once. Windows and label horizons stay inside each split. A unique research checkpoint records normalization, seed, source/data hashes and losses; repeated use of the same dataset holdout is refused.
+
+Set `MODEL_CHECKPOINT` to that checkpoint before `npm run sidecar:serve`. Prediction input is `{ "pairId": "A-B", "observations": [[epoch, priceA, priceB], ...] }` with exactly 50 synchronized, ordered observations. Training and serving share frozen normalization and identical channels. Old checkpoints and `spreadHistory` requests are incompatible and fail visibly. The model is research-only and is not connected to order eligibility.
+
+Run `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`, and `npm run test:python`. Model integration tests require the Python dependencies; otherwise they report skips. Tests do not establish trading edge. Keep credentials in the untracked `.env`; diagnostics redact tokens.

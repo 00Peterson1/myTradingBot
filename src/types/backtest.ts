@@ -71,6 +71,8 @@ export interface PerformanceMetrics {
  * A complete backtest run — one strategy, one symbol, one parameter set.
  */
 export interface BacktestRun {
+  readonly experimentId?: string;
+  readonly attemptId?: string;
   readonly id: string;
   readonly createdAt: Date;
   readonly strategy: string;

@@ -1,3 +1,5 @@
+import { classifyMarket, type MarketType } from '../config/markets.js';
+export type { MarketType } from '../config/markets.js';
 /**
  * SymbolRanker
  *
@@ -21,18 +23,6 @@ const log = createLogger('SymbolRanker');
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-export type MarketType =
-  | 'volatility'
-  | 'boom'
-  | 'crash'
-  | 'step'
-  | 'jump'
-  | 'forex'
-  | 'commodities'
-  | 'crypto'
-  | 'stock_indices'
-  | 'unknown';
 
 export type StrategyName =
   | 'momentum'
@@ -62,18 +52,7 @@ export interface SymbolProfile {
 // Market type detection
 // ---------------------------------------------------------------------------
 
-export function detectMarketType(symbol: string): MarketType {
-  if (symbol.startsWith('1HZ') || symbol.startsWith('R_')) return 'volatility';
-  if (symbol.startsWith('BOOM')) return 'boom';
-  if (symbol.startsWith('CRASH')) return 'crash';
-  if (symbol.startsWith('stpRNG')) return 'step';
-  if (symbol.startsWith('JD')) return 'jump';
-  if (symbol.startsWith('frx') && (symbol.includes('XAU') || symbol.includes('XAG'))) return 'commodities';
-  if (symbol.startsWith('frx')) return 'forex';
-  if (symbol.startsWith('cry')) return 'crypto';
-  if (symbol === 'US500' || symbol === 'UT100') return 'stock_indices';
-  return 'unknown';
-}
+export function detectMarketType(symbol: string): MarketType { return classifyMarket(symbol); }
 
 /**
  * Returns the appropriate strategies for a given market type.
@@ -105,6 +84,7 @@ export function strategiesForMarketType(type: MarketType): StrategyName[] {
       // Forex pairs exhibit strong trend persistence and macro momentum
       return ['momentum', 'vol-adj-momentum', 'breakout', 'ewms'];
 
+    case 'metals':
     case 'commodities':
       // Commodities (Gold/Silver) show strong volatility breakouts
       return ['momentum', 'vol-adj-momentum', 'breakout', 'wavelet'];
@@ -145,6 +125,7 @@ export class SymbolRanker {
       const rows = db
         .prepare<[], {
           symbol: string;
+          market_category: string;
           is_autocorrelated: number;
           is_normal: number;
           has_edge: number;
@@ -153,7 +134,7 @@ export class SymbolRanker {
           score: number;
         }>(`
           SELECT
-            mp.symbol,
+            mp.symbol, mp.market_category,
             COALESCE(mp.is_autocorrelated, 0) as is_autocorrelated,
             COALESCE(mp.is_normal, 1)         as is_normal,
             COALESCE(mp.has_edge, 0)          as has_edge,
@@ -167,7 +148,7 @@ export class SymbolRanker {
 
       for (const row of rows) {
         if (!symbols.includes(row.symbol)) continue;
-        const marketType = detectMarketType(row.symbol);
+        const marketType = classifyMarket(row.symbol, { marketCategory: row.market_category });
         dbProfiles.push({
           symbol: row.symbol,
           marketType,
