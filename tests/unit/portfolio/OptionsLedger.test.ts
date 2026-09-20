@@ -62,6 +62,13 @@ describe('durable Options accounting', () => {
     expect(ledger.recordSettlement(intent.intent_id, 1.85, 0.85)).toBe(false);
     expect(ledger.snapshot()).toMatchObject({ cashMinor: 100085, openCostMinor: 0 });
     expect(risk.getState().currentBalance).toBe(1000.85);
+    const events = db.prepare("SELECT payload FROM options_ledger_events WHERE event_type IN ('OPTION_RESERVED','OPTION_OPENED','OPTION_SETTLED') ORDER BY sequence").all() as { payload: string }[];
+    const canonical = events.map(row => (JSON.parse(row.payload) as { canonical: unknown }).canonical);
+    expect(canonical).toMatchObject([
+      { type: 'OPTION_RESERVED', product: 'OPTIONS', mode: 'DEMO', accountId: 'demo-account', intentId: intent.intent_id },
+      { type: 'OPTION_OPENED', purchaseCost: { minorUnits: 100, currency: 'USD' } },
+      { type: 'OPTION_SETTLED', payout: { minorUnits: 185 }, profit: { minorUnits: 85 } },
+    ]);
     expect(() => ledger.recordSettlement(intent.intent_id, 1.9, 0.9)).toThrow('Conflicting duplicate');
   });
   it('rolls back financial and audit writes when risk update fails', () => {

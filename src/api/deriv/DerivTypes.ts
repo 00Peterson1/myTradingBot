@@ -62,7 +62,8 @@ export const DerivTickSchema = z.object({
   ask: z.number().optional(),
   bid: z.number().optional(),
   epoch: z.number().int().nonnegative(),
-  id: z.number().optional(),
+  // Per-connection subscription identifier, not an individual observation ID.
+  id: z.string().optional(),
   pip_size: z.number().optional(),
   quote: z.number().finite().positive(),
   symbol: z.string(),

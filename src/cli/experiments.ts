@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { handleHelp } from './help.js';
-handleHelp('experiments', 'Read-only registry listing. --id HASH --output PATH exports a verified bundle without overwriting files.');
+handleHelp('experiments', 'Read-only registry listing. --id HASH --output PATH exports a verified bundle; --id HASH --replay verifies a catalogue experiment against its saved observations.');
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'node:url';
 import { writeFileSync } from 'node:fs';
 import { readExperimentBundle } from '../research/experiments/ExperimentRegistry.js';
+import { replayExperiment } from '../research/experiments/replayExperiment.js';
 import { print } from '../monitoring/print.js';
 
 try {
@@ -13,10 +14,15 @@ try {
     const id = process.argv[process.argv.indexOf('--id') + 1];
     if (process.argv.includes('--id')) {
       const output = process.argv[process.argv.indexOf('--output') + 1];
-      if (!id || !process.argv.includes('--output') || !output) throw new Error('--id and --output require values');
+      if (process.argv.includes('--replay')) {
+        if (!id || id.startsWith('--')) throw new Error('--id requires a value');
+        print(JSON.stringify(await replayExperiment(db, id, fileURLToPath(new URL('../../', import.meta.url)))));
+      } else {
+      if (!id || id.startsWith('--') || !process.argv.includes('--output') || !output || output.startsWith('--')) throw new Error('--id and --output require values');
       const bundle = readExperimentBundle(db, id);
       writeFileSync(output, JSON.stringify(bundle, null, 2), { flag: 'wx' });
       print(`Verified experiment exported to ${output}`);
+      }
     } else {
       const rows = db.prepare('SELECT id FROM experiment_manifests ORDER BY rowid DESC LIMIT 20').all() as { id: string }[];
       for (const row of rows) print(row.id);

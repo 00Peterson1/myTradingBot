@@ -1,3 +1,4 @@
+import { ensureLifecycleSchema } from '../../research/experiments/StrategyLifecycle.js';
 import type Database from 'better-sqlite3';
 import { initializeLegacySchema } from './legacySchema.js';
 import { ensureOptionsSchema } from '../../portfolio/OptionsLedger.js';
@@ -8,6 +9,7 @@ const migrations: readonly Migration[] = [
   { version: 1, name: 'Adopt legacy research schema', apply: initializeLegacySchema },
   { version: 2, name: 'Durable Options accounting', apply: ensureOptionsSchema },
   { version: 3, name: 'Immutable research registry', apply: ensureExperimentSchema },
+  { version: 4, name: 'Evidence-backed strategy lifecycle', apply: ensureLifecycleSchema },
 ];
 
 /** One transaction per version; failed DDL and its version marker roll back together. */

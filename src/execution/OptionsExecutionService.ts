@@ -22,6 +22,7 @@ export class OptionsExecutionService {
     readonly ledger: OptionsLedger,
     readonly risk: RiskEngine,
     private readonly mode: 'DEMO' | 'LIVE',
+    private readonly authorizeSignal?: (signal: Signal) => void,
   ) {
     this.executor = new DerivExecutionEngine(client);
     if (this.executor.getMode() !== mode) throw new Error('Executor and account mode disagree');
@@ -43,6 +44,7 @@ export class OptionsExecutionService {
     try {
       let approved: ApprovedSignal | undefined;
       const intent = this.ledger.reserve(() => {
+        this.authorizeSignal?.(signal);
         const decision = this.risk.evaluate(signal, this.mode);
         if (!decision.approved) throw new Error(`Risk rejected: ${decision.reason}`);
         approved = decision.approvedSignal;

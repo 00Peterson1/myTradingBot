@@ -4,6 +4,7 @@ import type { Money, OptionSpecification } from './product.js';
 interface PortfolioEventBase {
   readonly eventId: string;
   readonly accountId: string;
+  readonly mode: 'DEMO' | 'LIVE' | 'PAPER' | 'BACKTEST';
   readonly occurredAt: string; // UTC ISO-8601
 }
 export type PortfolioEvent = PortfolioEventBase & (

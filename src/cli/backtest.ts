@@ -9,21 +9,15 @@ import { assertDefined } from '../utils/assertDefined.js';
 import { configureLogger, createLogger } from '../monitoring/Logger.js';
 import { getEnv } from '../config/env.js';
 import { renderBanner, renderMetricsTable, renderSafetyStatus } from '../monitoring/Dashboard.js';
-import { MomentumStrategy } from '../strategies/momentum/MomentumStrategy.js';
-import { VolAdjMomentumStrategy } from '../strategies/volatility-momentum/VolAdjMomentumStrategy.js';
-import { MeanReversionStrategy } from '../strategies/mean-reversion/MeanReversionStrategy.js';
-import { BreakoutStrategy } from '../strategies/breakout/BreakoutStrategy.js';
-import { WaveletStrategy } from '../strategies/signal/WaveletStrategy.js';
-import { EWMSStrategy } from '../strategies/signal/EWMSStrategy.js';
 // NOTE: TDQNStrategy and ActorCriticStrategy are intentionally excluded.
 // Both have isOnlineLearner = true — they update weights inside generateSignal(),
 // meaning they adapt to the test set while being scored on it. This invalidates
 // OOS evaluation. A prequential (interleaved train-then-test) protocol is required.
+import { strategyFactories } from '../strategies/catalogue.js';
 import { ValidationStudy } from '../backtest/ValidationStudy.js';
 import { getDb } from '../data/database/sqlite.js';
 import { getTickCount, getRecentTicks } from '../data/repository/TickRepository.js';
 import { FeatureEngine } from '../features/FeatureEngine.js';
-import type { Strategy } from '../strategies/base/Strategy.js';
 import type { TickFeatures } from '../types/tick.js';
 
 const MAX_TICKS = parseInt(process.env.BACKTEST_MAX_TICKS ?? '100000', 10);
@@ -96,20 +90,7 @@ async function main(): Promise<void> {
   // Strategy factories — each provides a FACTORY FUNCTION so BacktestEngine
   // creates a fresh instance per fold period (prevents state bleed).
   // ---------------------------------------------------------------------------
-  interface StrategyFactory { name: string; factory: () => Strategy }
 
-  const strategyFactories: StrategyFactory[] = [
-    { name: 'Momentum(lookback=20,threshold=0.001)', factory: () => new MomentumStrategy({ lookback: 20, threshold: 0.001, momentumKey: 'mom20' }) },
-    { name: 'Momentum(lookback=50,threshold=0.002)', factory: () => new MomentumStrategy({ lookback: 50, threshold: 0.002, momentumKey: 'mom50' }) },
-    { name: 'VolAdjMomentum(zThreshold=1.0)',        factory: () => new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom20', zThreshold: 1.0 }) },
-    { name: 'VolAdjMomentum(zThreshold=1.5)',        factory: () => new VolAdjMomentumStrategy({ momentumKey: 'volAdjMom50', zThreshold: 1.5 }) },
-    { name: 'MeanReversion(z=1.5,exit=0.5)',         factory: () => new MeanReversionStrategy({ zScoreKey: 'zScore20', entryThreshold: 1.5, exitThreshold: 0.5 }) },
-    { name: 'MeanReversion(z=2.0,exit=0.5)',         factory: () => new MeanReversionStrategy({ zScoreKey: 'zScore50', entryThreshold: 2.0, exitThreshold: 0.5 }) },
-    { name: 'Breakout(window=20,frac=0.001)',         factory: () => new BreakoutStrategy({ highKey: 'rollingHigh20', lowKey: 'rollingLow20', confirmationFraction: 0.001 }) },
-    { name: 'Breakout(window=50,frac=0.002)',         factory: () => new BreakoutStrategy({ highKey: 'rollingHigh50', lowKey: 'rollingLow50', confirmationFraction: 0.002 }) },
-    { name: 'Wavelet',                               factory: () => new WaveletStrategy() },
-    { name: 'EWMS',                                  factory: () => new EWMSStrategy() },
-  ];
 
 
   const results: {
@@ -151,7 +132,7 @@ async function main(): Promise<void> {
     try {
       const study = await new ValidationStudy(registry, walkForwardConfig).run(features, strategyFactories.map(({ name, factory }) => ({
         id: name, family: name.split('(')[0] ?? name,
-        config: { strategyFactory: factory, registry, strategyDeclaration: { name, factorySource: factory.toString() },
+        config: { strategyFactory: factory, registry, strategyDeclaration: { catalogKey: name, version: 1 },
           strategyName: name, symbol, payoutMultiplier, feePerTrade: 0, minConfidence: env.MIN_CONSENSUS_CONFIDENCE,
           contextWindow: 200, contractDuration, contractDurationUnit },
       })));

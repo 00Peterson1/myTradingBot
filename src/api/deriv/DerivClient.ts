@@ -621,7 +621,7 @@ class DerivClient extends EventEmitter<{ [K in keyof DerivClientEvents]: Paramet
       if (reqId !== undefined) this.resolvePending(pending, reqId, parsed);
       const tick = DerivTickSchema.safeParse(parsed.tick);
       if (tick.success) this.emit('tick', tick.data);
-      else log.warn('Invalid tick discarded');
+      else log.warn({ issues: tick.error.issues.map(issue => ({ field: issue.path.join('.'), code: issue.code })) }, 'Invalid tick discarded');
       return;
     }
 

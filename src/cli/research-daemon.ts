@@ -35,7 +35,6 @@ async function collectForSymbol(client: DerivClient, symbol: string, durationSec
         epoch: tick.epoch,
         timestamp: new Date(tick.epoch * 1000),
         price: tick.quote,
-        ...(tick.id !== undefined ? { tickId: tick.id } : {})
       });
     };
 

@@ -1,6 +1,8 @@
 import type Database from 'better-sqlite3';
 import { z } from 'zod';
 import { money, optionSpecificationSchema } from '../types/product.js';
+import type { PortfolioEvent } from '../types/portfolio.js';
+import { assertDefined } from '../utils/assertDefined.js';
 import type { ApprovedSignal } from '../types/signal.js';
 
 const stateSchema = z.enum(['RESERVED', 'SUBMITTING', 'UNKNOWN', 'OPEN', 'SETTLED', 'CANCELLED']);
@@ -92,7 +94,7 @@ export class OptionsLedger {
         (intent_id,account_key,signal_id,symbol,strategy,specification,status,reserved_minor,updated_at)
         VALUES (?,?,?,?,?,?,'RESERVED',?,?)`).run(id, this.accountKey, approved.signal.id,
           spec.symbol, approved.signal.strategy, JSON.stringify(spec), spec.stake.minorUnits + feeMinor, this.now().toISOString());
-      this.event(id, 'OPTION_RESERVED', { specification: spec });
+      this.event(id, 'OPTION_RESERVED', { specification: spec, signal: approved.signal });
       return this.get(id);
     }).immediate();
   }
@@ -204,9 +206,19 @@ export class OptionsLedger {
   }
 
   private event(intentId: string | null, type: string, payload: unknown): void {
+    const occurredAt = this.now().toISOString();
+    let canonical: PortfolioEvent | null = null;
+    if (intentId && ['OPTION_RESERVED', 'OPTION_OPENED', 'OPTION_SETTLED'].includes(type)) {
+      const account = this.account();
+      const intent = this.get(intentId);
+      const base = { eventId: crypto.randomUUID(), accountId: account.account_id, mode: account.mode, occurredAt, product: 'OPTIONS' as const };
+      if (type === 'OPTION_RESERVED') canonical = { ...base, type, intentId, specification: optionSpecificationSchema.parse(JSON.parse(intent.specification)) };
+      else if (type === 'OPTION_OPENED') canonical = { ...base, type, intentId, contractId: assertDefined(intent.contract_id), purchaseCost: money(assertDefined(intent.cost_minor) / 100, 'USD', 2) };
+      else canonical = { ...base, type: 'OPTION_SETTLED', contractId: assertDefined(intent.contract_id), payout: money(assertDefined(intent.payout_minor) / 100, 'USD', 2), profit: money(assertDefined(intent.profit_minor) / 100, 'USD', 2) };
+    }
     this.db.prepare('UPDATE options_accounts SET revision=revision+1 WHERE account_key=?').run(this.accountKey);
     this.db.prepare('INSERT INTO options_ledger_events(account_key,intent_id,event_type,payload,occurred_at) VALUES (?,?,?,?,?)')
-      .run(this.accountKey, intentId, type, JSON.stringify(payload), this.now().toISOString());
+      .run(this.accountKey, intentId, type, JSON.stringify(canonical ? { canonical, details: payload } : payload), occurredAt);
   }
 }
 

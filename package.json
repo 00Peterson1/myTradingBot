@@ -29,7 +29,8 @@
     "typecheck": "tsc --noEmit",
     "doctor": "tsx src/cli/doctor.ts",
     "test:python": "cd python && python3 -m unittest discover -s tests",
-    "experiments": "tsx src/cli/experiments.ts"
+    "experiments": "tsx src/cli/experiments.ts",
+    "lifecycle": "tsx src/cli/lifecycle.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

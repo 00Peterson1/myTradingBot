@@ -9,7 +9,7 @@ describe('versioned schema migrations', () => {
       db.prepare('INSERT INTO symbols(symbol) VALUES (?)').run('TEST');
       runMigrations(db);
       expect(db.prepare('SELECT symbol FROM symbols').all()).toEqual([{ symbol: 'TEST' }]);
-      expect(db.prepare('SELECT version FROM schema_migrations').all()).toHaveLength(3);
+      expect(db.prepare('SELECT version FROM schema_migrations').all()).toHaveLength(4);
       expect(db.prepare("SELECT name FROM sqlite_master WHERE name='options_accounts'").get()).toBeDefined();
     } finally { db.close(); }
   });

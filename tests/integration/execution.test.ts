@@ -37,6 +37,14 @@ beforeEach(() => {
 afterEach(() => { db.close(); vi.unstubAllEnvs(); resetEnvForTesting(); });
 
 describe('signal → risk → durable reservation → purchase → settlement', () => {
+  it('checks eligibility under the reservation lock before any quote or buy', async () => {
+    const guarded = new OptionsExecutionService(client, ledger, new RiskEngine(1000, 'USD', ledger), 'DEMO', () => { throw new Error('Eligibility revoked'); });
+    await guarded.start();
+    await expect(guarded.execute(candidate())).rejects.toThrow('Eligibility revoked');
+    expect(ledger.snapshot().intents).toEqual([]);
+    expect(vi.spyOn(client, 'requestProposal')).not.toHaveBeenCalled();
+    expect(vi.spyOn(client, 'buyContract')).not.toHaveBeenCalled();
+  });
   it('accounts for confirmed settlement and reconciles before accepting another order', async () => {
     await service.start();
     const trade = await service.execute(candidate());

@@ -8,6 +8,7 @@ from pathlib import Path
 import sqlite3
 import uuid
 from spread_model.preprocessing import SCHEMA, split_dataset
+from spread_model.holdout import claim_holdout
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -72,13 +73,13 @@ def train(db_path, pair_id, epochs=50, batch_size=256, lr=0.001, seed=1729):
     folder = ROOT / 'python' / 'checkpoints'
     folder.mkdir(exist_ok=True)
     # An interrupted or previously evaluated holdout must not be silently reused.
-    with (folder / f'holdout-{dataset_id}.json').open('x') as claim:
-        json.dump({'dataset_id': dataset_id, 'pair_id': pair_id, 'seed': seed, 'epochs': epochs, 'batch_size': batch_size, 'lr': lr}, claim)
+    claim_holdout(folder, dataset_id, pair_id, pair, rows[int(len(rows) * .85)][0], rows[-1][0],
+                  {'seed': seed, 'epochs': epochs, 'batch_size': batch_size, 'lr': lr})
     test_loss = evaluate(loaders[2])  # Read once, after selection; never selects an epoch.
     metadata = {'schema': SCHEMA, 'pair_id': pair_id, 'symbols': list(pair), 'seed': seed,
                 'normalizer': asdict(normalizer), 'normalizer_id': normalizer.identity,
                 'dataset_id': dataset_id,
-                'code_id': hashlib.sha256(b''.join((Path(__file__).parent / file).read_bytes() for file in ['train.py', 'preprocessing.py', 'model.py'])).hexdigest(),
+                'code_id': hashlib.sha256(b''.join((Path(__file__).parent / file).read_bytes() for file in ['train.py', 'preprocessing.py', 'model.py', 'holdout.py'])).hexdigest(),
                 'torch_version': str(torch.__version__), 'numpy_version': str(np.__version__),
                 'split_policy': '70/15/15 raw chronological; independent feature and label windows',
                 'epochs': epochs, 'batch_size': batch_size, 'lr': lr, 'validation_loss': best_loss,
