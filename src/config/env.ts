@@ -77,6 +77,8 @@ const envSchema = z.object({
   RISK_MAX_CONSECUTIVE_LOSSES: z.coerce.number().int().positive().default(5),
   RISK_COOLDOWN_SECONDS: z.coerce.number().int().positive().default(3600),
 
+  // Real-market research is the active scope; synthetic work is explicitly paused.
+  MARKET_SCOPE: z.enum(['REAL', 'SYNTHETIC', 'ALL']).default('REAL'),
   // Data collection
   SYMBOLS: z
     .string()

@@ -13,7 +13,7 @@ let db: Database.Database;
 let lifecycle: StrategyLifecycle;
 let registry: ExperimentRegistry;
 beforeEach(() => {
-  vi.stubEnv('STAKE_AMOUNT', '1'); resetEnvForTesting();
+  vi.stubEnv('MARKET_SCOPE', 'ALL'); vi.stubEnv('STAKE_AMOUNT', '1'); resetEnvForTesting();
   db = new Database(':memory:');
   registry = new ExperimentRegistry(db, captureResearchCode(fileURLToPath(new URL('../../../', import.meta.url))));
   lifecycle = new StrategyLifecycle(db);

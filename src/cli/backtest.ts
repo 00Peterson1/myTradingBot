@@ -3,6 +3,7 @@ import { handleHelp } from './help.js';
 handleHelp('backtest', 'Preliminary Options simulation. --symbols SYMBOL,...; no account orders.');
 import { fileURLToPath } from 'node:url';
 import { ExperimentRegistry, captureResearchCode } from '../research/experiments/ExperimentRegistry.js';
+import { requestedSymbol, storedMarketAllowed } from '../markets/MarketScope.js';
 import { print } from '../monitoring/print.js';
 import { assertDefined } from '../utils/assertDefined.js';
 
@@ -66,9 +67,8 @@ async function main(): Promise<void> {
     .all(MIN_TICKS_REQUIRED) as {symbol: string}[];
   const allSymbols = dbSymbols.length > 0 ? dbSymbols.map(r => r.symbol) : env.SYMBOLS;
 
-  const symbols = cliSymbols
-    ? allSymbols.filter((s) => cliSymbols.includes(s))
-    : allSymbols;
+  const symbols = allSymbols.filter(symbol => requestedSymbol(symbol, cliSymbols ?? env.SYMBOLS) && storedMarketAllowed(db, symbol, env.MARKET_SCOPE));
+  print(`Active research scope: ${env.MARKET_SCOPE}; synthetic datasets are retained but excluded in REAL mode.`);
 
   if (cliSymbols) {
     print(`🔍 Symbols filter: ${symbols.length > 0 ? symbols.join(', ') : '(none matched)'}`);

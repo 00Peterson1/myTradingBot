@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { handleHelp } from './help.js';
 handleHelp('research', 'Public market survey; saves summary profiles. Configure SYMBOLS and COLLECTION_SECS.');
+import { MarketCatalogue } from '../markets/MarketCatalogue.js';
+import { selectMarkets } from '../markets/MarketScope.js';
 import { print } from '../monitoring/print.js';
 import { assertDefined } from '../utils/assertDefined.js';
 /**
@@ -322,17 +324,27 @@ async function main(): Promise<void> {
   const client = new DerivClient();
   await client.connectPublic();
   log.info('Connected to Deriv public WebSocket');
+  let selected;
+  try { selected = selectMarkets(await MarketCatalogue.discoverAll(client), env.MARKET_SCOPE, env.SYMBOLS, true); }
+  catch (error) { await client.disconnect(); throw error; }
+  if (!selected.length) {
+    await client.disconnect();
+    throw new Error(`No open instruments match MARKET_SCOPE=${env.MARKET_SCOPE} and SYMBOLS. Markets may be closed; inspect npm run markets.`);
+  }
+  const symbols = selected.map(row => row.symbol);
+  const categories = new Map(selected.map(row => [row.symbol, row.marketCategory]));
+  print(`Active scope: ${env.MARKET_SCOPE}; surveying ${String(symbols.length)} open instruments.`);
 
   const results: SymbolResult[] = [];
   let failures = 0;
   let saved = 0;
 
   // ─── Per-symbol collection & analysis ────────────────────────────────────
-  for (let i = 0; i < env.SYMBOLS.length; i++) {
-    const symbol = assertDefined(env.SYMBOLS[i]);
-    const marketType = detectMarketType(symbol);
+  for (let i = 0; i < symbols.length; i++) {
+    const symbol = assertDefined(symbols[i]);
+    const marketType = detectMarketType(symbol, categories.get(symbol));
 
-    log.info({ symbol, marketType, progress: `${String(i + 1)}/${String(env.SYMBOLS.length)}` }, 'Collecting...');
+    log.info({ symbol, marketType, progress: `${String(i + 1)}/${String(symbols.length)}` }, 'Collecting...');
 
     const rawReturns: number[] = [];
     const ticks: Tick[] = [];

@@ -1,3 +1,4 @@
+import { requestedSymbol, storedMarketAllowed } from '../markets/MarketScope.js';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import type Database from 'better-sqlite3';
@@ -24,8 +25,8 @@ export function loadEligibleStrategies(db: Database.Database, mode: 'DEMO' | 'LI
   for (const { id } of candidates) {
     const registered = lifecycle.declaration(id);
     const declaration = declarationSchema.parse(registered);
-    if (!symbols.includes(declaration.symbol)) {
-      if (ids) throw new Error('Requested hypothesis symbol is outside SYMBOLS');
+    if (!requestedSymbol(declaration.symbol, symbols) || !storedMarketAllowed(db, declaration.symbol, env.MARKET_SCOPE)) {
+      if (ids) throw new Error('Requested hypothesis symbol is outside SYMBOLS or MARKET_SCOPE');
       continue;
     }
     lifecycle.assertEligible(id, mode, codeId);

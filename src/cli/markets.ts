@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { handleHelp } from './help.js';
-handleHelp('markets', 'Discover/list instruments. --cat CATEGORY --open --min-ticks COUNT');
+handleHelp('markets', 'Discover/list instruments. --cat CATEGORY --open --min-ticks COUNT --refresh --all (otherwise uses MARKET_SCOPE)');
+import { getEnv } from '../config/env.js';
+import { selectMarkets } from '../markets/MarketScope.js';
+import { categoryMatches } from '../config/markets.js';
 import { print } from '../monitoring/print.js';
 import { MarketCatalogue } from '../markets/MarketCatalogue.js';
 import { getTickCount } from '../data/repository/TickRepository.js';
@@ -12,6 +15,8 @@ async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       cat: { type: 'string' },
+      all: { type: 'boolean' },
+      refresh: { type: 'boolean' },
       open: { type: 'boolean' },
       'min-ticks': { type: 'string' },
     },
@@ -26,16 +31,15 @@ async function main(): Promise<void> {
 
   let markets = MarketCatalogue.getAll();
 
-  if (markets.length === 0) {
+  if (markets.length === 0 || values.refresh) {
     print('No markets found in database. Discovering from API...');
     const client = new DerivClient();
-    await client.connectPublic();
-    markets = await MarketCatalogue.discoverAll(client);
-    await client.disconnect();
+    try { await client.connectPublic(); markets = await MarketCatalogue.discoverAll(client); } finally { await client.disconnect(); }
   }
 
+  markets = selectMarkets(markets, values.all ? 'ALL' : getEnv().MARKET_SCOPE);
   if (categoryFilter) {
-    markets = markets.filter(m => m.marketCategory.toLowerCase() === categoryFilter.toLowerCase());
+    markets = markets.filter(m => categoryMatches(m.marketCategory, categoryFilter));
   }
 
   if (onlyOpen) {
@@ -74,4 +78,4 @@ async function main(): Promise<void> {
   print('Tip: Run `npm run research:daemon` to collect more data.');
 }
 
-main().catch(console.error);
+main().catch((error: unknown) => { console.error(error instanceof Error ? error.message : 'Market discovery failed'); process.exitCode = 1; });
