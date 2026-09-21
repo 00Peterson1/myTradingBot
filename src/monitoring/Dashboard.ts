@@ -110,7 +110,7 @@ export function renderBanner(): void {
     chalk.cyan(`
 ╔══════════════════════════════════════════════════════════╗
 ║   Quant Trading Research System v${readPackageVersion().padEnd(24)}║
-║   Deriv Synthetic Indices — Demo-First Safety            ║
+║   Deriv Market Research — Demo-First Safety             ║
 ╠══════════════════════════════════════════════════════════╣
 ║   ${chalk.yellow('WARNING: This is a research tool. Not financial advice.')}  ║
 ║   ${chalk.yellow('Live trading is disabled until explicitly enabled.')}        ║

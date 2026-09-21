@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import sqlite3
+from contextlib import closing
 import uuid
 from spread_model.preprocessing import SCHEMA, split_dataset
 from spread_model.holdout import claim_holdout
@@ -14,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def load_rows(db_path, pair_id):
-    with sqlite3.connect(Path(db_path).resolve().as_uri() + '?mode=ro', uri=True) as conn:
+    with closing(sqlite3.connect(Path(db_path).resolve().as_uri() + '?mode=ro', uri=True)) as conn:
         pair = conn.execute('SELECT symbol_a,symbol_b FROM pair_spread_state WHERE pair_id=?', (pair_id,)).fetchone()
         if not pair:
             raise ValueError('Unknown pair')

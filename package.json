@@ -1,7 +1,7 @@
 {
   "name": "myTradingBot",
   "version": "0.1.0",
-  "description": "Quantitative trading research and execution system for Deriv Synthetic Indices",
+  "description": "Quantitative research and execution system for Deriv markets",
   "private": true,
   "type": "module",
   "engines": {
@@ -30,7 +30,8 @@
     "doctor": "tsx src/cli/doctor.ts",
     "test:python": "cd python && python3 -m unittest discover -s tests",
     "experiments": "tsx src/cli/experiments.ts",
-    "lifecycle": "tsx src/cli/lifecycle.ts"
+    "lifecycle": "tsx src/cli/lifecycle.ts",
+    "cfd:doctor": "tsx src/cli/cfd-doctor.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

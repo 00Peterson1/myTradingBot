@@ -151,7 +151,7 @@ export const MarketCatalogue = {
       displayName: row.display_name,
       market: row.market,
       submarket: row.submarket,
-      marketCategory: row.market_category,
+      marketCategory: classifyMarket(row.symbol, { market: row.market, submarket: row.submarket, display_name: row.display_name, marketCategory: row.market_category }),
       exchangeIsOpen: row.exchange_is_open === 1,
       tradabilityScore: row.tradability_score,
       researchScore: row.research_score,

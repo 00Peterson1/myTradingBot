@@ -1,3 +1,33 @@
+## Research/CFD checkpoint — 2026-09-21
+
+Verification: **211 TypeScript tests passed (35 files)**, source/test typechecks, lint and build passed. Python: 5 passed, 2 ML integration tests skipped because optional dependencies are absent. CLI subprocess tests required execution outside the sandbox after EPERM. No broker orders were submitted.
+
+The user supplied the original paper list and confirmed no CFD platform account exists. See [RESEARCH_ADHERENCE.md](RESEARCH_ADHERENCE.md) for paper-by-paper implementation gaps. Corrected a false deep-RL attribution and removed unsupported cointegration p-values; pair signals cannot use legacy significance.
+
+Added separately typed CFD risk/accounting and a single-instrument bid/ask paper broker, plus read-only cTrader demo authorization diagnostics (`cfd:doctor`). Broker execution, durable CFD reconciliation and CFD validation/lifecycle integration remain outstanding. This is not milestone 10 completion or broker verification. Earlier completion statements must be read with these limitations.
+
+# Current checkpoint — 2026-09-21: real-market scope
+
+This section supersedes older checkpoints below. Synthetic-market work is paused at the user's request; retained data/code are excluded by the active `MARKET_SCOPE=REAL` configuration. REAL describes instruments, not the account mode. Demo/live opt-ins remain independent.
+
+- Research, continuous collection, cached market listing, backtest selection and eligible hypothesis loading share the scope rule. Forex, metals, commodities, crypto, stock indices and stocks are allowed when offered by the provider; unknown categories are excluded. `SYMBOLS=ALL` now resolves to discovered instruments instead of requesting a literal ALL tick stream.
+- Public discovery returned 43 real-market instruments during verification. An AUD/XAU substring bug was corrected: AUD currency pairs stay forex; XAU/XAG/XPT/XPD remain metals. Cached listings also recalculate classification from provider metadata. Provider open flags were honored; the bounded collection subscribed to the two open crypto instruments and saved **28 raw observations**, with none buffered at shutdown. No orders were placed.
+- Rotating collection slots were replaced with continuous subscriptions. Five-second/1,000-observation batches retain data until persistence succeeds. Periodic discovery updates open instruments. Feed gaps remain explicit; no imputation or enlarged gap threshold disguises missing history. Derived features are recomputed by replay.
+- M1/M2: canonical Options portfolio events are written atomically with account changes and include account mode, identity and integer money; reservation evidence includes the originating signal. Existing events remain immutable.
+- M6: catalogue factories are shared by research and automated execution. Saved catalogue experiments can be reconstructed with `experiments --id HASH --replay`; the regression test compares nonempty observations and rejects mismatched source. Arbitrary saved code is never executed.
+- M7: Python holdout claims now use transactional, append-only interval ownership. Renaming a pair, reversing its symbol order, revising prices or selecting overlapping observations cannot reuse the claimed interval. Legacy markers require review. This does not prove the user never inspected data elsewhere.
+- M8: append-only lifecycle transitions prevent state skipping and require matching completed experiment/study evidence. Automated runners load eligible hypotheses only, verify runtime configuration/source, retain the one-tick entry delay, and recheck eligibility under the reservation lock. Review/suspension blocks new orders while settlement reconciliation continues. Live promotion remains unavailable until a prospective demo evaluation protocol is implemented.
+
+Verification: **197 TypeScript tests across 32 files passed**; source/test typechecks, lint and build passed. Python's five dependency-free preprocessing/holdout tests passed; two model integration tests were skipped because the current environment lacks ML dependencies. Earlier CPU model verification remains historical evidence, not a fresh run in this environment.
+
+Prior demo-test evidence: the explicitly authorized USD 1 synthetic CALL (contract 13092122379) settled at a USD 1 loss and reconciled. The later USD 100 test failed during connection with zero purchase attempts. These manual execution tests are not strategy eligibility evidence, and no further synthetic trades are part of the active work.
+
+Remaining completion work includes operator reconciliation of uncertain purchases, historical quote/execution fidelity, full shared-account multi-market replay evidence, aligned full-search PBO/dependence policies, prospective demo-to-live validation, and the separate CFD adapter. No milestone is certified complete merely because the test suite passes. Governance/CFD expansion must retain these constraints.
+
+---
+
+# Historical checkpoints (superseded)
+
 # Current verification — 2026-09-15
 
 This section supersedes all historical checkpoints below. The Options engineering and research pipeline has been substantially strengthened, but **Milestones 0–7 are not certified complete**, and neither a profitable strategy nor live readiness has been established.

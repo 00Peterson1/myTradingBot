@@ -52,7 +52,7 @@ export function classifyMarket(symbol: string, metadata: MarketMetadata = {}): M
 
   if (/synthetic|derived/.test(market)) return syntheticType();
   // Gold and silver often use the same frx prefix as currencies.
-  if (`${market} ${submarket}`.includes('metal') || /(?:xau|xag|xpt|xpd)/.test(key)) return 'metals';
+  if (`${market} ${submarket}`.includes('metal') || /^(?:frx)?(?:(?:xau|xag|xpt|xpd)[a-z]{3}|[a-z]{3}(?:xau|xag|xpt|xpd))$/.test(key)) return 'metals';
   if (/commodit|energy|energies/.test(`${market} ${submarket}`)) return 'commodities';
   if (`${market} ${kind}`.includes('crypto')) return 'crypto';
   if (/indices|stock_index/.test(`${market} ${submarket} ${kind}`)) return 'stock_indices';

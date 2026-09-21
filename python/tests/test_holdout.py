@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from contextlib import closing
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,7 +18,7 @@ class HoldoutClaims(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'overlaps'):
                     claim_holdout(folder, dataset, pair, symbols, start, end, {})
             claim_holdout(folder, 'future', 'A-B', ('A', 'B'), 201, 300, {})
-            with sqlite3.connect(folder / 'holdouts.sqlite') as conn:
+            with closing(sqlite3.connect(folder / 'holdouts.sqlite')) as conn, conn:
                 self.assertEqual(conn.execute('SELECT count(*) FROM claims').fetchone()[0], 2)
                 with self.assertRaisesRegex(sqlite3.IntegrityError, 'immutable'):
                     conn.execute('DELETE FROM claims')

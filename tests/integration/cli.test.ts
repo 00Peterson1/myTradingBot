@@ -9,7 +9,7 @@ const run = (name: string, args: string[], extra: Record<string, string> = {}): 
 );
 
 describe('CLI startup boundaries (no account or network requests)', () => {
-  it.each(['lifecycle', 'experiments', 'doctor', 'migrate', 'markets', 'research', 'research-daemon', 'backtest', 'trade-demo', 'trade-live'])(
+  it.each(['cfd-doctor', 'lifecycle', 'experiments', 'doctor', 'migrate', 'markets', 'research', 'research-daemon', 'backtest', 'trade-demo', 'trade-live'])(
     '%s help starts without credentials or database access', name => {
       const result = run(name, ['--help']);
       expect(result.error).toBeUndefined();
@@ -21,6 +21,12 @@ describe('CLI startup boundaries (no account or network requests)', () => {
     const result = run(name, [], { CONTRACT_DURATION: '-1' });
     expect(result.status).toBe(1);
     expect(String(result.stderr)).toContain('Invalid environment configuration');
+  });
+  it('CFD diagnostics report absent credentials without contacting a broker', () => {
+    const result = run('cfd-doctor', ['--connect'], { CTRADER_CLIENT_ID: '', CTRADER_CLIENT_SECRET: '', CTRADER_ACCESS_TOKEN: '', CTRADER_DEMO_ACCOUNT_ID: '' });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(1);
+    expect(String(result.stdout)).toContain('not configured');
   });
   it('live startup rejects missing live opt-in', () => {
     const result = run('trade-live', []);

@@ -44,7 +44,7 @@ export class TDQNStrategy implements Strategy {
     this.minEpsilon = config.minEpsilon ?? 0.01;
 
     this.name = `TDQN(${this.symbol})`;
-    this.description = 'Tabular Q-learning strategy (arXiv:2004.06627 TDQN)';
+    this.description = 'Experimental tabular Q-learning; not a deep RL paper replication';
 
     this.loadQTable();
   }

@@ -2,6 +2,7 @@
 import json
 import math
 import sqlite3
+from contextlib import closing
 from datetime import datetime, timezone
 
 
@@ -11,7 +12,7 @@ def claim_holdout(folder, dataset_id, pair_id, symbols, start, end, settings):
     # Symbol identity, rather than a user-chosen pair alias, owns the interval.
     instruments = json.dumps(sorted(symbols))
     folder.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(folder / 'holdouts.sqlite', timeout=30) as conn:
+    with closing(sqlite3.connect(folder / 'holdouts.sqlite', timeout=30)) as conn, conn:
         conn.execute('CREATE TABLE IF NOT EXISTS claims (dataset_id TEXT PRIMARY KEY, instruments TEXT NOT NULL, start REAL NOT NULL, end REAL NOT NULL, content TEXT NOT NULL)')
         for operation in ('UPDATE', 'DELETE'):
             conn.execute(f"CREATE TRIGGER IF NOT EXISTS no_{operation} BEFORE {operation} ON claims BEGIN SELECT RAISE(ABORT, 'Holdout claims are immutable'); END")

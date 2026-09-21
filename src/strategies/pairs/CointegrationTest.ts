@@ -1,12 +1,12 @@
 import { assertDefined } from '../../utils/assertDefined.js';
 export interface CointegrationResult {
   isCointegrated: boolean;
-  pValue: number;          // ADF p-value on residuals (approximate)
+  pValue: null;            // Calibration unavailable; never infer significance from this diagnostic.
   betaHedgeRatio: number;  // OLS slope: log(A) = alpha + beta*log(B) + eps
   alpha: number;           // OLS intercept
   spreadMean: number;      // mean of residuals
   spreadStd: number;       // std of residuals
-  adfStatistic: number;    // ADF test statistic on residuals
+  adfStatistic: number;    // Unaugmented residual statistic, NOT a calibrated Engle-Granger test
 }
 
 function mean(arr: readonly number[]): number {
@@ -21,10 +21,11 @@ export function cointegrationTest(
   logPricesB: readonly number[],
 ): CointegrationResult {
   const n = logPricesA.length;
-  if (n < 50) {
+  if (n !== logPricesB.length || [...logPricesA, ...logPricesB].some(value => !Number.isFinite(value))) throw new Error('Pair observations must be aligned and finite');
+  if (n < 50 || logPricesB.every(value => value === logPricesB[0])) {
     return {
       isCointegrated: false,
-      pValue: 1.0,
+      pValue: null,
       betaHedgeRatio: 1.0,
       alpha: 0.0,
       spreadMean: 0.0,
@@ -39,11 +40,11 @@ export function cointegrationTest(
   let sumAB = 0;
   let sumB2 = 0;
   for (let i = 0; i < n; i++) {
-    sumAB += assertDefined(logPricesA[i]) * assertDefined(logPricesB[i]);
-    sumB2 += assertDefined(logPricesB[i]) * assertDefined(logPricesB[i]);
+    sumAB += (assertDefined(logPricesA[i]) - meanA) * (assertDefined(logPricesB[i]) - meanB);
+    sumB2 += (assertDefined(logPricesB[i]) - meanB) ** 2;
   }
 
-  const beta = (sumAB - n * meanA * meanB) / (sumB2 - n * meanB * meanB);
+  const beta = sumB2 > 0 ? sumAB / sumB2 : 0;
   const alpha = meanA - beta * meanB;
 
   const residuals = new Float64Array(n);
@@ -87,18 +88,9 @@ export function cointegrationTest(
   const se = Math.sqrt(errSqSum / (n - 1 - 2)) / Math.sqrt(sumLagged2 === 0 ? 1 : sumLagged2);
   const tStat = se === 0 ? 0 : gamma / se;
 
-  let pValue = 0.99;
-  if (tStat < -3.96) {
-    pValue = 0.01;
-  } else if (tStat < -3.41) {
-    pValue = 0.05;
-  } else if (tStat < -3.12) {
-    pValue = 0.10;
-  }
-
   return {
-    isCointegrated: pValue < 0.05,
-    pValue,
+    isCointegrated: false,
+    pValue: null,
     betaHedgeRatio: beta,
     alpha,
     spreadMean,

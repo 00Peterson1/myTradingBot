@@ -32,7 +32,7 @@ async function main(): Promise<void> {
   let markets = MarketCatalogue.getAll();
 
   if (markets.length === 0 || values.refresh) {
-    print('No markets found in database. Discovering from API...');
+    print('Refreshing public instrument catalogue...');
     const client = new DerivClient();
     try { await client.connectPublic(); markets = await MarketCatalogue.discoverAll(client); } finally { await client.disconnect(); }
   }
@@ -57,7 +57,7 @@ async function main(): Promise<void> {
   results.sort((a, b) => b.ticks - a.ticks);
 
   print('╔═════════════════════════════════════════════════════════════════════════════════════════╗');
-  print(`║  ALL MARKETS (${String(results.length)} symbols found)                                                          ║`.padEnd(90, ' ') + '║');
+  print(`║  SELECTED MARKETS (${String(results.length)} symbols found)                                                          ║`.padEnd(90, ' ') + '║');
   print('╠═════════════════════════════════════════════════════════════════════════════════════════╣');
   print('║ Category    Symbol         Name                    Ticks   Open  Score                  ║');
   print('╠═════════════════════════════════════════════════════════════════════════════════════════╣');

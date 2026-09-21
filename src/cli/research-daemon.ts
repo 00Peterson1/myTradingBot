@@ -1,212 +1,88 @@
 #!/usr/bin/env node
 import { handleHelp } from './help.js';
-handleHelp('research:daemon', 'Public tick collector; persists batches. Configure SYMBOLS and collection slots.');
+handleHelp('research:daemon', 'Continuous public tick collection in MARKET_SCOPE. Uses COLLECT_SYMBOLS or SYMBOLS; refreshes market availability every 5 minutes. --duration SECONDS runs a bounded collection.');
 import { print } from '../monitoring/print.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
 import { configureLogger, createLogger } from '../monitoring/Logger.js';
 import { getEnv } from '../config/env.js';
-import { renderBanner, renderSafetyStatus } from '../monitoring/Dashboard.js';
 import { DerivClient } from '../api/deriv/DerivClient.js';
 import { getDb, closeDb } from '../data/database/sqlite.js';
 import { MarketCatalogue } from '../markets/MarketCatalogue.js';
-import { MarketScheduler } from '../research/MarketScheduler.js';
-import { FeatureEngine } from '../features/FeatureEngine.js';
-import {
-  bulkInsertTicks,
-  bulkUpsertTickFeatures,
-  type TickInsert,
-} from '../data/repository/TickRepository.js';
-import type { Tick } from '../types/tick.js';
-import type { DerivTick } from '../api/deriv/DerivTypes.js';
-
-const log = createLogger('ResearchDaemon');
-
-let isShuttingDown = false;
-
-async function collectForSymbol(client: DerivClient, symbol: string, durationSecs: number): Promise<void> {
-  const ticks: Tick[] = [];
-
-
-  const subscribed = await new Promise<boolean>((resolve) => {
-    const handler = (tick: DerivTick): void => {
-      if (tick.symbol !== symbol) return;
-      ticks.push({
-        symbol: tick.symbol,
-        epoch: tick.epoch,
-        timestamp: new Date(tick.epoch * 1000),
-        price: tick.quote,
-      });
-    };
-
-    client.on('tick', handler);
-
-    client.subscribeTicks(symbol).catch((err: unknown) => {
-      log.warn({ symbol, err }, 'Subscription failed');
-      clearTimeout(timer);
-      client.off('tick', handler);
-      resolve(false);
-    });
-
-    const timer = setTimeout(() => {
-      client.off('tick', handler);
-      client.unsubscribeTicks(symbol).catch((error: unknown) => { log.warn({ error, symbol }, 'Unsubscribe failed'); });
-      resolve(true);
-    }, durationSecs * 1000);
-  });
-
-  if (!subscribed || ticks.length === 0) return;
-
-  try {
-    const tickInserts: TickInsert[] = ticks.map((t) => ({
-      symbol: t.symbol,
-      epoch: t.epoch,
-      price: t.price,
-      ...(t.tickId !== undefined ? { tickId: t.tickId } : {}),
-    }));
-    bulkInsertTicks(tickInserts);
-
-    const db = getDb();
-    const featureEngine = new FeatureEngine(symbol);
-    const featurePairs: { rowId: bigint; features: ReturnType<FeatureEngine['process']> }[] = [];
-
-    for (const tick of ticks) {
-      const features = featureEngine.process(tick);
-      const row = db
-        .prepare<[string, number], { id: number }>(
-          'SELECT id FROM ticks WHERE symbol = ? AND epoch = ? LIMIT 1',
-        )
-        .get(tick.symbol, tick.epoch);
-      if (row) {
-        featurePairs.push({ rowId: BigInt(row.id), features });
-      }
-    }
-
-    bulkUpsertTickFeatures(featurePairs);
-  } catch (err) {
-    log.error({ symbol, err }, 'Failed to save ticks/features');
-  }
-}
+import { selectMarkets } from '../markets/MarketScope.js';
+import { ContinuousTickBuffer } from '../research/ContinuousTickBuffer.js';
+import { bulkInsertTicks } from '../data/repository/TickRepository.js';
 
 async function main(): Promise<void> {
   const env = getEnv();
   configureLogger(env.LOG_LEVEL, env.LOG_PRETTY);
-
-  renderBanner();
-  renderSafetyStatus(env.DEMO_TRADING, env.LIVE_TRADING);
-
-  print('Daemon initializing database...');
+  const log = createLogger('ResearchDaemon');
+  const index = process.argv.indexOf('--duration');
+  const duration = index < 0 ? null : Number(process.argv[index + 1]);
+  if (duration !== null && (!Number.isInteger(duration) || duration < 1)) throw new Error('--duration requires positive integer seconds');
   getDb();
-
   const client = new DerivClient();
-  await client.connectPublic();
-
-  print('Discovering markets...');
-  let markets = await MarketCatalogue.discoverAll(client);
-
-  const categories = new Set(markets.map((m) => m.marketCategory));
-  print(`Discovered ${String(markets.length)} markets across ${String(categories.size)} categories`);
-
-  setInterval(asyncHandler(async () => {
-    try {
-      log.info('Running periodic market discovery...');
-      markets = await MarketCatalogue.discoverAll(client);
-    } catch (err) {
-      log.error({ err }, 'Failed periodic discovery');
-    }
-  }, (error: unknown) => { log.error({ error }, 'Asynchronous handler failed'); process.exitCode = 1; }), 6 * 60 * 60 * 1000); // 6 hours
-
-  const scheduler = new MarketScheduler();
-
-  let activeFast: string[] = [];
-  let activeSlow: string | null = null;
-  let fastElapsed = 0;
-  let slowElapsed = 0;
-
-  // Live progress
-  setInterval(() => {
-    if (isShuttingDown) return;
-    try {
-      const row = getDb().prepare('SELECT COUNT(*) as count FROM ticks').get() as { count: number };
-      const currentTicks = row.count;
-
-      const fastStr = activeFast.length > 0 ? `${activeFast.join(',')} ${String(fastElapsed)}/${String(env.SLOT_SECS_FAST)}s` : 'none';
-      const slowStr = activeSlow ? `${activeSlow} ${String(slowElapsed)}/${String(env.SLOT_SECS_SLOW)}s` : 'none';
-
-      process.stdout.write(`\r[DAEMON] fast: ${fastStr} | slow: ${slowStr} | DB: ${String(currentTicks)} ticks total\x1b[K`);
-    } catch {
-      // ignore
-    }
-  }, 5000);
-
-  // Fast loop
-  const runFastLoop = async (): Promise<void> => {
-    while (!isShuttingDown) {
-      try {
-        const { fast } = scheduler.nextBatch(markets);
-        if (fast.length === 0) {
-          await new Promise((r) => setTimeout(r, 5000));
-          continue;
-        }
-
-        activeFast = fast;
-        fastElapsed = 0;
-
-        const timer = setInterval(() => fastElapsed++, 1000);
-        await Promise.all(fast.map(sym => collectForSymbol(client, sym, env.SLOT_SECS_FAST)));
-        clearInterval(timer);
-
-        for (const sym of fast) {
-          scheduler.markCollected(sym);
-        }
-      } catch (err) {
-        log.error({ err }, 'Fast loop error');
-        await new Promise((r) => setTimeout(r, 5000));
-      }
-    }
-  };
-
-  // Slow loop
-  const runSlowLoop = async (): Promise<void> => {
-    while (!isShuttingDown) {
-      try {
-        const { slow } = scheduler.nextBatch(markets);
-        if (!slow) {
-          await new Promise((r) => setTimeout(r, 5000));
-          continue;
-        }
-
-        activeSlow = slow;
-        slowElapsed = 0;
-
-        const timer = setInterval(() => slowElapsed++, 1000);
-        await collectForSymbol(client, slow, env.SLOT_SECS_SLOW);
-        clearInterval(timer);
-
-        scheduler.markCollected(slow);
-      } catch (err) {
-        log.error({ err }, 'Slow loop error');
-        await new Promise((r) => setTimeout(r, 5000));
-      }
-    }
-  };
-
-  void runFastLoop().catch((error: unknown) => { log.fatal({ error }, 'Fast loop stopped'); process.exitCode = 1; });
-  void runSlowLoop().catch((error: unknown) => { log.fatal({ error }, 'Slow loop stopped'); process.exitCode = 1; });
-
-  const shutdown = async (): Promise<void> => {
-    if (isShuttingDown) return;
-    isShuttingDown = true;
-    print('\nShutting down gracefully...');
+  const subscribed = new Set<string>();
+  const buffer = new ContinuousTickBuffer(rows => bulkInsertTicks(rows));
+  let stopping = false;
+  let refreshing = false;
+  const isStopping = (): boolean => stopping;
+  let flushTimer: NodeJS.Timeout | undefined;
+  let refreshTimer: NodeJS.Timeout | undefined;
+  let stopTimer: NodeJS.Timeout | undefined;
+  let saved = 0;
+  const flush = (): void => { saved += buffer.flush(); };
+  const stop = async (): Promise<void> => {
+    if (isStopping()) return;
+    stopping = true;
+    if (flushTimer) clearInterval(flushTimer);
+    if (refreshTimer) clearInterval(refreshTimer);
+    if (stopTimer) clearTimeout(stopTimer);
     await client.disconnect();
-    closeDb();
-    process.exit(0);
+    try { flush(); print(`Collection stopped: ${String(saved)} raw ticks saved; ${String(buffer.size)} buffered.`); }
+    finally { closeDb(); }
   };
-
-  process.on('SIGINT', asyncHandler(shutdown, (error: unknown) => { log.error({ error }, 'Shutdown failed'); process.exitCode = 1; }));
-  process.on('SIGTERM', asyncHandler(shutdown, (error: unknown) => { log.error({ error }, 'Shutdown failed'); process.exitCode = 1; }));
+  const failed = (error: unknown): void => {
+    process.exitCode = 1;
+    log.error({ error: error instanceof Error ? error.message : 'Unknown collection error' }, 'Collector failed');
+    void stop().catch((shutdownError: unknown) => { console.error(shutdownError); });
+  };
+  const refresh = async (): Promise<void> => {
+    if (isStopping() || refreshing) return;
+    refreshing = true;
+    try {
+      const markets = await MarketCatalogue.discoverAll(client);
+      if (isStopping()) return;
+      const requested = env.COLLECT_SYMBOLS.length ? env.COLLECT_SYMBOLS : env.SYMBOLS;
+      buffer.setSymbols(selectMarkets(markets, env.MARKET_SCOPE, requested).map(market => market.symbol));
+      const active = selectMarkets(markets, env.MARKET_SCOPE, requested, true);
+      const desired = new Set(active.map(market => market.symbol));
+      for (const symbol of subscribed) if (!desired.has(symbol)) { await client.unsubscribeTicks(symbol); subscribed.delete(symbol); }
+      for (const symbol of desired) if (!subscribed.has(symbol)) {
+        if (isStopping()) return;
+        await client.subscribeTicks(symbol);
+        subscribed.add(symbol);
+      }
+      print(`${env.MARKET_SCOPE}: continuously collecting ${String(subscribed.size)} open instruments. Closed markets will be checked again in 5 minutes.`);
+    } finally { refreshing = false; }
+  };
+  client.on('tick', tick => {
+    if (isStopping()) return;
+    // subscribeTicks emits its first tick before resolving; classify against the
+    // discovered catalogue and scope rather than losing that first observation.
+    try {
+      if (!buffer.accepts(tick.symbol)) return;
+      buffer.push({ symbol: tick.symbol, epoch: tick.epoch, price: tick.quote });
+      if (buffer.size >= 1000) flush();
+    } catch (error) { failed(error); }
+  });
+  client.on('disconnected', () => { if (!isStopping()) log.warn('Feed disconnected; missing observations remain explicit gaps in stored data'); });
+  try {
+    await client.connectPublic();
+    await refresh();
+    flushTimer = setInterval(() => { try { flush(); } catch (error) { failed(error); } }, 5000);
+    refreshTimer = setInterval(() => { void refresh().catch(failed); }, 300_000);
+    process.once('SIGINT', () => { void stop().catch(failed); });
+    process.once('SIGTERM', () => { void stop().catch(failed); });
+    if (duration !== null) stopTimer = setTimeout(() => { void stop().catch(failed); }, duration * 1000);
+  } catch (error) { await stop(); throw error; }
 }
-
-main().catch((err: unknown) => {
-  log.fatal({ err }, 'Daemon crashed');
-  process.exit(1);
-});
+main().catch((error: unknown) => { console.error(error instanceof Error ? error.message : 'Collection failed'); process.exitCode = 1; });

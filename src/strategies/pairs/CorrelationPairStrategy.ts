@@ -50,9 +50,9 @@ export class CorrelationPairStrategy {
       });
     }
 
-    if (cointegP > 0.1) {
+    if (cointegP === null || !Number.isFinite(cointegP) || cointegP > 0.1) {
       return makeSignal(this.name, featuresA, 'NONE', 0, {
-        reason: 'COINTEGRATION_BROKEN',
+        reason: cointegP === null ? 'COINTEGRATION_UNVALIDATED' : 'COINTEGRATION_BROKEN',
         spreadZ: z,
         cointegP,
         betaHedge,

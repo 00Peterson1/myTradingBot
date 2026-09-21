@@ -1,6 +1,6 @@
 # Quantitative research workstation
 
-The intended workflow is research → backtesting → validated demo evaluation → explicitly eligible live execution. Lifecycle promotion gates are still pending. See [the milestone review](docs/MILESTONE_REVIEW.md) for evidence and remaining work.
+The intended workflow is research → backtesting → validated demo evaluation → explicitly eligible live execution. Automated runners enforce registered strategy eligibility; prospective demo evaluation for live promotion remains pending. See [the milestone review](docs/MILESTONE_REVIEW.md) for evidence and remaining work.
 
 | Command | Behavior |
 |---|---|
@@ -9,12 +9,13 @@ The intended workflow is research → backtesting → validated demo evaluation 
 | `npm run doctor -- --demo-connectivity --proposal 1HZ10V` | Demo authentication, balance, portfolio and configured CALL quote; no orders |
 | `npm run migrate` | Transactional, versioned SQLite migrations and integrity check |
 | `npm run markets` | Cached catalogue or public discovery; distinct market categories |
-| `npm run research:daemon` | Persist tick batches and derived features |
+| `npm run research:daemon` | Continuously persist raw ticks for open instruments in the active scope; replay recomputes causal features |
 | `npm run research` | Exploratory survey; saves profiles, not raw survey ticks |
 | `npm run backtest -- --symbols 1HZ10V` | Registered validation study with development walk-forward, declared parameter neighbors and a one-time final holdout |
+| `npm run lifecycle` | List hypothesis states; evidence-backed transitions require an explicit reason |
 | `npm run experiments` | List recent experiment/study IDs |
 | `npm run experiments -- --id HASH --output PATH` | Export a verified input/code/attempt bundle without overwriting an existing file |
-| `npm run trade:demo` | Options runner with durable accounting, capability checks and settlement reconciliation; eligibility gates still pending |
+| `npm run trade:demo` | Options runner loading only exact registered demo-eligible hypotheses, with durable accounting and reconciliation |
 | `npm run trade:live` | Options runner requiring explicit live switches; deployment validation remains incomplete |
 
 `SYMBOLS` selects instruments. Discovery does not establish contract availability, strategy suitability or CFD access. Options capabilities are checked for the requested type and duration before quoting. Unsupported durations are rejected; there is no automatic duration substitution. CFD execution requires a separate adapter and is not implemented.
@@ -32,3 +33,28 @@ Use a Python 3 virtual environment, install `python/requirements.txt`, then acti
 Set `MODEL_CHECKPOINT` to that checkpoint before `npm run sidecar:serve`. Prediction input is `{ "pairId": "A-B", "observations": [[epoch, priceA, priceB], ...] }` with exactly 50 synchronized, ordered observations. Training and serving share frozen normalization and identical channels. Old checkpoints and `spreadHistory` requests are incompatible and fail visibly. The model is research-only and is not connected to order eligibility.
 
 Run `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`, and `npm run test:python`. Model integration tests require the Python dependencies; otherwise they report skips. Tests do not establish trading edge. Keep credentials in the untracked `.env`; diagnostics redact tokens.
+
+## Active scope: real markets
+
+`MARKET_SCOPE=REAL` and `SYMBOLS=ALL` select discovered forex, metals, commodities, crypto, stock indices and stocks. This instrument scope is independent of the account mode: REAL does **not** enable real-money execution. Synthetic instruments and unclassified symbols are excluded from surveys, daemon collection, backtest selection and eligible strategy loading. Existing synthetic data and code are retained for later work. `npm run markets -- --all` can inspect the full catalogue without enabling those instruments for trading.
+
+`npm run markets -- --refresh` refreshes classifications and open/closed flags from the provider. Instruments not offered through this API will not be invented. Discovery does not imply that a particular Options contract is supported; CFD execution still requires its separate adapter.
+
+Run `npm run research:daemon` for continuous collection across selected open markets. Subscriptions stay active instead of rotating away from a symbol. The collector flushes raw ticks every five seconds or 1,000 buffered observations and checks market availability every five minutes. `--duration 60` performs a bounded run. Closed markets are skipped until they reopen. Feed outages remain visible gaps; collection cannot reconstruct missing history. Storage errors stop collection visibly. Features are recomputed during replay instead of persisting potentially mismatched tick-feature rows.
+
+`npm run research` performs exploratory surveys of selected open instruments. `npm run backtest` applies the same scope to stored datasets. Old discontinuous datasets remain unsuitable for continuous replay; collect sufficient new data before validation. Neither command automatically promotes a strategy.
+
+Use `npm run experiments -- --id HASH --replay` to reconstruct a supported catalogue experiment and compare its trade observations with completed attempts. Source, dependencies and resolved settings must match. Runners load the same catalogue factories, preserve hypothesis identity, apply the declared one-tick entry delay, and reject revoked eligibility before a reservation. Live promotion currently refuses requests because a prospective demo validation protocol has not been completed.
+
+### CFD setup checkpoint
+
+CFD support is under implementation. See [the research adherence audit](docs/RESEARCH_ADHERENCE.md) for implemented components and remaining requirements.
+
+The selected connection target is cTrader Open API. Create a Deriv cTrader **demo** account and authorize a cTrader Open API application, then configure these locally (never paste secrets into chat):
+
+- `CTRADER_CLIENT_ID`
+- `CTRADER_CLIENT_SECRET`
+- `CTRADER_ACCESS_TOKEN`
+- `CTRADER_DEMO_ACCOUNT_ID`
+
+Run `npm run cfd:doctor` for local configuration checks, or `npm run cfd:doctor -- --connect` for read-only demo authorization and symbol/position counts. These commands do not submit orders. The Deriv Options token does not replace cTrader OAuth credentials. The CFD simulator is a research component, not a connected broker or validated trading strategy.

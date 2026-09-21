@@ -52,7 +52,7 @@ export interface SymbolProfile {
 // Market type detection
 // ---------------------------------------------------------------------------
 
-export function detectMarketType(symbol: string): MarketType { return classifyMarket(symbol); }
+export function detectMarketType(symbol: string, marketCategory?: string): MarketType { return classifyMarket(symbol, marketCategory ? { marketCategory } : {}); }
 
 /**
  * Returns the appropriate strategies for a given market type.

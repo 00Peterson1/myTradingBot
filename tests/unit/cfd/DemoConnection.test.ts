@@ -1,0 +1,53 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+const state = vi.hoisted(() => ({ live: false, mismatch: false, requests: [] as number[] }));
+vi.mock('ws', async () => {
+  const { EventEmitter } = await import('node:events');
+  class Socket extends EventEmitter {
+    static OPEN = 1;
+    readyState = 1;
+    constructor() { super(); queueMicrotask(() => { this.emit('open'); }); }
+    send(raw: string, callback?: (error?: Error) => void): void {
+      const request = JSON.parse(raw) as { payloadType: number; clientMsgId: string };
+      state.requests.push(request.payloadType);
+      const responses: Record<number, { type: number; payload: unknown }> = {
+        2100: { type: 2101, payload: {} },
+        2149: { type: 2150, payload: { ctidTraderAccount: [{ ctidTraderAccountId: '123', isLive: state.live }] } },
+        2102: { type: 2103, payload: { ctidTraderAccountId: state.mismatch ? '456' : '123' } },
+        2114: { type: 2115, payload: { ctidTraderAccountId: '123', symbol: [{ symbolId: '1' }] } },
+        2124: { type: 2125, payload: { ctidTraderAccountId: '123', position: [], order: [] } },
+      };
+      const response = responses[request.payloadType];
+      if (!response) throw new Error('Unexpected request');
+      queueMicrotask(() => { this.emit('message', Buffer.from(JSON.stringify({ clientMsgId: request.clientMsgId, payloadType: response.type, payload: response.payload }))); });
+      callback?.();
+    }
+    terminate(): void { this.readyState = 3; this.emit('close'); }
+  }
+  return { default: Socket };
+});
+import { CTraderDemoConnection } from '../../../src/cfd/ctrader/DemoConnection.js';
+const config = { clientId: 'fixture', clientSecret: 'secret-fixture', accessToken: 'token-fixture', accountId: '123' };
+beforeEach(() => { state.live = false; state.mismatch = false; state.requests = []; });
+describe('cTrader demo read-only authentication', () => {
+  it('authorizes the selected demo account and inspects without order requests', async () => {
+    const connection = new CTraderDemoConnection(config);
+    try {
+      await connection.connect();
+      expect(await connection.inspect()).toEqual({ symbolCount: 1, positionCount: 0, pendingOrderCount: 0 });
+      expect(state.requests).toEqual([2100, 2149, 2102, 2114, 2124]);
+    } finally { connection.close(); }
+  });
+  it('refuses live account selection before account authorization', async () => {
+    state.live = true;
+    const connection = new CTraderDemoConnection(config);
+    await expect(connection.connect()).rejects.toThrow('authentication failed');
+    expect(state.requests).toEqual([2100, 2149]);
+    await expect(connection.inspect()).rejects.toThrow('not authenticated');
+  });
+  it('refuses mismatched authenticated account identity', async () => {
+    state.mismatch = true;
+    const connection = new CTraderDemoConnection(config);
+    await expect(connection.connect()).rejects.toThrow('authentication failed');
+    await expect(connection.inspect()).rejects.toThrow('not authenticated');
+  });
+});

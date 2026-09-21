@@ -8,7 +8,7 @@ export interface SpreadState {
   betaHedgeRatio: number;
   spreadMean: number;
   spreadStd: number;
-  cointegrationP: number;
+  cointegrationP: number | null;
   lastZScore: number;
   windowSize: number;
   updatedAt: Date;
@@ -30,11 +30,12 @@ export class SpreadTracker {
       betaHedgeRatio: 1.0,
       spreadMean: 0.0,
       spreadStd: 1.0,
-      cointegrationP: 1.0,
+      cointegrationP: null,
       lastZScore: 0.0,
       windowSize,
       updatedAt: new Date()
     };
+    this.state.cointegrationP = null; // Restored states must not resurrect legacy pseudo-p-values.
   }
   
   update(priceA: number, priceB: number, timestamp: Date): SpreadState {
@@ -134,7 +135,7 @@ export class SpreadTracker {
       betaHedgeRatio: row.beta_hedge_ratio,
       spreadMean: row.spread_mean,
       spreadStd: row.spread_std,
-      cointegrationP: row.cointegration_p,
+      cointegrationP: null, // Legacy threshold buckets are not calibrated evidence.
       lastZScore: row.last_z_score,
       windowSize: row.window_size,
       updatedAt: new Date(row.updated_at)
