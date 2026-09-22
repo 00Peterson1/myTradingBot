@@ -1,3 +1,33 @@
+## CFD offline execution/research checkpoint — 2026-09-22
+
+Implemented order/partial-fill reconciliation using immutable cumulative deal evidence (migration 6), confirmed broker-triggered position closure records (migration 7), a serialized risk-checking execution controller, next-quote bid/ask replay, dated financing/effective leverage and margin stop-out, per-symbol predeclared lookback sensitivity, DSR/BY correction, aligned CSCV PBO, cost stress, sealed final holdout, and a bounded demo round-trip harness. Live accounts remain blocked. See [CFD_WORKFLOW.md](CFD_WORKFLOW.md) for precise contracts, commands and limitations.
+
+The example dataset is a labelled software fixture, not observed market data. Its replay tests mechanics and its validation must report INSUFFICIENT_EVIDENCE. No longer broker bid/ask archive or actual broker verification was obtained. The cTrader application is awaiting approval; the existing connection remains read-only and needs a concrete order/deal/position adapter. Migration 8 adds runner leases and immutable daily baselines; broker-backed baseline initialization, source/cost verification, dependence assumption review and prospective broker evaluation remain required. This does not mark every CFD milestone complete or establish an edge.
+
+## Historical collection checkpoint — 2026-09-22
+
+Verification: **234 tests passed across 39 files**; source/test typechecks, lint and build passed.
+
+Added `collect:history`: all discovered real symbols, including closed instruments, can request bounded recent historical price batches. Pacing and bounded rate-limit retries protect public requests. Batch validation rejects malformed, unordered or ambiguous timestamps before persistence. Per-symbol failures produce a nonzero command exit.
+
+Verified public collection for all **43 real symbols**, adding **43,000 price ticks**. Six initial rate limits were successfully retried. Each symbol returned 1,000 ticks despite a request for 5,000; this is one recent batch, not a complete archive. Updated the coverage report and saved [collection evidence](HISTORY_COLLECTION_2026-09-22.json). This supersedes the earlier two-symbol data-availability checkpoint.
+
+The six S&P 500 (`OTC_SPC`) candidates completed the existing Options validation workflow: **INSUFFICIENT_EVIDENCE**, no selected strategy and no promotion. No broker orders were submitted. CFD execution/quote fidelity is not established by these price-only samples.
+
+## Real-symbol coverage checkpoint — 2026-09-22
+
+Verification: **222 tests passed across 37 files**; source/test typechecks, lint and build passed. Public catalogue refresh completed without orders.
+
+Public refresh verified 43 real symbols: 25 forex, 4 metals, 12 stock indices, 2 crypto. Every returned real symbol receives a category-specific research candidate plan, shared by survey recommendations and backtests. Tests cover dynamically named symbols in all six real categories, including stocks and commodities when supplied by the provider. Closed symbols remain visible; disappeared symbols retire from active discovery without losing historical records. Empty/duplicate provider catalogues fail without corrupting prior discovery.
+
+`markets --refresh --coverage` reports every real symbol, tick count, candidate family and outstanding execution/data requirements. See [the complete snapshot](REAL_MARKET_COVERAGE_2026-09-22.json). Stocks and non-metal commodities were absent from this Options feed, and only two returned symbols had stored ticks. This is research routing coverage, not proof that every Deriv CFD instrument is supported or validated. Separate cTrader discovery and execution remain outstanding.
+
+## CFD journal checkpoint — 2026-09-22
+
+Verification: **218 TypeScript tests passed across 36 files**; source/test typechecks, lint and build passed. Migration 5 applied to the local database with its integrity check passing. No broker orders were submitted.
+
+Migration 5 adds durable CFD open/close submission intents and append-only audit events. The paper-only submission service checks account identity, persists before dispatch, deduplicates requests, and preserves ambiguous outcomes as UNKNOWN. Restart recovery and partial fills block further submissions; neither is silently retried. Broker-confirmed reconciliation and CFD risk/lifecycle integration remain outstanding; the paper service is not an automated trading runner.
+
 ## Research/CFD checkpoint — 2026-09-21
 
 Verification: **211 TypeScript tests passed (35 files)**, source/test typechecks, lint and build passed. Python: 5 passed, 2 ML integration tests skipped because optional dependencies are absent. CLI subprocess tests required execution outside the sandbox after EPERM. No broker orders were submitted.

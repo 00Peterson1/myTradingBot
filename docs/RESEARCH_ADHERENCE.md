@@ -1,3 +1,7 @@
+## CFD implementation update — 2026-09-22
+
+See [CFD_WORKFLOW.md](CFD_WORKFLOW.md) for the current implementation. Offline components now include cumulative order/partial-fill reconciliation, broker-triggered position closure evidence, a risk-checked demo/paper execution controller, bid/ask replay with dated financing/leverage, per-symbol sensitivity/DSR/BY/PBO/holdout research, and a demo round-trip verification harness. None has been verified against the actual broker; cTrader approval, the concrete provider adapter, longer verified bid/ask data and actual demo evidence remain outstanding. Earlier missing-component descriptions below are historical where superseded by this update.
+
 # Research adherence audit — 2026-09-21
 
 The bibliography supplied by the user is the research baseline. The current repository contains research-inspired candidates, not verified replications of all these papers. A paper's published performance cannot validate a different instrument, sampling interval, execution product or cost model. Synthetic markets remain paused under `MARKET_SCOPE=REAL`.
@@ -28,4 +32,6 @@ Added separate CFD instrument/account/order/position schemas, risk sizing and a 
 
 `npm run cfd:doctor` checks separate cTrader credentials without printing their values. `--connect` performs read-only demo authentication and symbol/position inspection. The user has not created a CFD account. The implementation follows [cTrader JSON endpoints](https://help.ctrader.com/open-api/proxies-endpoints/) and [application/account authorization](https://help.ctrader.com/open-api/account-authentication/). Fixture tests are not broker verification.
 
-Still outstanding: the cTrader execution adapter; durable CFD order/close intents and restart reconciliation; broker-specific sizing, conversion, costs and dynamic margin; causal CFD backtest/validation integration; CFD-specific lifecycle promotion; prospective demo evidence. Therefore milestone 10 and complete paper adherence are **not complete**. Existing Options eligibility is not CFD eligibility.
+Durable CFD order/close intents now use migration 5 and an append-only audit journal. Submission is persisted before the broker call; request IDs cannot be reused with changed payloads. Interrupted submissions recover as UNKNOWN, partial fills block further submissions, and duplicate requests never resend. The submission service currently permits paper accounts only; it is not a complete risk or lifecycle gate.
+
+Still outstanding: the cTrader execution adapter; broker-evidence reconciliation of uncertain/partial orders; broker-specific sizing, conversion, costs and dynamic margin; causal CFD backtest/validation integration; CFD-specific lifecycle promotion; prospective demo evidence. Therefore milestone 10 and complete paper adherence are **not complete**. Existing Options eligibility is not CFD eligibility.

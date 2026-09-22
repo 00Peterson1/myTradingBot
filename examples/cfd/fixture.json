@@ -1,0 +1,2270 @@
+{
+  "version": 1,
+  "source": "Deterministic test fixture, not market observations",
+  "kind": "FIXTURE",
+  "accountCurrency": "USD",
+  "costSource": "Explicit illustrative assumptions only",
+  "instrument": {
+    "symbol": "EURUSD",
+    "category": "forex",
+    "contractSize": 100000,
+    "volumeMin": 0.01,
+    "volumeMax": 10,
+    "volumeStep": 0.01,
+    "priceTick": 1e-05,
+    "minStopDistance": 0,
+    "profitCurrency": "USD"
+  },
+  "quotes": [
+    {
+      "timeMs": 1700000000000,
+      "bid": 1.1,
+      "ask": 1.10012,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000010000,
+      "bid": 1.10005,
+      "ask": 1.10017,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000020000,
+      "bid": 1.10009,
+      "ask": 1.10021,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000030000,
+      "bid": 1.10014,
+      "ask": 1.10026,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000040000,
+      "bid": 1.10018,
+      "ask": 1.1003,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000050000,
+      "bid": 1.10022,
+      "ask": 1.10034,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000060000,
+      "bid": 1.10026,
+      "ask": 1.10038,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000070000,
+      "bid": 1.1003,
+      "ask": 1.10042,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000080000,
+      "bid": 1.10034,
+      "ask": 1.10046,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000090000,
+      "bid": 1.10037,
+      "ask": 1.10049,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000100000,
+      "bid": 1.1004,
+      "ask": 1.10052,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000110000,
+      "bid": 1.10043,
+      "ask": 1.10055,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000120000,
+      "bid": 1.10045,
+      "ask": 1.10057,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000130000,
+      "bid": 1.10047,
+      "ask": 1.10059,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000140000,
+      "bid": 1.10049,
+      "ask": 1.10061,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000150000,
+      "bid": 1.10051,
+      "ask": 1.10063,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000160000,
+      "bid": 1.10053,
+      "ask": 1.10065,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000170000,
+      "bid": 1.10054,
+      "ask": 1.10066,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000180000,
+      "bid": 1.10055,
+      "ask": 1.10067,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000190000,
+      "bid": 1.10057,
+      "ask": 1.10069,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000200000,
+      "bid": 1.10058,
+      "ask": 1.1007,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000210000,
+      "bid": 1.10059,
+      "ask": 1.10071,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000220000,
+      "bid": 1.10061,
+      "ask": 1.10073,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000230000,
+      "bid": 1.10063,
+      "ask": 1.10075,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000240000,
+      "bid": 1.10064,
+      "ask": 1.10076,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000250000,
+      "bid": 1.10066,
+      "ask": 1.10078,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000260000,
+      "bid": 1.10069,
+      "ask": 1.10081,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000270000,
+      "bid": 1.10071,
+      "ask": 1.10083,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000280000,
+      "bid": 1.10074,
+      "ask": 1.10086,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000290000,
+      "bid": 1.10077,
+      "ask": 1.10089,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000300000,
+      "bid": 1.1008,
+      "ask": 1.10092,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000310000,
+      "bid": 1.10084,
+      "ask": 1.10096,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000320000,
+      "bid": 1.10088,
+      "ask": 1.101,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000330000,
+      "bid": 1.10092,
+      "ask": 1.10104,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000340000,
+      "bid": 1.10096,
+      "ask": 1.10108,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000350000,
+      "bid": 1.10101,
+      "ask": 1.10113,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000360000,
+      "bid": 1.10105,
+      "ask": 1.10117,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000370000,
+      "bid": 1.1011,
+      "ask": 1.10122,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000380000,
+      "bid": 1.10115,
+      "ask": 1.10127,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000390000,
+      "bid": 1.10119,
+      "ask": 1.10131,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000400000,
+      "bid": 1.10124,
+      "ask": 1.10136,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000410000,
+      "bid": 1.10128,
+      "ask": 1.1014,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000420000,
+      "bid": 1.10133,
+      "ask": 1.10145,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000430000,
+      "bid": 1.10137,
+      "ask": 1.10149,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000440000,
+      "bid": 1.10141,
+      "ask": 1.10153,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000450000,
+      "bid": 1.10144,
+      "ask": 1.10156,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000460000,
+      "bid": 1.10148,
+      "ask": 1.1016,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000470000,
+      "bid": 1.10151,
+      "ask": 1.10163,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000480000,
+      "bid": 1.10154,
+      "ask": 1.10166,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000490000,
+      "bid": 1.10157,
+      "ask": 1.10169,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000500000,
+      "bid": 1.10159,
+      "ask": 1.10171,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000510000,
+      "bid": 1.10161,
+      "ask": 1.10173,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000520000,
+      "bid": 1.10163,
+      "ask": 1.10175,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000530000,
+      "bid": 1.10165,
+      "ask": 1.10177,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000540000,
+      "bid": 1.10166,
+      "ask": 1.10178,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000550000,
+      "bid": 1.10168,
+      "ask": 1.1018,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000560000,
+      "bid": 1.10169,
+      "ask": 1.10181,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000570000,
+      "bid": 1.1017,
+      "ask": 1.10182,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000580000,
+      "bid": 1.10172,
+      "ask": 1.10184,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000590000,
+      "bid": 1.10173,
+      "ask": 1.10185,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000600000,
+      "bid": 1.10175,
+      "ask": 1.10187,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000610000,
+      "bid": 1.10176,
+      "ask": 1.10188,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000620000,
+      "bid": 1.10178,
+      "ask": 1.1019,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000630000,
+      "bid": 1.1018,
+      "ask": 1.10192,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000640000,
+      "bid": 1.10183,
+      "ask": 1.10195,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000650000,
+      "bid": 1.10185,
+      "ask": 1.10197,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000660000,
+      "bid": 1.10188,
+      "ask": 1.102,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000670000,
+      "bid": 1.10191,
+      "ask": 1.10203,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000680000,
+      "bid": 1.10195,
+      "ask": 1.10207,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000690000,
+      "bid": 1.10198,
+      "ask": 1.1021,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000700000,
+      "bid": 1.10202,
+      "ask": 1.10214,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000710000,
+      "bid": 1.10206,
+      "ask": 1.10218,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000720000,
+      "bid": 1.10211,
+      "ask": 1.10223,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000730000,
+      "bid": 1.10215,
+      "ask": 1.10227,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000740000,
+      "bid": 1.1022,
+      "ask": 1.10232,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000750000,
+      "bid": 1.10224,
+      "ask": 1.10236,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000760000,
+      "bid": 1.10229,
+      "ask": 1.10241,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000770000,
+      "bid": 1.10234,
+      "ask": 1.10246,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000780000,
+      "bid": 1.10238,
+      "ask": 1.1025,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000790000,
+      "bid": 1.10243,
+      "ask": 1.10255,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000800000,
+      "bid": 1.10247,
+      "ask": 1.10259,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000810000,
+      "bid": 1.10251,
+      "ask": 1.10263,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000820000,
+      "bid": 1.10255,
+      "ask": 1.10267,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000830000,
+      "bid": 1.10259,
+      "ask": 1.10271,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000840000,
+      "bid": 1.10262,
+      "ask": 1.10274,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000850000,
+      "bid": 1.10265,
+      "ask": 1.10277,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000860000,
+      "bid": 1.10268,
+      "ask": 1.1028,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000870000,
+      "bid": 1.1027,
+      "ask": 1.10282,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000880000,
+      "bid": 1.10273,
+      "ask": 1.10285,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000890000,
+      "bid": 1.10275,
+      "ask": 1.10287,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000900000,
+      "bid": 1.10277,
+      "ask": 1.10289,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000910000,
+      "bid": 1.10278,
+      "ask": 1.1029,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000920000,
+      "bid": 1.1028,
+      "ask": 1.10292,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000930000,
+      "bid": 1.10281,
+      "ask": 1.10293,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000940000,
+      "bid": 1.10282,
+      "ask": 1.10294,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000950000,
+      "bid": 1.10284,
+      "ask": 1.10296,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000960000,
+      "bid": 1.10285,
+      "ask": 1.10297,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000970000,
+      "bid": 1.10287,
+      "ask": 1.10299,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000980000,
+      "bid": 1.10288,
+      "ask": 1.103,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700000990000,
+      "bid": 1.1029,
+      "ask": 1.10302,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001000000,
+      "bid": 1.10292,
+      "ask": 1.10304,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001010000,
+      "bid": 1.10294,
+      "ask": 1.10306,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001020000,
+      "bid": 1.10296,
+      "ask": 1.10308,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001030000,
+      "bid": 1.10299,
+      "ask": 1.10311,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001040000,
+      "bid": 1.10302,
+      "ask": 1.10314,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001050000,
+      "bid": 1.10305,
+      "ask": 1.10317,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001060000,
+      "bid": 1.10309,
+      "ask": 1.10321,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001070000,
+      "bid": 1.10312,
+      "ask": 1.10324,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001080000,
+      "bid": 1.10316,
+      "ask": 1.10328,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001090000,
+      "bid": 1.10321,
+      "ask": 1.10333,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001100000,
+      "bid": 1.10325,
+      "ask": 1.10337,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001110000,
+      "bid": 1.1033,
+      "ask": 1.10342,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001120000,
+      "bid": 1.10334,
+      "ask": 1.10346,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001130000,
+      "bid": 1.10339,
+      "ask": 1.10351,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001140000,
+      "bid": 1.10343,
+      "ask": 1.10355,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001150000,
+      "bid": 1.10348,
+      "ask": 1.1036,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001160000,
+      "bid": 1.10353,
+      "ask": 1.10365,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001170000,
+      "bid": 1.10357,
+      "ask": 1.10369,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001180000,
+      "bid": 1.10361,
+      "ask": 1.10373,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001190000,
+      "bid": 1.10365,
+      "ask": 1.10377,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001200000,
+      "bid": 1.10369,
+      "ask": 1.10381,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": -2,
+      "shortFinancingPerLot": -1
+    },
+    {
+      "timeMs": 1700001210000,
+      "bid": 1.10373,
+      "ask": 1.10385,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001220000,
+      "bid": 1.10376,
+      "ask": 1.10388,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001230000,
+      "bid": 1.10379,
+      "ask": 1.10391,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001240000,
+      "bid": 1.10382,
+      "ask": 1.10394,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001250000,
+      "bid": 1.10384,
+      "ask": 1.10396,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001260000,
+      "bid": 1.10386,
+      "ask": 1.10398,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001270000,
+      "bid": 1.10388,
+      "ask": 1.104,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001280000,
+      "bid": 1.1039,
+      "ask": 1.10402,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001290000,
+      "bid": 1.10392,
+      "ask": 1.10404,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001300000,
+      "bid": 1.10393,
+      "ask": 1.10405,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001310000,
+      "bid": 1.10395,
+      "ask": 1.10407,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001320000,
+      "bid": 1.10396,
+      "ask": 1.10408,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001330000,
+      "bid": 1.10397,
+      "ask": 1.10409,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001340000,
+      "bid": 1.10399,
+      "ask": 1.10411,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001350000,
+      "bid": 1.104,
+      "ask": 1.10412,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001360000,
+      "bid": 1.10402,
+      "ask": 1.10414,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001370000,
+      "bid": 1.10404,
+      "ask": 1.10416,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001380000,
+      "bid": 1.10406,
+      "ask": 1.10418,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001390000,
+      "bid": 1.10408,
+      "ask": 1.1042,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001400000,
+      "bid": 1.1041,
+      "ask": 1.10422,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001410000,
+      "bid": 1.10413,
+      "ask": 1.10425,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001420000,
+      "bid": 1.10416,
+      "ask": 1.10428,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001430000,
+      "bid": 1.10419,
+      "ask": 1.10431,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001440000,
+      "bid": 1.10423,
+      "ask": 1.10435,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001450000,
+      "bid": 1.10427,
+      "ask": 1.10439,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001460000,
+      "bid": 1.10431,
+      "ask": 1.10443,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001470000,
+      "bid": 1.10435,
+      "ask": 1.10447,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001480000,
+      "bid": 1.1044,
+      "ask": 1.10452,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001490000,
+      "bid": 1.10444,
+      "ask": 1.10456,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001500000,
+      "bid": 1.10449,
+      "ask": 1.10461,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001510000,
+      "bid": 1.10453,
+      "ask": 1.10465,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001520000,
+      "bid": 1.10458,
+      "ask": 1.1047,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001530000,
+      "bid": 1.10463,
+      "ask": 1.10475,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001540000,
+      "bid": 1.10467,
+      "ask": 1.10479,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001550000,
+      "bid": 1.10471,
+      "ask": 1.10483,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001560000,
+      "bid": 1.10476,
+      "ask": 1.10488,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001570000,
+      "bid": 1.1048,
+      "ask": 1.10492,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001580000,
+      "bid": 1.10483,
+      "ask": 1.10495,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001590000,
+      "bid": 1.10487,
+      "ask": 1.10499,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001600000,
+      "bid": 1.1049,
+      "ask": 1.10502,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001610000,
+      "bid": 1.10493,
+      "ask": 1.10505,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001620000,
+      "bid": 1.10496,
+      "ask": 1.10508,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001630000,
+      "bid": 1.10498,
+      "ask": 1.1051,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001640000,
+      "bid": 1.105,
+      "ask": 1.10512,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001650000,
+      "bid": 1.10502,
+      "ask": 1.10514,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001660000,
+      "bid": 1.10504,
+      "ask": 1.10516,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001670000,
+      "bid": 1.10505,
+      "ask": 1.10517,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001680000,
+      "bid": 1.10507,
+      "ask": 1.10519,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001690000,
+      "bid": 1.10508,
+      "ask": 1.1052,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001700000,
+      "bid": 1.10509,
+      "ask": 1.10521,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001710000,
+      "bid": 1.10511,
+      "ask": 1.10523,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001720000,
+      "bid": 1.10512,
+      "ask": 1.10524,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001730000,
+      "bid": 1.10514,
+      "ask": 1.10526,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001740000,
+      "bid": 1.10515,
+      "ask": 1.10527,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001750000,
+      "bid": 1.10517,
+      "ask": 1.10529,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001760000,
+      "bid": 1.10519,
+      "ask": 1.10531,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001770000,
+      "bid": 1.10522,
+      "ask": 1.10534,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001780000,
+      "bid": 1.10524,
+      "ask": 1.10536,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001790000,
+      "bid": 1.10527,
+      "ask": 1.10539,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001800000,
+      "bid": 1.1053,
+      "ask": 1.10542,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001810000,
+      "bid": 1.10534,
+      "ask": 1.10546,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001820000,
+      "bid": 1.10537,
+      "ask": 1.10549,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001830000,
+      "bid": 1.10541,
+      "ask": 1.10553,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001840000,
+      "bid": 1.10545,
+      "ask": 1.10557,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001850000,
+      "bid": 1.10549,
+      "ask": 1.10561,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001860000,
+      "bid": 1.10554,
+      "ask": 1.10566,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001870000,
+      "bid": 1.10559,
+      "ask": 1.10571,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001880000,
+      "bid": 1.10563,
+      "ask": 1.10575,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001890000,
+      "bid": 1.10568,
+      "ask": 1.1058,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001900000,
+      "bid": 1.10572,
+      "ask": 1.10584,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001910000,
+      "bid": 1.10577,
+      "ask": 1.10589,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001920000,
+      "bid": 1.10582,
+      "ask": 1.10594,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001930000,
+      "bid": 1.10586,
+      "ask": 1.10598,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001940000,
+      "bid": 1.1059,
+      "ask": 1.10602,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001950000,
+      "bid": 1.10594,
+      "ask": 1.10606,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001960000,
+      "bid": 1.10597,
+      "ask": 1.10609,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001970000,
+      "bid": 1.10601,
+      "ask": 1.10613,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001980000,
+      "bid": 1.10604,
+      "ask": 1.10616,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700001990000,
+      "bid": 1.10607,
+      "ask": 1.10619,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002000000,
+      "bid": 1.10609,
+      "ask": 1.10621,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002010000,
+      "bid": 1.10612,
+      "ask": 1.10624,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002020000,
+      "bid": 1.10614,
+      "ask": 1.10626,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002030000,
+      "bid": 1.10616,
+      "ask": 1.10628,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002040000,
+      "bid": 1.10617,
+      "ask": 1.10629,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002050000,
+      "bid": 1.10619,
+      "ask": 1.10631,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002060000,
+      "bid": 1.1062,
+      "ask": 1.10632,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002070000,
+      "bid": 1.10622,
+      "ask": 1.10634,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002080000,
+      "bid": 1.10623,
+      "ask": 1.10635,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002090000,
+      "bid": 1.10624,
+      "ask": 1.10636,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002100000,
+      "bid": 1.10626,
+      "ask": 1.10638,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002110000,
+      "bid": 1.10627,
+      "ask": 1.10639,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002120000,
+      "bid": 1.10629,
+      "ask": 1.10641,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002130000,
+      "bid": 1.10631,
+      "ask": 1.10643,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002140000,
+      "bid": 1.10633,
+      "ask": 1.10645,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002150000,
+      "bid": 1.10635,
+      "ask": 1.10647,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002160000,
+      "bid": 1.10638,
+      "ask": 1.1065,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002170000,
+      "bid": 1.10641,
+      "ask": 1.10653,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002180000,
+      "bid": 1.10644,
+      "ask": 1.10656,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002190000,
+      "bid": 1.10648,
+      "ask": 1.1066,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002200000,
+      "bid": 1.10651,
+      "ask": 1.10663,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002210000,
+      "bid": 1.10655,
+      "ask": 1.10667,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002220000,
+      "bid": 1.1066,
+      "ask": 1.10672,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002230000,
+      "bid": 1.10664,
+      "ask": 1.10676,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002240000,
+      "bid": 1.10668,
+      "ask": 1.1068,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002250000,
+      "bid": 1.10673,
+      "ask": 1.10685,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002260000,
+      "bid": 1.10678,
+      "ask": 1.1069,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002270000,
+      "bid": 1.10682,
+      "ask": 1.10694,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002280000,
+      "bid": 1.10687,
+      "ask": 1.10699,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002290000,
+      "bid": 1.10692,
+      "ask": 1.10704,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002300000,
+      "bid": 1.10696,
+      "ask": 1.10708,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002310000,
+      "bid": 1.107,
+      "ask": 1.10712,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002320000,
+      "bid": 1.10704,
+      "ask": 1.10716,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002330000,
+      "bid": 1.10708,
+      "ask": 1.1072,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002340000,
+      "bid": 1.10712,
+      "ask": 1.10724,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002350000,
+      "bid": 1.10715,
+      "ask": 1.10727,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002360000,
+      "bid": 1.10718,
+      "ask": 1.1073,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002370000,
+      "bid": 1.10721,
+      "ask": 1.10733,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002380000,
+      "bid": 1.10723,
+      "ask": 1.10735,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002390000,
+      "bid": 1.10725,
+      "ask": 1.10737,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002400000,
+      "bid": 1.10727,
+      "ask": 1.10739,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002410000,
+      "bid": 1.10729,
+      "ask": 1.10741,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002420000,
+      "bid": 1.10731,
+      "ask": 1.10743,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002430000,
+      "bid": 1.10732,
+      "ask": 1.10744,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002440000,
+      "bid": 1.10734,
+      "ask": 1.10746,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002450000,
+      "bid": 1.10735,
+      "ask": 1.10747,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002460000,
+      "bid": 1.10736,
+      "ask": 1.10748,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002470000,
+      "bid": 1.10738,
+      "ask": 1.1075,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002480000,
+      "bid": 1.10739,
+      "ask": 1.10751,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    },
+    {
+      "timeMs": 1700002490000,
+      "bid": 1.10741,
+      "ask": 1.10753,
+      "profitCurrencyToAccount": 1,
+      "leverage": 100,
+      "longFinancingPerLot": 0,
+      "shortFinancingPerLot": 0
+    }
+  ]
+}

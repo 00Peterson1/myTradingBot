@@ -14,6 +14,8 @@ import { renderBanner, renderMetricsTable, renderSafetyStatus } from '../monitor
 // Both have isOnlineLearner = true — they update weights inside generateSignal(),
 // meaning they adapt to the test set while being scored on it. This invalidates
 // OOS evaluation. A prequential (interleaved train-then-test) protocol is required.
+import { researchFactoriesForMarket, realMarketCategory } from '../markets/RealMarketCoverage.js';
+import type { MarketMetadata } from '../config/markets.js';
 import { strategyFactories } from '../strategies/catalogue.js';
 import { ValidationStudy } from '../backtest/ValidationStudy.js';
 import { getDb } from '../data/database/sqlite.js';
@@ -129,8 +131,11 @@ async function main(): Promise<void> {
     }
     print(`  ✅ Feature replay complete: ${String(features.length)} rows\n`);
 
+    const metadata = db.prepare('SELECT market,submarket,display_name,instrument_type AS marketCategory FROM symbols WHERE symbol=?').get(symbol) as MarketMetadata | undefined;
+    const factories = realMarketCategory(symbol, metadata ?? {}) ? researchFactoriesForMarket(symbol, metadata ?? {}) : strategyFactories;
+    print(`  Research candidates: ${String(factories.length)} (category-specific hypotheses, not validated strategies)`);
     try {
-      const study = await new ValidationStudy(registry, walkForwardConfig).run(features, strategyFactories.map(({ name, factory }) => ({
+      const study = await new ValidationStudy(registry, walkForwardConfig).run(features, factories.map(({ name, factory }) => ({
         id: name, family: name.split('(')[0] ?? name,
         config: { strategyFactory: factory, registry, strategyDeclaration: { catalogKey: name, version: 1 },
           strategyName: name, symbol, payoutMultiplier, feePerTrade: 0, minConfidence: env.MIN_CONSENSUS_CONFIDENCE,

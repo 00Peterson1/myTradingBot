@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { handleHelp } from './help.js';
-handleHelp('markets', 'Discover/list instruments. --cat CATEGORY --open --min-ticks COUNT --refresh --all (otherwise uses MARKET_SCOPE)');
+handleHelp('markets', 'Discover/list instruments. --cat CATEGORY --search NAME_OR_SYMBOL --open --min-ticks COUNT --refresh --coverage (JSON research coverage) --all (otherwise uses MARKET_SCOPE)');
+import { matchesMarketSearch } from '../markets/MarketNames.js';
+import { realMarketCoverage } from '../markets/RealMarketCoverage.js';
 import { getEnv } from '../config/env.js';
 import { selectMarkets } from '../markets/MarketScope.js';
 import { categoryMatches } from '../config/markets.js';
@@ -15,6 +17,8 @@ async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       cat: { type: 'string' },
+      search: { type: 'string' },
+      coverage: { type: 'boolean' },
       all: { type: 'boolean' },
       refresh: { type: 'boolean' },
       open: { type: 'boolean' },
@@ -32,9 +36,23 @@ async function main(): Promise<void> {
   let markets = MarketCatalogue.getAll();
 
   if (markets.length === 0 || values.refresh) {
-    print('Refreshing public instrument catalogue...');
+    if (!values.coverage) print('Refreshing public instrument catalogue...');
     const client = new DerivClient();
     try { await client.connectPublic(); markets = await MarketCatalogue.discoverAll(client); } finally { await client.disconnect(); }
+  }
+
+  if (typeof values.search === 'string') {
+    const query = values.search;
+    markets = markets.filter(market => matchesMarketSearch(market, query));
+  }
+
+  if (values.coverage) {
+    const report = realMarketCoverage(markets, getTickCount);
+    if (typeof values.search === 'string') for (const category of report.categories) {
+      if (!category.symbols) category.status = 'NO_MATCH_IN_SEARCH';
+    }
+    print(JSON.stringify(report, null, 2));
+    return;
   }
 
   markets = selectMarkets(markets, values.all ? 'ALL' : getEnv().MARKET_SCOPE);

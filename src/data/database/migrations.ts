@@ -1,4 +1,4 @@
-import { ensureCfdSchema } from '../../cfd/CfdLedger.js';
+import { ensureCfdSchema, ensureCfdReconciliationSchema, ensureCfdPositionSchema, ensureCfdRunnerSchema } from '../../cfd/CfdLedger.js';
 import { ensureLifecycleSchema } from '../../research/experiments/StrategyLifecycle.js';
 import type Database from 'better-sqlite3';
 import { initializeLegacySchema } from './legacySchema.js';
@@ -12,6 +12,8 @@ const migrations: readonly Migration[] = [
   { version: 3, name: 'Immutable research registry', apply: ensureExperimentSchema },
   { version: 4, name: 'Evidence-backed strategy lifecycle', apply: ensureLifecycleSchema },
   { version: 5, name: 'Durable CFD submission journal', apply: ensureCfdSchema },
+  { version: 6, name: 'Immutable CFD reconciliation evidence', apply: ensureCfdReconciliationSchema },
+  { version: 7, name: 'Confirmed CFD position closures', apply: ensureCfdPositionSchema, ensureCfdRunnerSchema },
 ];
 
 /** One transaction per version; failed DDL and its version marker roll back together. */

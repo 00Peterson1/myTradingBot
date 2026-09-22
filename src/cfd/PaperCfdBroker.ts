@@ -6,7 +6,7 @@ import { assertDefined } from '../utils/assertDefined.js';
 
 export interface PaperCfdPolicy {
   initialBalance: number; currency: string; leverage: number; commissionPerLotPerSide: number;
-  slippageTicks: number; stopOutMarginRatio: number;
+  slippageTicks: number; stopOutMarginRatio: number; maxDecisionAgeMs?: number;
 }
 interface PaperPosition { position: CfdPosition; margin: number }
 
@@ -14,6 +14,7 @@ interface PaperPosition { position: CfdPosition; margin: number }
 export class PaperCfdBroker implements CfdBroker {
   private balance: number;
   private now = 0;
+  private leverage: number;
   private readonly instruments = new Map<string, CfdInstrument>();
   private readonly quotes = new Map<string, CfdQuote>();
   private readonly conversion = new Map<string, number>();
@@ -25,9 +26,11 @@ export class PaperCfdBroker implements CfdBroker {
   constructor(private readonly policy: PaperCfdPolicy, instruments: readonly CfdInstrument[]) {
     if (Object.entries(policy).some(([key, value]) => key !== 'currency' && (typeof value !== 'number' || !Number.isFinite(value))) ||
       policy.initialBalance <= 0 || policy.leverage < 1 || policy.commissionPerLotPerSide < 0 || !Number.isInteger(policy.slippageTicks) || policy.slippageTicks < 0 || policy.stopOutMarginRatio <= 0) throw new Error('Invalid paper CFD assumptions');
+    if (policy.maxDecisionAgeMs !== undefined && (!Number.isInteger(policy.maxDecisionAgeMs) || policy.maxDecisionAgeMs <= 0)) throw new Error('Invalid paper decision age');
     if (instruments.length !== 1) throw new Error('Paper CFD studies require one instrument; portfolio quote synchronization is not implemented');
     if (!/^[A-Z]{3}$/.test(policy.currency)) throw new Error('Invalid paper account currency');
     this.balance = policy.initialBalance;
+    this.leverage = policy.leverage;
     for (const item of instruments) {
       cfdInstrumentSchema.parse(item);
       if (this.instruments.has(item.symbol)) throw new Error('Duplicate CFD instrument');
@@ -43,7 +46,7 @@ export class PaperCfdBroker implements CfdBroker {
     return (exit - position.entryPrice) * (position.side === 'LONG' ? 1 : -1) * volume * this.instrumentNow(position.symbol).contractSize * this.rate(position.symbol);
   }
   private margin(symbol: string, volume: number, entry: number): number {
-    return volume * this.instrumentNow(symbol).contractSize * entry * this.rate(symbol) / this.policy.leverage;
+    return volume * this.instrumentNow(symbol).contractSize * entry * this.rate(symbol) / this.leverage;
   }
   estimateMargin(order: CfdOrder, entry: number): Promise<number> { return Promise.resolve(this.margin(order.symbol, order.volumeLots, entry)); }
   estimateProfit(order: CfdOrder, entry: number, exit: number): Promise<number> {
@@ -59,17 +62,24 @@ export class PaperCfdBroker implements CfdBroker {
   snapshot(): Promise<CfdSnapshot> { return Promise.resolve({ account: this.account(), positions: [...this.positions.values()].map(row => ({ ...row.position })) }); }
 
   /** Gaps fill stops at the next executable quote, never at an invented stop price. */
-  advance(input: CfdQuote, profitCurrencyToAccount?: number): void {
+  advance(input: CfdQuote, profitCurrencyToAccount?: number, terms?: { leverage: number; longFinancingPerLot: number; shortFinancingPerLot: number }): void {
     const quote = cfdQuoteSchema.parse(input);
     const instrument = this.instrumentNow(quote.symbol);
     if (quote.timeMs < this.now) throw new Error('CFD events must be globally chronological');
     const rate = instrument.profitCurrency === this.policy.currency ? 1 : profitCurrencyToAccount;
     if (rate === undefined || !Number.isFinite(rate) || rate <= 0) throw new Error('Historical account-currency conversion required');
+    if (terms && (!Number.isFinite(terms.leverage) || terms.leverage < 1 || !Number.isFinite(terms.longFinancingPerLot) || !Number.isFinite(terms.shortFinancingPerLot))) throw new Error('Invalid dated CFD costs/margin');
+    if (terms) this.leverage = terms.leverage;
     this.now = quote.timeMs;
     this.quotes.set(quote.symbol, quote);
     this.conversion.set(quote.symbol, rate);
     for (const row of this.positions.values()) if (row.position.symbol === quote.symbol) {
       const position = row.position;
+      if (terms) {
+        const financing = position.volumeLots * (position.side === 'LONG' ? terms.longFinancingPerLot : terms.shortFinancingPerLot);
+        position.financing += financing;
+        this.balance += financing;
+      }
       position.currentPrice = position.side === 'LONG' ? quote.bid : quote.ask;
       position.unrealizedPnl = this.pnl(position, position.currentPrice);
       row.margin = this.margin(position.symbol, position.volumeLots, position.currentPrice);
@@ -102,7 +112,7 @@ export class PaperCfdBroker implements CfdBroker {
     const hash = contentHash(order), prior = this.requests.get(order.clientOrderId);
     if (prior) { if (prior.hash !== hash) throw new Error('Client order ID reused with changed CFD request'); return Promise.resolve(prior.result); }
     const instrument = this.instrumentNow(order.symbol), quote = this.quoteNow(order.symbol);
-    validateCfdOrder(order, instrument, quote, this.now, 5000);
+    validateCfdOrder(order, instrument, quote, this.now, this.policy.maxDecisionAgeMs ?? 5000);
     const price = (order.side === 'LONG' ? quote.ask : quote.bid) + (order.side === 'LONG' ? 1 : -1) * instrument.priceTick * this.policy.slippageTicks;
     const margin = this.margin(order.symbol, order.volumeLots, price), commission = order.volumeLots * this.policy.commissionPerLotPerSide;
     if (this.policy.slippageTicks > order.maxSlippagePoints || margin + commission > this.account().freeMargin) {

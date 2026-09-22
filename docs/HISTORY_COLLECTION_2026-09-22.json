@@ -1,0 +1,444 @@
+{
+  "date": "2026-09-22",
+  "source": "Deriv public price history (not CFD bid/ask)",
+  "symbols": 43,
+  "inserted": 42990,
+  "initialFailures": 6,
+  "retryFailures": 0,
+  "requests": [
+    {
+      "symbol": "cryBTCUSD",
+      "displayName": "BTC/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073492,
+      "toEpoch": 1790074491
+    },
+    {
+      "symbol": "cryETHUSD",
+      "displayName": "ETH/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073492,
+      "toEpoch": 1790074491
+    },
+    {
+      "symbol": "frxAUDCAD",
+      "displayName": "AUD/CAD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073493,
+      "toEpoch": 1790074492
+    },
+    {
+      "symbol": "frxAUDCHF",
+      "displayName": "AUD/CHF",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073494,
+      "toEpoch": 1790074493
+    },
+    {
+      "symbol": "frxAUDJPY",
+      "displayName": "AUD/JPY",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073494,
+      "toEpoch": 1790074493
+    },
+    {
+      "symbol": "frxAUDNZD",
+      "displayName": "AUD/NZD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073495,
+      "toEpoch": 1790074494
+    },
+    {
+      "symbol": "frxAUDUSD",
+      "displayName": "AUD/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073495,
+      "toEpoch": 1790074494
+    },
+    {
+      "symbol": "frxEURAUD",
+      "displayName": "EUR/AUD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073496,
+      "toEpoch": 1790074495
+    },
+    {
+      "symbol": "frxEURCAD",
+      "displayName": "EUR/CAD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073496,
+      "toEpoch": 1790074495
+    },
+    {
+      "symbol": "frxEURCHF",
+      "displayName": "EUR/CHF",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073497,
+      "toEpoch": 1790074496
+    },
+    {
+      "symbol": "frxEURGBP",
+      "displayName": "EUR/GBP",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073497,
+      "toEpoch": 1790074496
+    },
+    {
+      "symbol": "frxEURJPY",
+      "displayName": "EUR/JPY",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073498,
+      "toEpoch": 1790074497
+    },
+    {
+      "symbol": "frxEURNZD",
+      "displayName": "EUR/NZD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073498,
+      "toEpoch": 1790074497
+    },
+    {
+      "symbol": "frxEURUSD",
+      "displayName": "EUR/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073499,
+      "toEpoch": 1790074498
+    },
+    {
+      "symbol": "frxGBPAUD",
+      "displayName": "GBP/AUD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073500,
+      "toEpoch": 1790074499
+    },
+    {
+      "symbol": "frxGBPCAD",
+      "displayName": "GBP/CAD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073500,
+      "toEpoch": 1790074499
+    },
+    {
+      "symbol": "frxGBPCHF",
+      "displayName": "GBP/CHF",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073501,
+      "toEpoch": 1790074500
+    },
+    {
+      "symbol": "frxGBPJPY",
+      "displayName": "GBP/JPY",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073501,
+      "toEpoch": 1790074500
+    },
+    {
+      "symbol": "frxGBPNZD",
+      "displayName": "GBP/NZD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073503,
+      "toEpoch": 1790074502
+    },
+    {
+      "symbol": "frxGBPUSD",
+      "displayName": "GBP/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073503,
+      "toEpoch": 1790074502
+    },
+    {
+      "symbol": "frxNZDJPY",
+      "displayName": "NZD/JPY",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073504,
+      "toEpoch": 1790074503
+    },
+    {
+      "symbol": "frxNZDUSD",
+      "displayName": "NZD/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073506,
+      "toEpoch": 1790074505
+    },
+    {
+      "symbol": "frxUSDCAD",
+      "status": "FAILED",
+      "reason": "Deriv API error [RateLimit]: You have reached the rate limit for ticks_history."
+    },
+    {
+      "symbol": "frxUSDCHF",
+      "status": "FAILED",
+      "reason": "Deriv API error [RateLimit]: You have reached the rate limit for ticks_history."
+    },
+    {
+      "symbol": "frxUSDJPY",
+      "status": "FAILED",
+      "reason": "Deriv API error [RateLimit]: You have reached the rate limit for ticks_history."
+    },
+    {
+      "symbol": "frxUSDMXN",
+      "status": "FAILED",
+      "reason": "Deriv API error [RateLimit]: You have reached the rate limit for ticks_history."
+    },
+    {
+      "symbol": "frxUSDPLN",
+      "status": "FAILED",
+      "reason": "Deriv API error [RateLimit]: You have reached the rate limit for ticks_history."
+    },
+    {
+      "symbol": "frxXAGUSD",
+      "status": "FAILED",
+      "reason": "Deriv API error [RateLimit]: You have reached the rate limit for ticks_history."
+    },
+    {
+      "symbol": "frxXAUUSD",
+      "displayName": "Gold/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073506,
+      "toEpoch": 1790074508
+    },
+    {
+      "symbol": "frxXPDUSD",
+      "displayName": "Palladium/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073510,
+      "toEpoch": 1790074509
+    },
+    {
+      "symbol": "frxXPTUSD",
+      "displayName": "Platinum/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073509,
+      "toEpoch": 1790074510
+    },
+    {
+      "symbol": "OTC_AEX",
+      "displayName": "Netherlands 25",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073315,
+      "toEpoch": 1790074510
+    },
+    {
+      "symbol": "OTC_AS51",
+      "displayName": "Australia 200",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790070613,
+      "toEpoch": 1790074504
+    },
+    {
+      "symbol": "OTC_DJI",
+      "displayName": "Wall Street 30",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073101,
+      "toEpoch": 1790074511
+    },
+    {
+      "symbol": "OTC_FCHI",
+      "displayName": "France 40",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790072589,
+      "toEpoch": 1790074509
+    },
+    {
+      "symbol": "OTC_FTSE",
+      "displayName": "UK 100",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790072957,
+      "toEpoch": 1790074512
+    },
+    {
+      "symbol": "OTC_GDAXI",
+      "displayName": "Germany 40",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073247,
+      "toEpoch": 1790074513
+    },
+    {
+      "symbol": "OTC_HSI",
+      "displayName": "Hong Kong 50",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790062503,
+      "toEpoch": 1790064000
+    },
+    {
+      "symbol": "OTC_N225",
+      "displayName": "Japan 225",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1789758074,
+      "toEpoch": 1789761600
+    },
+    {
+      "symbol": "OTC_NDX",
+      "displayName": "US Tech 100",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073464,
+      "toEpoch": 1790074515
+    },
+    {
+      "symbol": "OTC_SPC",
+      "displayName": "US 500",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790072013,
+      "toEpoch": 1790074508
+    },
+    {
+      "symbol": "OTC_SSMI",
+      "displayName": "Swiss 20",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790072484,
+      "toEpoch": 1790074515
+    },
+    {
+      "symbol": "OTC_SX5E",
+      "displayName": "Euro 50",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790070940,
+      "toEpoch": 1790074509
+    },
+    {
+      "symbols": 43,
+      "failures": 6,
+      "note": "Recent public price ticks only; not complete historical coverage or CFD execution data"
+    },
+    {
+      "symbol": "frxUSDCAD",
+      "displayName": "USD/CAD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 996,
+      "fromEpoch": 1790073579,
+      "toEpoch": 1790074578
+    },
+    {
+      "symbol": "frxUSDCHF",
+      "displayName": "USD/CHF",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 997,
+      "fromEpoch": 1790073583,
+      "toEpoch": 1790074582
+    },
+    {
+      "symbol": "frxUSDJPY",
+      "displayName": "USD/JPY",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 998,
+      "fromEpoch": 1790073587,
+      "toEpoch": 1790074586
+    },
+    {
+      "symbol": "frxUSDMXN",
+      "displayName": "USD/MXN",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 999,
+      "fromEpoch": 1790073590,
+      "toEpoch": 1790074590
+    },
+    {
+      "symbol": "frxUSDPLN",
+      "displayName": "USD/PLN",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073596,
+      "toEpoch": 1790074595
+    },
+    {
+      "symbol": "frxXAGUSD",
+      "displayName": "Silver/USD",
+      "status": "COLLECTED",
+      "received": 1000,
+      "inserted": 1000,
+      "fromEpoch": 1790073599,
+      "toEpoch": 1790074599
+    },
+    {
+      "symbols": 6,
+      "failures": 0,
+      "note": "Recent public price ticks only; not complete historical coverage or CFD execution data"
+    }
+  ],
+  "sp500Validation": {
+    "symbol": "OTC_SPC",
+    "verdict": "INSUFFICIENT_EVIDENCE",
+    "selectedStrategy": null,
+    "candidates": 6,
+    "tradingEnabled": false
+  }
+}

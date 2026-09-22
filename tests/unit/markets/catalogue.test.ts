@@ -22,4 +22,25 @@ describe('market discovery integrity', () => {
     await MarketCatalogue.discoverAll(client);
     expect(db.prepare("SELECT research_score,last_profiled_at FROM market_profiles WHERE symbol='frxXAUUSD'").get()).toEqual({ research_score: 88, last_profiled_at: '2020-01-01' });
   });
+  it('retires disappeared symbols while retaining historical research records', async () => {
+    const client = new DerivClient();
+    const provider = vi.spyOn(client, 'getActiveSymbols');
+    const gold = ActiveSymbolSchema.parse({ symbol: 'frxXAUUSD', display_name: 'Gold', market: 'commodities', submarket: 'metals', exchange_is_open: true });
+    const index = ActiveSymbolSchema.parse({ symbol: 'US500', display_name: 'US 500', market: 'indices', submarket: 'americas', exchange_is_open: true });
+    provider.mockResolvedValue([gold, index]);
+    await MarketCatalogue.discoverAll(client);
+    provider.mockResolvedValue([gold]);
+    await MarketCatalogue.discoverAll(client);
+    expect(MarketCatalogue.getAll().map(row => row.symbol)).toEqual(['frxXAUUSD']);
+    expect(MarketCatalogue.getOpen().map(row => row.symbol)).toEqual(['frxXAUUSD']);
+    expect(db.prepare("SELECT is_active FROM symbols WHERE symbol='US500'").get()).toEqual({ is_active: 0 });
+    expect(db.prepare("SELECT symbol FROM market_profiles WHERE symbol='US500'").get()).toBeDefined();
+    provider.mockResolvedValue([]);
+    await expect(MarketCatalogue.discoverAll(client)).rejects.toThrow('empty');
+    expect(MarketCatalogue.getAll()).toHaveLength(1);
+    provider.mockResolvedValue([gold, gold]);
+    await expect(MarketCatalogue.discoverAll(client)).rejects.toThrow('catalogue');
+    expect(MarketCatalogue.getAll()).toHaveLength(1);
+  });
+
 });

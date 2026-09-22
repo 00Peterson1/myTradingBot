@@ -1,3 +1,4 @@
+import { realMarketPlans, type RealMarketCategory } from '../markets/RealMarketCoverage.js';
 import { classifyMarket, type MarketType } from '../config/markets.js';
 export type { MarketType } from '../config/markets.js';
 /**
@@ -56,9 +57,13 @@ export function detectMarketType(symbol: string, marketCategory?: string): Marke
 
 /**
  * Returns the appropriate strategies for a given market type.
- * Based on statistical properties of each market class.
+ * Research hypotheses only; these assignments do not establish an edge.
  */
 export function strategiesForMarketType(type: MarketType): StrategyName[] {
+  if (Object.hasOwn(realMarketPlans, type)) {
+    const names = { Momentum: 'momentum', VolAdjMomentum: 'vol-adj-momentum', MeanReversion: 'mean-reversion', Breakout: 'breakout' } as const;
+    return realMarketPlans[type as RealMarketCategory].families.map(family => names[family]);
+  }
   switch (type) {
     case 'volatility':
       // Pure GBM — run full suite, vote filters noise
@@ -79,23 +84,6 @@ export function strategiesForMarketType(type: MarketType): StrategyName[] {
     case 'jump':
       // Brownian + random jumps — vol-adjusted strategies handle jump risk
       return ['vol-adj-momentum', 'wavelet', 'ewms'];
-
-    case 'forex':
-      // Forex pairs exhibit strong trend persistence and macro momentum
-      return ['momentum', 'vol-adj-momentum', 'breakout', 'ewms'];
-
-    case 'metals':
-    case 'commodities':
-      // Commodities (Gold/Silver) show strong volatility breakouts
-      return ['momentum', 'vol-adj-momentum', 'breakout', 'wavelet'];
-
-    case 'crypto':
-      // Crypto pairs display high volatility and strong trend momentum
-      return ['momentum', 'vol-adj-momentum', 'breakout', 'ewms'];
-
-    case 'stock_indices':
-      // Stock indices exhibit long-term drift + short-term mean reversion
-      return ['momentum', 'mean-reversion', 'breakout', 'ewms'];
 
     case 'unknown':
     default:
@@ -230,6 +218,7 @@ export class SymbolRanker {
     marketType: MarketType,
   ): StrategyName[] {
     const base = strategiesForMarketType(marketType);
+    if (Object.hasOwn(realMarketPlans, marketType)) return base; // Keep predeclared real-market research families stable.
 
     // If autocorrelated, prioritise mean-reversion
     if (row.is_autocorrelated) {

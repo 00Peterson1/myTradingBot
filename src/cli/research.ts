@@ -24,8 +24,8 @@ import { assertDefined } from '../utils/assertDefined.js';
  *   5. Prints ranked table — best symbols first
  *
  * After running:
- *   → `npm run trade:demo` will automatically pick the best symbols
- *   → No manual selection needed
+ *   → Collect continuous history and run isolated backtests.
+ *   → `npm run trade:demo` loads only hypotheses with validated eligibility.
  */
 
 import { configureLogger, createLogger } from '../monitoring/Logger.js';

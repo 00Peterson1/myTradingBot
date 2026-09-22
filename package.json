@@ -31,7 +31,9 @@
     "test:python": "cd python && python3 -m unittest discover -s tests",
     "experiments": "tsx src/cli/experiments.ts",
     "lifecycle": "tsx src/cli/lifecycle.ts",
-    "cfd:doctor": "tsx src/cli/cfd-doctor.ts"
+    "cfd:doctor": "tsx src/cli/cfd-doctor.ts",
+    "collect:history": "tsx src/cli/collect-history.ts",
+    "cfd:backtest": "tsx src/cli/cfd-backtest.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

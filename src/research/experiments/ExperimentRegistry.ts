@@ -74,6 +74,15 @@ export class ExperimentRegistry {
     return (this.db.prepare('SELECT count(*) AS count FROM research_hypotheses').get() as { count: number }).count;
   }
 
+  /** Count all recorded declarations in a product search, including failed/unfinished trials. */
+  countProductHypotheses(product: 'CFD' | 'OPTIONS'): number {
+    const rows = this.db.prepare('SELECT content FROM research_hypotheses').all() as { content: string }[];
+    return rows.filter(row => {
+      const declaration: unknown = JSON.parse(row.content);
+      return typeof declaration === 'object' && declaration !== null && 'product' in declaration && declaration.product === product;
+    }).length;
+  }
+
   /** Consume once BEFORE evaluation, including failed evaluations; no retry with another candidate. */
   claimHoldout(dataset: unknown, hypothesisId: string): string {
     const rows = holdoutSchema.parse(dataset);

@@ -28,6 +28,7 @@ const marketRowSchema = z.object({
 export const MarketCatalogue = {
   async discoverAll(client: DerivClient): Promise<MarketInfo[]> {
     const activeSymbols = await client.getActiveSymbols();
+    if (activeSymbols.length === 0 || activeSymbols.some(row => !row.symbol.trim()) || new Set(activeSymbols.map(row => row.symbol)).size !== activeSymbols.length) throw new Error('Invalid or empty provider symbol catalogue');
     const marketInfos: MarketInfo[] = [];
 
     const db = getDb();
@@ -53,6 +54,8 @@ export const MarketCatalogue = {
     `);
 
     const transaction = db.transaction((infos: MarketInfo[], activeSyms: ActiveSymbol[]) => {
+      db.prepare('UPDATE symbols SET is_active=0').run();
+      db.prepare('UPDATE market_profiles SET exchange_is_open=0').run();
       for (let i = 0; i < infos.length; i++) {
         const info = assertDefined(infos[i]);
         const sym = assertDefined(activeSyms[i]);
@@ -105,14 +108,7 @@ export const MarketCatalogue = {
   },
 
   getByCategory(category: string): MarketInfo[] {
-    const rows = getDb().prepare(`
-      SELECT mp.*, s.display_name, s.market, s.submarket
-      FROM market_profiles mp
-      JOIN symbols s ON mp.symbol = s.symbol
-      WHERE mp.market_category = ?
-      ORDER BY mp.symbol ASC
-    `).all(category);
-    return rows.map(row => this.mapRowToMarketInfo(row));
+    return this.getAll().filter(row => row.marketCategory === category);
   },
 
   getAll(): MarketInfo[] {
@@ -120,6 +116,7 @@ export const MarketCatalogue = {
       SELECT mp.*, s.display_name, s.market, s.submarket
       FROM market_profiles mp
       JOIN symbols s ON mp.symbol = s.symbol
+      WHERE s.is_active=1
       ORDER BY mp.symbol ASC
     `).all();
     return rows.map(row => this.mapRowToMarketInfo(row));
@@ -130,7 +127,7 @@ export const MarketCatalogue = {
       SELECT mp.*, s.display_name, s.market, s.submarket
       FROM market_profiles mp
       JOIN symbols s ON mp.symbol = s.symbol
-      WHERE mp.exchange_is_open = 1
+      WHERE s.is_active=1 AND mp.exchange_is_open = 1
       ORDER BY mp.symbol ASC
     `).all();
     return rows.map(row => this.mapRowToMarketInfo(row));

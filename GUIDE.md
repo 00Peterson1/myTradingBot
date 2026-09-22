@@ -58,3 +58,24 @@ The selected connection target is cTrader Open API. Create a Deriv cTrader **dem
 - `CTRADER_DEMO_ACCOUNT_ID`
 
 Run `npm run cfd:doctor` for local configuration checks, or `npm run cfd:doctor -- --connect` for read-only demo authorization and symbol/position counts. These commands do not submit orders. The Deriv Options token does not replace cTrader OAuth credentials. The CFD simulator is a research component, not a connected broker or validated trading strategy.
+
+### Real-market symbol coverage
+
+Run `npm run markets -- --refresh --coverage` to discover every real symbol returned by the public Options feed and show its research candidates, stored tick count and outstanding requirements. Closed markets remain in this report. The collector subscribes to open selected markets and refreshes discovery; keep `MARKET_SCOPE=REAL` and `SYMBOLS=ALL` to include newly discovered real instruments.
+
+Forex, metals, commodities, crypto, stock indices and individual stocks have separate predeclared research plans. Each symbol is evaluated independently; a plan is not a validated strategy or permission to trade. The survey and backtest share these plans. Stale provider symbols are retired from the active catalogue while their history is retained.
+
+The verified public-feed snapshot on 2026-09-22 contained 43 real symbols (25 forex, 4 metals, 12 indices, 2 crypto). Individual stocks and non-metal commodities were not returned by this feed. See [the complete per-symbol report](docs/REAL_MARKET_COVERAGE_2026-09-22.json). Only two symbols had stored ticks at this checkpoint. CFD availability must be discovered from the authorized cTrader account; Options feed membership does not prove CFD execution support. Corporate actions, financing, sessions and category-specific data requirements listed in the report remain evidence requirements, not implemented data feeds.
+
+Symbol reports include the provider's display name and market/submarket, not just opaque codes. In the public catalogue, `OTC_SPC` is **US 500 (S&P 500)**; it already has momentum, mean-reversion and breakout research candidates. Search it using `npm run markets -- --search 'S&P500' --coverage`. Use the actual provider identifier for data collection/backtesting (`--symbols OTC_SPC`); search aliases are not execution symbols, and this Options-feed identifier must not be assumed to identify a cTrader CFD or an ETF such as SPY. Deriv's [US 500 page](https://deriv.com/markets/stock-indices/us-indices/sp-500) documents the index name.
+
+### Collect recent historical prices
+
+Run `npm run collect:history` to request recent public price ticks for **every discovered real symbol**, including markets that are currently closed. To target the S&P 500, use `npm run collect:history -- --symbols OTC_SPC --count 5000`. Requests are paced and rate-limit responses receive bounded retries. Invalid, unordered, duplicate-timestamp or misaligned response batches are rejected before insertion; collection failures are reported per symbol and cause a nonzero exit status. Repeated imports use the existing database duplicate protection.
+
+The requested count is a maximum, not a promise: the provider may return fewer ticks. This command downloads one recent batch per symbol, not a complete multi-year archive. It preserves gaps and does not fabricate missing observations. These public price ticks support the existing Options research pipeline, not CFD spread/financing simulation. Continue `research:daemon` for continuous raw history. A successful download is not validation or trading eligibility.
+
+
+### CFD offline workflow
+
+Bid/ask CFD replay and per-symbol research validation are available through `npm run cfd:backtest -- --data DATASET.json --config CONFIG.json [--validate]`. A runnable, clearly labelled software fixture lives in `examples/cfd/`. See [CFD_WORKFLOW.md](docs/CFD_WORKFLOW.md) for input requirements, reconciliation/position-management components, demo verification harness and remaining integration limits. Imported longer bid/ask history must include explicit conversion, margin and financing assumptions; the Options price-history collector is not a substitute. cTrader application approval and actual broker verification remain pending.

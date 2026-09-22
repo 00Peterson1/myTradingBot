@@ -1,0 +1,1113 @@
+{
+  "categories": [
+    {
+      "category": "forex",
+      "symbols": 25,
+      "status": "DISCOVERED"
+    },
+    {
+      "category": "metals",
+      "symbols": 4,
+      "status": "DISCOVERED"
+    },
+    {
+      "category": "commodities",
+      "symbols": 0,
+      "status": "NOT_RETURNED_BY_OPTIONS_FEED"
+    },
+    {
+      "category": "crypto",
+      "symbols": 2,
+      "status": "DISCOVERED"
+    },
+    {
+      "category": "stock_indices",
+      "symbols": 12,
+      "status": "DISCOVERED"
+    },
+    {
+      "category": "stocks",
+      "symbols": 0,
+      "status": "NOT_RETURNED_BY_OPTIONS_FEED"
+    }
+  ],
+  "symbols": [
+    {
+      "symbol": "cryBTCUSD",
+      "displayName": "BTC/USD",
+      "aliases": [],
+      "providerMarket": "cryptocurrency",
+      "providerSubmarket": "non_stable_coin",
+      "category": "crypto",
+      "exchangeOpen": true,
+      "ticks": 2172,
+      "researchCandidates": [
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Weekend liquidity",
+        "Spread/slippage stress",
+        "Financing schedule"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "cryETHUSD",
+      "displayName": "ETH/USD",
+      "aliases": [],
+      "providerMarket": "cryptocurrency",
+      "providerSubmarket": "non_stable_coin",
+      "category": "crypto",
+      "exchangeOpen": true,
+      "ticks": 2169,
+      "researchCandidates": [
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Weekend liquidity",
+        "Spread/slippage stress",
+        "Financing schedule"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxAUDCAD",
+      "displayName": "AUD/CAD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1024,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxAUDCHF",
+      "displayName": "AUD/CHF",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1023,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxAUDJPY",
+      "displayName": "AUD/JPY",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1022,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxAUDNZD",
+      "displayName": "AUD/NZD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1021,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxAUDUSD",
+      "displayName": "AUD/USD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1020,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxEURAUD",
+      "displayName": "EUR/AUD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1019,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxEURCAD",
+      "displayName": "EUR/CAD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1018,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxEURCHF",
+      "displayName": "EUR/CHF",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1017,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxEURGBP",
+      "displayName": "EUR/GBP",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1016,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxEURJPY",
+      "displayName": "EUR/JPY",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1015,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxEURNZD",
+      "displayName": "EUR/NZD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1014,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxEURUSD",
+      "displayName": "EUR/USD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1013,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxGBPAUD",
+      "displayName": "GBP/AUD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1012,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxGBPCAD",
+      "displayName": "GBP/CAD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1011,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxGBPCHF",
+      "displayName": "GBP/CHF",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1010,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxGBPJPY",
+      "displayName": "GBP/JPY",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1009,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxGBPNZD",
+      "displayName": "GBP/NZD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1008,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxGBPUSD",
+      "displayName": "GBP/USD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1007,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxNZDJPY",
+      "displayName": "NZD/JPY",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1006,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxNZDUSD",
+      "displayName": "NZD/USD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1005,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxUSDCAD",
+      "displayName": "USD/CAD",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxUSDCHF",
+      "displayName": "USD/CHF",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxUSDJPY",
+      "displayName": "USD/JPY",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "major_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxUSDMXN",
+      "displayName": "USD/MXN",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxUSDPLN",
+      "displayName": "USD/PLN",
+      "aliases": [],
+      "providerMarket": "forex",
+      "providerSubmarket": "minor_pairs",
+      "category": "forex",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)"
+      ],
+      "requirements": [
+        "Trading sessions",
+        "Economic announcements",
+        "Rollover and currency conversion"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxXAGUSD",
+      "displayName": "Silver/USD",
+      "aliases": [],
+      "providerMarket": "commodities",
+      "providerSubmarket": "metals",
+      "category": "metals",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Contract size",
+        "USD/rate announcements",
+        "Financing and session gaps"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxXAUUSD",
+      "displayName": "Gold/USD",
+      "aliases": [],
+      "providerMarket": "commodities",
+      "providerSubmarket": "metals",
+      "category": "metals",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Contract size",
+        "USD/rate announcements",
+        "Financing and session gaps"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxXPDUSD",
+      "displayName": "Palladium/USD",
+      "aliases": [],
+      "providerMarket": "commodities",
+      "providerSubmarket": "metals",
+      "category": "metals",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Contract size",
+        "USD/rate announcements",
+        "Financing and session gaps"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "frxXPTUSD",
+      "displayName": "Platinum/USD",
+      "aliases": [],
+      "providerMarket": "commodities",
+      "providerSubmarket": "metals",
+      "category": "metals",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "VolAdjMomentum(zThreshold=1.0)",
+        "VolAdjMomentum(zThreshold=1.5)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Contract size",
+        "USD/rate announcements",
+        "Financing and session gaps"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_AEX",
+      "displayName": "Netherlands 25",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "europe_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_AS51",
+      "displayName": "Australia 200",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "asia_oceania_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_DJI",
+      "displayName": "Wall Street 30",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "americas_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_FCHI",
+      "displayName": "France 40",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "europe_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_FTSE",
+      "displayName": "UK 100",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "europe_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_GDAXI",
+      "displayName": "Germany 40",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "europe_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_HSI",
+      "displayName": "Hong Kong 50",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "asia_oceania_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": false,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_N225",
+      "displayName": "Japan 225",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "asia_oceania_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": false,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_NDX",
+      "displayName": "US Tech 100",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "americas_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_SPC",
+      "displayName": "US 500",
+      "aliases": [
+        "S&P 500",
+        "S&P500",
+        "SP500",
+        "US SP 500"
+      ],
+      "providerMarket": "indices",
+      "providerSubmarket": "americas_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_SSMI",
+      "displayName": "Swiss 20",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "europe_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    },
+    {
+      "symbol": "OTC_SX5E",
+      "displayName": "Euro 50",
+      "aliases": [],
+      "providerMarket": "indices",
+      "providerSubmarket": "europe_OTC",
+      "category": "stock_indices",
+      "exchangeOpen": true,
+      "ticks": 1000,
+      "researchCandidates": [
+        "Momentum(lookback=20,threshold=0.001)",
+        "Momentum(lookback=50,threshold=0.002)",
+        "MeanReversion(z=1.5,exit=0.5)",
+        "MeanReversion(z=2.0,exit=0.5)",
+        "Breakout(window=20,frac=0.001)",
+        "Breakout(window=50,frac=0.002)"
+      ],
+      "requirements": [
+        "Exchange sessions and gaps",
+        "Dividend/contract adjustments",
+        "Index-specific macro events"
+      ],
+      "optionsExecution": "Requires symbol contract capability and validated hypothesis",
+      "cfdExecution": "Unverified: requires separate cTrader catalogue, adapter and CFD evidence"
+    }
+  ],
+  "unclassified": []
+}
