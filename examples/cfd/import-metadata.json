@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "source": "Deterministic test fixture, not market observations",
+  "kind": "FIXTURE",
+  "accountCurrency": "USD",
+  "costSource": "Explicit illustrative assumptions only",
+  "instrument": {
+    "symbol": "EURUSD",
+    "category": "forex",
+    "contractSize": 100000,
+    "volumeMin": 0.01,
+    "volumeMax": 10,
+    "volumeStep": 0.01,
+    "priceTick": 1e-05,
+    "minStopDistance": 0,
+    "profitCurrency": "USD"
+  }
+}

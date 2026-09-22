@@ -131,7 +131,7 @@ export class CfdExecutionController {
       if (!Number.isFinite(loss)) throw new Error('Invalid open-position risk estimate');
       reservedRisk += Math.max(0, -loss) + position.volumeLots * this.policy.commissionPerLotRoundTrip;
     }
-    await approveCfdOrder(this.broker, request.order, snapshot.account, this.policy, { positions: snapshot.positions.length, reservedMargin: 0, reservedRisk, dailyStartEquity: this.ledger.dailyBaseline(snapshot.account.timeMs, this.dailyStartEquity) }, this.options.now());
+    await approveCfdOrder(this.broker, request.order, snapshot.account, this.policy, { positions: snapshot.positions.length, reservedMargin: 0, reservedRisk, dailyStartEquity: this.ledger.dailyBaseline(snapshot.account.timeMs, this.dailyStartEquity) }, this.options.now);
     this.ledger.acquireRunner(this.owner);
     if (!this.isReady()) throw new Error('CFD disconnected during preflight');
   }

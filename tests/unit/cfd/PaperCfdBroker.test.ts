@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { PaperCfdBroker } from '../../../src/cfd/PaperCfdBroker.js';
 import { approveCfdOrder, sizeCfdLots } from '../../../src/cfd/CfdRisk.js';
-import type { CfdInstrument, CfdOrder } from '../../../src/cfd/types.js';
+import type { CfdInstrument, CfdOrder, CfdQuote } from '../../../src/cfd/types.js';
 
 const instrument: CfdInstrument = { symbol: 'EURUSD', category: 'forex', contractSize: 100000, volumeMin: 0.01, volumeMax: 10, volumeStep: 0.01, priceTick: 0.00001, minStopDistance: 0, profitCurrency: 'USD' };
 const order = (overrides: Partial<CfdOrder> = {}): CfdOrder => ({ product: 'CFD', clientOrderId: randomUUID(), hypothesisId: 'research-only', symbol: 'EURUSD', side: 'LONG', volumeLots: 0.1, stopLoss: 1.09, takeProfit: null, maxSlippagePoints: 2, createdAtMs: 1000, ...overrides });
@@ -67,6 +67,21 @@ describe('CFD accounting uses executable bid/ask prices', () => {
     b.advance(quote, 0.9);
     expect(() => { b.advance({ ...quote, timeMs: 999 }, 0.9); }).toThrow('chronological');
     expect(() => { b.advance({ ...quote, ask: 1 }, 0.9); }).toThrow();
+  });
+  it('checks freshness after asynchronous quote and margin requests', async () => {
+    const b = broker(), { account } = await b.snapshot();
+    const policy = { maxRiskFraction: 0.02, maxMarginFraction: 0.5, maxSpreadFraction: 0.01, maxQuoteAgeMs: 5000, commissionPerLotRoundTrip: 6, maxPositions: 3, maxDailyLossFraction: 0.05 };
+    const exposure = { positions: 0, reservedMargin: 0, reservedRisk: 0, dailyStartEquity: 10000 };
+    let now = 1000;
+    const quote = b.quote.bind(b), margin = b.estimateMargin.bind(b);
+    b.quote = async (symbol): Promise<CfdQuote> => {
+      now = 2000;
+      b.advance({ symbol, bid: 1.1, ask: 1.1002, timeMs: now });
+      return quote(symbol);
+    };
+    await expect(approveCfdOrder(b, order(), account, policy, exposure, () => now)).resolves.toHaveProperty('plannedLoss');
+    b.estimateMargin = async (request, price): Promise<number> => { now = 7000; return margin(request, price); };
+    await expect(approveCfdOrder(b, order(), account, policy, exposure, () => now)).rejects.toThrow('snapshot is stale');
   });
   it('rounds sizing down and enforces aggregate stop risk', async () => {
     expect(sizeCfdLots(109, 1000, instrument)).toBe(0.1);

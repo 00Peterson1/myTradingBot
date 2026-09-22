@@ -13,7 +13,8 @@ const migrations: readonly Migration[] = [
   { version: 4, name: 'Evidence-backed strategy lifecycle', apply: ensureLifecycleSchema },
   { version: 5, name: 'Durable CFD submission journal', apply: ensureCfdSchema },
   { version: 6, name: 'Immutable CFD reconciliation evidence', apply: ensureCfdReconciliationSchema },
-  { version: 7, name: 'Confirmed CFD position closures', apply: ensureCfdPositionSchema, ensureCfdRunnerSchema },
+  { version: 7, name: 'Confirmed CFD position closures', apply: ensureCfdPositionSchema },
+  { version: 8, name: 'CFD runner ownership and daily risk baselines', apply: ensureCfdRunnerSchema },
 ];
 
 /** One transaction per version; failed DDL and its version marker roll back together. */

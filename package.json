@@ -33,7 +33,10 @@
     "lifecycle": "tsx src/cli/lifecycle.ts",
     "cfd:doctor": "tsx src/cli/cfd-doctor.ts",
     "collect:history": "tsx src/cli/collect-history.ts",
-    "cfd:backtest": "tsx src/cli/cfd-backtest.ts"
+    "cfd:backtest": "tsx src/cli/cfd-backtest.ts",
+    "cfd:import": "tsx src/cli/cfd-import.ts",
+    "cfd:research": "tsx src/cli/cfd-research.ts",
+    "cfd:download": "cd python && python3 -m market_data.dukascopy"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

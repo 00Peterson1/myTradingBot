@@ -45,3 +45,6 @@ data/*.db-wal
 
 # Local research model weights and holdout audit storage
 python/checkpoints/
+
+# External historical archives (raw prices and provenance retained locally)
+data/history/

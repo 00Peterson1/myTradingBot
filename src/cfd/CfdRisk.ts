@@ -27,21 +27,27 @@ export function validateCfdOrder(orderInput: CfdOrder, instrumentInput: CfdInstr
 
 /** Risk uses broker account-currency estimates; no hard-coded forex pip values. */
 export async function approveCfdOrder(broker: CfdBroker, order: CfdOrder, accountInput: CfdAccount, policyInput: CfdRiskPolicy,
-  exposure: { positions: number; reservedMargin: number; reservedRisk: number; dailyStartEquity: number }, nowMs = Date.now()): Promise<CfdApproval> {
+  exposure: { positions: number; reservedMargin: number; reservedRisk: number; dailyStartEquity: number }, clock: number | (() => number) = Date.now): Promise<CfdApproval> {
   const account = cfdAccountSchema.parse(accountInput), policy = cfdRiskPolicySchema.parse(policyInput);
   if (!account.tradeAllowed || !account.hedging || account.equity <= 0) throw new Error('CFD account is not eligible for position-isolated execution');
-  if (nowMs - account.timeMs > policy.maxQuoteAgeMs || account.timeMs > nowMs) throw new Error('CFD account snapshot is stale');
+  const checkFreshness = (): number => {
+    const now = typeof clock === 'function' ? clock() : clock;
+    if (!Number.isFinite(now) || now - account.timeMs > policy.maxQuoteAgeMs || account.timeMs > now) throw new Error('CFD account snapshot is stale');
+    return now;
+  };
+  checkFreshness();
   if (Object.values(exposure).some(value => !Number.isFinite(value) || value < 0) || exposure.dailyStartEquity <= 0) throw new Error('Invalid CFD exposure state');
   if (exposure.positions >= policy.maxPositions) throw new Error('CFD position limit reached');
   if (account.equity <= exposure.dailyStartEquity * (1 - policy.maxDailyLossFraction)) throw new Error('CFD daily equity loss limit reached');
   const instrument = await broker.instrument(order.symbol);
   const quote = await broker.quote(order.symbol);
-  validateCfdOrder(order, instrument, quote, nowMs, policy.maxQuoteAgeMs);
+  validateCfdOrder(order, instrument, quote, checkFreshness(), policy.maxQuoteAgeMs);
   if ((quote.ask - quote.bid) / quote.bid > policy.maxSpreadFraction) throw new Error('CFD spread exceeds policy');
   const entry = (order.side === 'LONG' ? quote.ask : quote.bid) +
     (order.side === 'LONG' ? 1 : -1) * order.maxSlippagePoints * instrument.priceTick;
   if (entry <= 0) throw new Error('Invalid CFD slippage bound');
   const [margin, profitAtStop] = await Promise.all([broker.estimateMargin(order, entry), broker.estimateProfit(order, entry, order.stopLoss)]);
+  validateCfdOrder(order, instrument, quote, checkFreshness(), policy.maxQuoteAgeMs);
   const plannedLoss = -profitAtStop + order.volumeLots * policy.commissionPerLotRoundTrip;
   if (!Number.isFinite(plannedLoss) || profitAtStop >= 0 || plannedLoss <= 0 || plannedLoss + exposure.reservedRisk > account.equity * policy.maxRiskFraction) throw new Error('CFD planned stop loss exceeds risk budget');
   if (!Number.isFinite(margin) || margin <= 0 || margin + exposure.reservedMargin > account.freeMargin || account.margin + margin + exposure.reservedMargin > account.equity * policy.maxMarginFraction) throw new Error('CFD margin budget exceeded');
