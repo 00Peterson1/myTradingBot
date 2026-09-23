@@ -1,0 +1,93 @@
+{
+  "status": "PARTIAL_EXTERNAL_DATA_ACQUISITION",
+  "provider": "Dukascopy",
+  "completedSample": {
+    "version": 1,
+    "specification": {
+      "provider": "Dukascopy",
+      "symbol": "EURUSD",
+      "start": "2025-01-06T12:00:00+00:00",
+      "endExclusive": "2025-01-06T13:00:00+00:00",
+      "priceScale": 100000.0,
+      "snapshotMs": 0,
+      "utcHour": null
+    },
+    "hours": [
+      {
+        "hour": "2025-01-06T12:00:00+00:00",
+        "url": "https://datafeed.dukascopy.com/datafeed/EURUSD/2025/00/06/12h_ticks.bi5",
+        "file": "2025010612.bi5",
+        "status": "AVAILABLE",
+        "ticks": 8550,
+        "sha256": "0a282b745bbbbe0fef65f4e8f4c21e26ef02473a3f1c93a12ae44dfbf0c43e99",
+        "bytes": 40413
+      }
+    ],
+    "statuses": {
+      "AVAILABLE": 1,
+      "EMPTY": 0,
+      "UNAVAILABLE": 0,
+      "FAILED": 0,
+      "PENDING": 0
+    },
+    "costs": "UNKNOWN: quotes cannot establish Deriv financing, margin, commission or instrument mapping",
+    "demoEligible": false,
+    "liveEligible": false,
+    "exportedQuotes": 8550,
+    "sameTimestampCollapses": 0,
+    "exportSha256": "ae0d50f36642c8083e486aabd146702a1350784627d4b5c6cfb19bbf3aa42aff",
+    "exportLimitations": "Last observed quote per bucket; no interpolation. Intrabucket stop/target paths require the retained raw ticks. Missing hours remain gaps."
+  },
+  "attempts": [
+    {
+      "specification": {
+        "provider": "Dukascopy",
+        "symbol": "EURUSD",
+        "start": "2025-01-01T00:00:00+00:00",
+        "endExclusive": "2025-07-01T00:00:00+00:00",
+        "priceScale": 100000.0,
+        "snapshotMs": 60000,
+        "utcHour": null
+      },
+      "statuses": {
+        "AVAILABLE": 48,
+        "EMPTY": 62,
+        "UNAVAILABLE": 0,
+        "FAILED": 1,
+        "PENDING": 4233
+      },
+      "downloadedTicks": 173410,
+      "failureReasons": {
+        "<urlopen error timed out>": 1
+      },
+      "manifest": "data/history/dukascopy/EURUSD-2025H1/manifest.json"
+    },
+    {
+      "specification": {
+        "provider": "Dukascopy",
+        "symbol": "EURUSD",
+        "start": "2025-01-01T00:00:00+00:00",
+        "endExclusive": "2025-07-01T00:00:00+00:00",
+        "priceScale": 100000.0,
+        "snapshotMs": 60000,
+        "utcHour": 12
+      },
+      "statuses": {
+        "AVAILABLE": 16,
+        "EMPTY": 8,
+        "UNAVAILABLE": 0,
+        "FAILED": 18,
+        "PENDING": 139
+      },
+      "downloadedTicks": 79868,
+      "failureReasons": {
+        "<urlopen error _ssl.c:1063: The handshake operation timed out>": 1,
+        "<urlopen error timed out>": 2,
+        "The read operation timed out": 5,
+        "HTTP 503": 10
+      },
+      "manifest": "data/history/dukascopy/EURUSD-2025H1-12UTC/manifest.json"
+    }
+  ],
+  "interpretation": "Observed sample verifies acquisition and exploratory replay only. Both six-month requests remain incomplete. No passing strategy or broker verification."
+}

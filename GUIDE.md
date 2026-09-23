@@ -79,3 +79,8 @@ The requested count is a maximum, not a promise: the provider may return fewer t
 ### CFD offline workflow
 
 Bid/ask CFD replay and per-symbol research validation are available through `npm run cfd:backtest -- --data DATASET.json --config CONFIG.json [--validate]`. A runnable, clearly labelled software fixture lives in `examples/cfd/`. See [CFD_WORKFLOW.md](docs/CFD_WORKFLOW.md) for input requirements, reconciliation/position-management components, demo verification harness and remaining integration limits. Imported longer bid/ask history must include explicit conversion, margin and financing assumptions; the Options price-history collector is not a substitute. cTrader application approval and actual broker verification remain pending.
+
+
+### CFD historical research commands
+
+Use `npm run cfd:download -- --help`, `npm run cfd:import -- --help`, `npm run cfd:prepare -- --help`, and `npm run cfd:research -- --help`. [The CFD workflow](docs/CFD_WORKFLOW.md#historical-acquisition-import-and-batch-research) documents the selected Dukascopy source, bounded/resumable acquisition, mandatory cost data, explicitly hypothetical scenarios and per-symbol reports. The 43-symbol plan includes the S&P 500. A missing dataset is an explicit blocker, never silently dropped. cTrader integration and actual broker verification remain pending; none of these commands submits orders.

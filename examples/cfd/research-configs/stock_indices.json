@@ -1,0 +1,22 @@
+{
+  "family": "MOMENTUM",
+  "lookback": 120,
+  "threshold": 0.0015,
+  "stopFraction": 0.005,
+  "rewardRisk": 2,
+  "maxHoldingQuotes": 240,
+  "maxGapMs": 120000,
+  "initialBalance": 10000,
+  "commissionPerLotPerSide": 3.5,
+  "slippageTicks": 2,
+  "stopOutMarginRatio": 0.5,
+  "risk": {
+    "maxRiskFraction": 0.01,
+    "maxMarginFraction": 0.5,
+    "maxSpreadFraction": 0.01,
+    "maxQuoteAgeMs": 120000,
+    "commissionPerLotRoundTrip": 7,
+    "maxPositions": 1,
+    "maxDailyLossFraction": 0.05
+  }
+}

@@ -6,6 +6,7 @@ The original compressed files and hashes remain available for exact tick replay.
 import argparse
 import concurrent.futures
 import csv
+import fcntl
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -62,12 +63,16 @@ def atomic_json(path, value):
     temporary.replace(path)
 
 
-def fetch_hour(symbol, hour, destination, scale):
+def fetch_hour(symbol, hour, destination, scale, expected_sha=None, deadline=None):
     url = hour_url(symbol, hour)
     file = destination / f'{hour:%Y%m%d%H}.bi5'
     start_ms = int(hour.timestamp() * 1000)
     base = {'hour': hour.isoformat(), 'url': url, 'file': file.name}
+    reason = 'Acquisition time budget exhausted'
     for attempt in range(3):
+        if deadline is not None and time.monotonic() >= deadline:
+            break
+        retry_delay = 2 ** attempt
         try:
             cached = file.exists()
             if cached:
@@ -76,10 +81,12 @@ def fetch_hour(symbol, hour, destination, scale):
                 data = file.read_bytes()
             else:
                 request = urllib.request.Request(url, headers={'User-Agent': 'CFDResearchArchive/1.0'})
-                with urllib.request.urlopen(request, timeout=20) as response:
+                with urllib.request.urlopen(request, timeout=20 if deadline is None else max(0.001, min(20, deadline - time.monotonic()))) as response:
                     data = response.read(MAX_COMPRESSED + 1)
                 if len(data) > MAX_COMPRESSED:
                     raise ValueError('Oversized archive')
+            if expected_sha is not None and hashlib.sha256(data).hexdigest() != expected_sha:
+                raise ValueError('Archive differs from recorded SHA256')
             ticks = decode_ticks(data, start_ms, scale)
             if not cached:
                 temporary = file.with_suffix('.tmp')
@@ -91,13 +98,24 @@ def fetch_hour(symbol, hour, destination, scale):
             if error.code == 404:
                 return {**base, 'status': 'UNAVAILABLE', 'reason': 'HTTP 404; not assumed to be a closed session'}
             reason = f'HTTP {error.code}'
+            if error.code not in (429, 500, 502, 503, 504):
+                break
+            retry_after = error.headers.get('Retry-After') if error.headers else None
+            if retry_after and retry_after.isdecimal():
+                retry_delay = max(retry_delay, int(retry_after))
+            if retry_delay > 60:
+                reason += '; retry deferred by provider'
+                break
         except (OSError, ValueError, lzma.LZMAError) as error:
             reason = str(error)
             if isinstance(error, (ValueError, lzma.LZMAError)):
                 break
         if attempt < 2:
-            time.sleep(2 ** attempt)
-    return {**base, 'status': 'FAILED', 'reason': reason}
+            if deadline is not None and time.monotonic() + retry_delay >= deadline:
+                break
+            time.sleep(retry_delay)
+    # Retain the original identity even on failure: a retry must never bless changed bytes.
+    return {**base, 'status': 'FAILED', 'reason': reason, **({'sha256': expected_sha} if expected_sha is not None else {})}
 
 
 def parse_hour(value):
@@ -107,6 +125,31 @@ def parse_hour(value):
     return result.astimezone(timezone.utc)
 
 
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def acquisition_rows(symbol, requested, previous, updated):
+    """Unvisited hours stay pending but retain their last recorded content identity."""
+    prior = {row['hour']: row for row in previous}
+    current = {row['hour']: row for row in updated}
+    rows = []
+    for hour in requested:
+        key = hour.isoformat()
+        pending = {**prior.get(key, {}), 'hour': key, 'url': hour_url(symbol, hour),
+                   'file': f'{hour:%Y%m%d%H}.bi5', 'status': 'PENDING'}
+        row = current.get(key, pending)
+        expected = prior.get(key, {}).get('sha256')
+        if expected is not None and row.get('sha256') != expected:
+            row = {**row, 'status': 'FAILED', 'reason': 'Archive identity differs from prior manifest', 'sha256': expected}
+        rows.append(row)
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--symbol', required=True)
@@ -114,64 +157,99 @@ def main():
     parser.add_argument('--end', required=True, help='Exclusive UTC end hour')
     parser.add_argument('--scale', type=float, required=True, help='Provider integer-price divisor; FX typically 100000, JPY pairs 1000. Never inferred for indices/metals.')
     parser.add_argument('--out', required=True)
+    parser.add_argument('--max-seconds', type=int, default=300, help='Stop scheduling requests after this wall-clock budget; resume with the same command')
+    parser.add_argument('--utc-hour', type=int, choices=range(24), help='Optional predeclared one-hour daily research window; output is explicitly incomplete intraday coverage')
     parser.add_argument('--workers', type=int, choices=range(1, 5), default=2)
     parser.add_argument('--snapshot-ms', type=int, default=0, help='0 retains all ticks; positive retains last observed quote per UTC bucket, with its actual timestamp. Raw archives are always retained.')
     args = parser.parse_args()
     start, end = parse_hour(args.start), parse_hour(args.end)
     hours = int((end - start).total_seconds() // 3600)
-    if hours < 1 or hours > 8784 or args.snapshot_ms < 0 or args.snapshot_ms > 3600000:
+    if hours < 1 or hours > 8784 or args.max_seconds < 1 or args.snapshot_ms < 0 or args.snapshot_ms > 3600000:
         parser.error('Require 1..8784 hours and snapshot-ms 0..3600000')
     hour_url(args.symbol, start)
     decode_ticks(b'', int(start.timestamp() * 1000), args.scale)
     destination = Path(args.out)
     destination.mkdir(parents=True, exist_ok=True)
-    manifest_path = destination / 'manifest.json'
-    specification = {'provider': 'Dukascopy', 'symbol': args.symbol, 'start': start.isoformat(), 'endExclusive': end.isoformat(), 'priceScale': args.scale, 'snapshotMs': args.snapshot_ms}
-    if manifest_path.exists():
-        prior = json.loads(manifest_path.read_text())
-        if prior['specification'] != specification:
-            parser.error('Output directory belongs to a different acquisition specification')
-    rows = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = [pool.submit(fetch_hour, args.symbol, start + timedelta(hours=i), destination, args.scale) for i in range(hours)]
-        for index, future in enumerate(concurrent.futures.as_completed(futures), 1):
-            rows.append(future.result())
-            if index % 100 == 0:
-                print(f'{index}/{hours} hours processed', flush=True)
-    rows.sort(key=lambda row: row['hour'])
-    manifest = {'version': 1, 'specification': specification, 'hours': rows, 'statuses': {status: sum(row['status'] == status for row in rows) for status in ('AVAILABLE', 'EMPTY', 'UNAVAILABLE', 'FAILED')},
-                'costs': 'UNKNOWN: quotes cannot establish Deriv financing, margin, commission or instrument mapping',
-                'demoEligible': False, 'liveEligible': False}
-    atomic_json(manifest_path, manifest)
-    # Never publish a silently truncated export after transport/decode failure.
-    if manifest['statuses']['FAILED']:
-        raise RuntimeError('Archive has failed hours; inspect manifest and rerun to resume')
-    temporary = destination / 'quotes.csv.tmp'
-    count = duplicate_times = 0
-    with temporary.open('w', newline='') as output:
-        writer = csv.writer(output)
-        writer.writerow(['timeMs', 'bid', 'ask'])
-        pending = None
-        for row in rows:
-            if row['status'] != 'AVAILABLE':
-                continue
-            hour = parse_hour(row['hour'])
-            for tick in decode_ticks((destination / row['file']).read_bytes(), int(hour.timestamp() * 1000), args.scale):
-                # Equal-ms ticks cannot be ordered by the downstream contract. Preserve archives and explicitly count collapsed snapshots.
-                same_bucket = pending is not None and (tick[0] // args.snapshot_ms == pending[0] // args.snapshot_ms if args.snapshot_ms else tick[0] == pending[0])
-                if same_bucket:
-                    duplicate_times += int(tick[0] == pending[0])
-                elif pending is not None:
-                    writer.writerow(pending)
-                    count += 1
-                pending = tick
-        if pending is not None:
-            writer.writerow(pending)
-            count += 1
-    temporary.replace(destination / 'quotes.csv')
-    manifest.update({'exportedQuotes': count, 'sameTimestampCollapses': duplicate_times, 'exportSha256': hashlib.sha256((destination / 'quotes.csv').read_bytes()).hexdigest(), 'exportLimitations': 'Last observed quote per bucket; no interpolation. Intrabucket stop/target paths require the retained raw ticks. Missing hours remain gaps.'})
-    atomic_json(manifest_path, manifest)
-    print(json.dumps({'manifest': str(manifest_path), 'quotes': count, 'statuses': manifest['statuses']}))
+    # OS-managed ownership survives neither crashes nor process termination.
+    with (destination / '.acquisition.lock').open('a') as ownership:
+        fcntl.flock(ownership, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        manifest_path = destination / 'manifest.json'
+        specification = {'provider': 'Dukascopy', 'symbol': args.symbol, 'start': start.isoformat(), 'endExclusive': end.isoformat(), 'priceScale': args.scale, 'snapshotMs': args.snapshot_ms, 'utcHour': args.utc_hour}
+        prior = {}
+        if manifest_path.exists():
+            prior = json.loads(manifest_path.read_text())
+            if prior['specification'] != specification:
+                parser.error('Output directory belongs to a different acquisition specification')
+        requested = [start + timedelta(hours=i) for i in range(hours) if args.utc_hour is None or (start + timedelta(hours=i)).hour == args.utc_hour]
+        if not requested:
+            parser.error('Selected UTC window contains no requested hours')
+        deadline = time.monotonic() + args.max_seconds
+        atomic_json(manifest_path, {'version': 1, 'specification': specification, 'status': 'ACQUIRING', 'hours': prior.get('hours', []), 'demoEligible': False, 'liveEligible': False})
+        expected_hashes = {row['hour']: row.get('sha256') for row in prior.get('hours', [])}
+        rows = []
+        # Each worker draws only when ready; shutdown waits for at most the in-flight requests.
+        import threading
+        iterator = iter(requested)
+        lock = threading.Lock()
+
+        def worker():
+            while time.monotonic() < deadline:
+                with lock:
+                    hour = next(iterator, None)
+                if hour is None:
+                    return
+                result = fetch_hour(args.symbol, hour, destination, args.scale, expected_hashes.get(hour.isoformat()), deadline)
+                with lock:
+                    rows.append(result)
+                    if len(rows) % 25 == 0:
+                        atomic_json(manifest_path, {'version': 1, 'specification': specification, 'status': 'ACQUIRING',
+                                    'hours': acquisition_rows(args.symbol, requested, prior.get('hours', []), rows),
+                                    'demoEligible': False, 'liveEligible': False})
+                        print(f'{len(rows)}/{len(requested)} hours processed', flush=True)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
+            list(pool.map(lambda _: worker(), range(args.workers)))
+        rows = acquisition_rows(args.symbol, requested, prior.get('hours', []), rows)
+        manifest = {'version': 1, 'specification': specification, 'hours': rows, 'statuses': {status: sum(row['status'] == status for row in rows) for status in ('AVAILABLE', 'EMPTY', 'UNAVAILABLE', 'FAILED', 'PENDING')},
+                    'costs': 'UNKNOWN: quotes cannot establish Deriv financing, margin, commission or instrument mapping',
+                    'demoEligible': False, 'liveEligible': False}
+        atomic_json(manifest_path, manifest)
+        # Never publish a silently truncated export after transport/decode failure.
+        if manifest['statuses']['FAILED'] or manifest['statuses']['PENDING']:
+            print(json.dumps({'manifest': str(manifest_path), 'status': 'INCOMPLETE_RESUME_REQUIRED', 'statuses': manifest['statuses']}), flush=True)
+            raise SystemExit(2)
+        temporary = destination / 'quotes.csv.tmp'
+        count = duplicate_times = 0
+        with temporary.open('w', newline='') as output:
+            writer = csv.writer(output)
+            writer.writerow(['timeMs', 'bid', 'ask'])
+            pending = None
+            for row in rows:
+                if row['status'] != 'AVAILABLE':
+                    continue
+                hour = parse_hour(row['hour'])
+                for tick in decode_ticks((destination / row['file']).read_bytes(), int(hour.timestamp() * 1000), args.scale):
+                    # Equal-ms ticks cannot be ordered by the downstream contract. Preserve archives and explicitly count collapsed snapshots.
+                    same_bucket = pending is not None and (tick[0] // args.snapshot_ms == pending[0] // args.snapshot_ms if args.snapshot_ms else tick[0] == pending[0])
+                    if same_bucket:
+                        duplicate_times += int(tick[0] == pending[0])
+                    elif pending is not None:
+                        writer.writerow(pending)
+                        count += 1
+                    pending = tick
+            if pending is not None:
+                writer.writerow(pending)
+                count += 1
+        if count < 2:
+            temporary.unlink()
+            manifest['status'] = 'INSUFFICIENT_OBSERVATIONS'
+            atomic_json(manifest_path, manifest)
+            print(json.dumps({'manifest': str(manifest_path), 'status': manifest['status'], 'quotes': count}), flush=True)
+            raise SystemExit(2)
+        temporary.replace(destination / 'quotes.csv')
+        manifest.update({'exportedQuotes': count, 'sameTimestampCollapses': duplicate_times, 'exportSha256': file_sha256(destination / 'quotes.csv'), 'exportLimitations': 'Last observed quote per bucket; no interpolation. Intrabucket stop/target paths require the retained raw ticks. Missing hours remain gaps.'})
+        atomic_json(manifest_path, manifest)
+        print(json.dumps({'manifest': str(manifest_path), 'quotes': count, 'statuses': manifest['statuses']}))
 
 
 if __name__ == '__main__':

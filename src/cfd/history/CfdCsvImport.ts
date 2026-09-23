@@ -4,7 +4,7 @@ import { open, link, unlink } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { z } from 'zod';
 import { cfdInstrumentSchema } from '../types.js';
-import { cfdDatasetIdentity, type CfdDataset } from '../CfdDataset.js';
+import { cfdDatasetIdentity, cfdDatasetQuoteSchema, type CfdDataset } from '../CfdDataset.js';
 import { inspectCfdData } from '../CfdDataQuality.js';
 
 export const cfdImportMetadataSchema = z.object({ version: z.literal(1), source: z.string().min(1),
@@ -20,8 +20,6 @@ export async function importCfdCsv(inputPath: string, metadataInput: unknown): P
   const stream = createReadStream(inputPath);
   stream.on('data', chunk => { hash.update(chunk); });
   const lines = createInterface({ input: stream, crlfDelay: Infinity });
-  // readline does not forward input errors to its async iterator on every supported Node version.
-  stream.on('error', error => { lines.emit('error', error); });
   const quotes: CfdDataset['quotes'] = [];
   let lineNumber = 0;
   try {
@@ -32,10 +30,12 @@ export async function importCfdCsv(inputPath: string, metadataInput: unknown): P
       if (values.length !== 7 || values.some(value => !decimal.test(value))) throw new Error(`Invalid numeric CSV row ${String(lineNumber)}`);
       const [timeMs, bid, ask, profitCurrencyToAccount, leverage, longFinancingPerLot, shortFinancingPerLot] = values.map(Number);
       const candidate = { timeMs, bid, ask, profitCurrencyToAccount, leverage, longFinancingPerLot, shortFinancingPerLot };
-      // Reuse the dataset contract for each incoming pair to bound malformed input detection latency.
-      const pair = quotes.length ? [quotes[quotes.length - 1], candidate] : [candidate, { ...candidate, timeMs: (timeMs ?? NaN) + 1 }];
-      try { cfdDatasetIdentity({ ...metadata, quotes: pair }); } catch { throw new Error(`Invalid quote/cost/chronology at CSV row ${String(lineNumber)}`); }
-      quotes.push(candidate as CfdDataset['quotes'][number]);
+      try {
+        const row = cfdDatasetQuoteSchema.parse(candidate), previous = quotes.at(-1);
+        if (row.ask < row.bid || (previous && row.timeMs <= previous.timeMs) ||
+          (metadata.accountCurrency === metadata.instrument.profitCurrency && row.profitCurrencyToAccount !== 1)) throw new Error('Invalid quote');
+        quotes.push(row);
+      } catch { throw new Error(`Invalid quote/cost/chronology at CSV row ${String(lineNumber)}`); }
     }
   } finally { lines.close(); stream.destroy(); }
   const { dataset } = cfdDatasetIdentity({ ...metadata, quotes });

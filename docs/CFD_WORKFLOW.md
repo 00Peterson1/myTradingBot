@@ -14,7 +14,7 @@ A cTrader order/position/deal adapter is still needed to connect these component
 
 `src/cfd/CfdDataset.ts` defines a strict versioned JSON input. The complete example is `examples/cfd/fixture.json`, explicitly labelled `FIXTURE` and unusable as validation evidence.
 
-Required metadata: source, kind (`BROKER_BID_ASK`, `EXTERNAL_BID_ASK`, or `FIXTURE`), account currency, instrument specifications and cost source. Every quote supplies:
+Required metadata: source, kind (`BROKER_BID_ASK`, `EXTERNAL_BID_ASK`, `SCENARIO_BID_ASK`, or `FIXTURE`), account currency, instrument specifications and cost source. Every quote supplies:
 
 - UTC Unix milliseconds, bid and ask;
 - historical profit-currency/account-currency conversion (one when identical);
@@ -37,12 +37,60 @@ npm run cfd:backtest -- --data examples/cfd/fixture.json --config examples/cfd/c
 
 Replay supports momentum, mean-reversion and breakout parameter declarations per symbol. Decisions execute only on the next quote. It models spread, both commissions, fixed adverse slippage, explicit financing, dated leverage, margin constraints, mark-to-market equity, stop-out, gap-aware stops and forced end-of-period close. Gaps clear pending decisions and warmup. Expected order rejections are counted with reasons. No order book, partial-liquidity simulation or market impact model is supplied; effective leverage is a simplified margin assumption, not the broker's complete tiered formula.
 
-The validation command records the dataset/code/configuration before evaluation. It predeclares the supplied lookback and two bounded neighboring lookbacks, evaluates each in three chronological development periods, requires all neighbors to pass basic checks, applies DSR and BY multiple-testing correction, estimates PBO from aligned equity-return paths, applies a cost-stress run, and claims the final 20% before evaluating one selected candidate. Recorded prior CFD hypotheses that are not represented in the current search make the statistical correction unavailable. Block-bootstrap expectancy, minimum sample/span/trade counts and drawdown checks can reject a hypothesis. These fixed-rule periods do not train a model. Fixture/insufficient data cannot open the final holdout. Reused overlapping holdouts are refused by the existing registry.
+The validation command records the dataset/code/configuration before evaluation. It predeclares the supplied lookback and two bounded neighboring lookbacks, evaluates each in three chronological development periods, requires all neighbors to pass basic checks, applies DSR and BY multiple-testing correction, estimates PBO from aligned equity-return paths, applies a cost-stress run, and claims the final 20% before evaluating one selected candidate. Recorded prior CFD hypotheses for the same symbol (and legacy declarations without a symbol) that are not represented in the current search make the statistical correction unavailable. Other symbols are not candidate paths for this symbol. Batch reports additionally apply BY across every declared symbol, treating missing/failed studies as p=1; per-symbol support alone does not establish batch support. Block-bootstrap expectancy, minimum sample/span/trade counts and drawdown checks can reject a hypothesis. These fixed-rule periods do not train a model. Fixture/insufficient data cannot open the final holdout. Reused overlapping holdouts are refused by the existing registry.
 
-A positive result is labelled holdout support **pending broker verification**. Multiple-testing correction uses the recorded CFD trial universe, PBO uses a common aligned prefix divisible into four blocks, and undefined/tied PBO is unavailable rather than fabricated. Dependence calibration and representativeness of the chosen lookback neighborhood still need review. `demoEligible` and `liveEligible` remain false in every research report. This module must not be used to bypass the existing Options lifecycle or claim a validated CFD edge.
+A positive result is labelled holdout support **pending broker verification**. Multiple-testing correction uses the recorded per-symbol CFD trial universe, PBO uses a common aligned prefix divisible into four blocks, and undefined/tied PBO is unavailable rather than fabricated. Bootstrap expectancy must pass all predeclared block lengths (defaults 3, 5 and 10 trades); the reported interval envelopes their results. These sensitivity checks do not prove independence or that the chosen parameter neighborhood covers all strategies tried outside the registry. `demoEligible` and `liveEligible` remain false in every research report. This module must not be used to bypass the existing Options lifecycle or claim a validated CFD edge.
 
 ## Verification status
 
 Offline tests cover account/mode guards, duplicate submissions, lost responses after acceptance, restart recovery, partial remainder cancellation, changed/duplicate deal evidence, gap/cost handling, deterministic replay and causal prefix invariance. A demo-shaped fixture tests the round-trip harness and is explicitly labelled `FIXTURE` in its report.
 
 Still required before automated trading: the concrete cTrader adapter; broker-backed daily-risk baseline initialization; broker integration of position/stop reconciliation and dividend/corporate-action feeds; longer verified historical data and statistical assumption review; physical disconnect/reconnect tests against the approved demo account; prospective strategy evaluation. Live trading remains disabled.
+
+## Historical acquisition, import and batch research
+
+Selected external source: [Dukascopy historical bid/ask exports](https://www.dukascopy.com/api/data/get/historical-data-export). Its [binary decoding documentation](https://www.dukascopy.com/wiki/en/development/data-export/) describes the integer prices and volumes. The downloader uses the public hourly endpoint, a UTC hour offset, and an **explicit** instrument price divisor. It does not use the separate paid S3 service or require cTrader credentials.
+
+```bash
+# Bounded six-month acquisition. The default scheduling budget is 300 seconds.
+# Rerun the identical command to resume; exit 2 means incomplete, not success.
+npm run cfd:download -- --symbol EURUSD --start 2025-01-01T00:00:00Z --end 2025-07-01T00:00:00Z --scale 100000 --workers 4 --snapshot-ms 60000 --out ../data/history/dukascopy/EURUSD-2025H1
+
+# Verify a canonical CSV whose rows already include real dated costs/conversions.
+npm run cfd:import -- --csv examples/cfd/fixture.csv --metadata examples/cfd/import-metadata.json --out /tmp/cfd-import-example.json
+
+# Inspect every declared symbol; missing history is reported and exits 2.
+npm run cfd:research -- --plan examples/cfd/real-market-plan.json --out /tmp/cfd-readiness.json
+# After supplying verified per-symbol datasets/configurations:
+npm run cfd:research -- --plan examples/cfd/real-market-plan.json --out /tmp/cfd-validation.json --validate
+```
+
+`cfd:download` runs from `python/`, so its output path is relative to that directory. It retains compressed hourly archives, content hashes, missing/failed/pending-hour statuses and export provenance. Transport/decode failures or a runtime budget expiry prevent publishing a new CSV. A 404 is a reported gap, never assumed to be a closed session. Empty responses are explicitly counted. `--utc-hour 12` requests only the predeclared 12:00–13:00 UTC window each day and **cannot** be described as full daily coverage. No process runs indefinitely or silently treats partial downloads as complete.
+
+`--snapshot-ms 0` exports full ticks, collapsing equal-millisecond observations to the last received quote and counting the collapses. Positive values export the last observed quote in each UTC bucket with its actual timestamp; no interpolation occurs. Original raw ticks remain necessary to resolve intrabucket stop/target paths. Price divisors are not guessed for metals/indices. The downloader is a provider-specific data tool, not an automatic mapping of Deriv CFDs.
+
+The strict import header is:
+
+```text
+timeMs,bid,ask,profitCurrencyToAccount,leverage,longFinancingPerLot,shortFinancingPerLot
+```
+
+All fields are mandatory numeric values. `timeMs` is UTC Unix milliseconds; rates are account-currency conversions and financing is the cashflow **per lot due at that event**. Missing fields, nonfinite values, crossed quotes, duplicates, out-of-order rows and same-currency conversions other than one fail. Import never sorts, fills gaps or silently discards bad rows. Original CSV bytes are hashed into persisted source provenance. Outputs are published only when complete and refuse to overwrite existing files. Import reads CSV incrementally but the replay dataset remains in memory; partition very large archives.
+
+Without verified broker costs, use explicit **scenario** preparation:
+
+```bash
+npm run cfd:prepare -- --quotes data/history/dukascopy/EURUSD-smoke/quotes.csv --metadata examples/cfd/eurusd-external-metadata.json --assumptions examples/cfd/cost-scenario.json --out /tmp/eurusd-scenario.json
+npm run cfd:backtest -- --data /tmp/eurusd-scenario.json --config examples/cfd/eurusd-scenario-config.json
+```
+
+This generates `SCENARIO_BID_ASK`, which always fails validation eligibility even when prices are observed and history is long. The supplied example assumes effective leverage 30, 10% annual carrying charges in both directions, 3.5 account-currency commission per lot per side and two ticks of slippage. These are deliberately declared research assumptions, **not verified Deriv terms**. The scenario charges elapsed calendar days at the first observed quote of the new UTC day; it is not the broker swap/triple-roll calendar. Cross-currency scenarios require observed conversions and are rejected by this convenience preparer.
+
+The plan lists all 43 known real-market research identifiers, including `OTC_SPC` (S&P 500), and six category-specific starting templates. These are predeclared hypotheses, not proven strategies. Instrument mappings, lot sizes and costs must be independently supplied for each CFD. The Options catalogue does not enumerate every cTrader stock/commodity contract. Paths resolve relative to the plan. Audits never run strategies or consume holdouts; `--validate` registers every prepared candidate before evaluating any symbol. Duplicate symbols and mismatched dataset identities fail. Fixture, assumed-cost, short-span and discontinuous inputs remain visible blockers.
+
+Research eligibility, broker execution verification and profitability are separate. The new commands complete acquisition/import/audit plumbing; they do not manufacture a passing result or make an incomplete archive sufficient.
+
+
+### Resumption integrity
+
+A failed checksum check never discards the original content hash. Unvisited hours retain their expected hash while marked PENDING; redownloaded files must also match it before they enter the cache. Changed historical bytes require explicit source review, not an automatic retry that silently changes research inputs. The downloader checkpoints progress every 25 processed hours and applies the scheduling budget to retry starts/backoff as well as new hours. A request already in progress is subject to its network timeout. Numeric provider Retry-After values longer than 60 seconds defer the request to a later run. Empty exports return exit code 2; selecting a UTC window outside the requested range is a configuration error.

@@ -2,14 +2,16 @@ import { z } from 'zod';
 import { cfdInstrumentSchema } from './types.js';
 import { contentHash } from '../research/experiments/ExperimentRegistry.js';
 
-export const cfdDatasetSchema = z.object({
-  version: z.literal(1), source: z.string().min(1), kind: z.enum(['BROKER_BID_ASK', 'EXTERNAL_BID_ASK', 'FIXTURE']),
-  accountCurrency: z.string().regex(/^[A-Z]{3}$/), instrument: cfdInstrumentSchema,
-  costSource: z.string().min(1),
-  quotes: z.array(z.object({ timeMs: z.number().int().nonnegative().max(8640000000000000), bid: z.number().finite().positive(), ask: z.number().finite().positive(),
+export const cfdDatasetQuoteSchema = z.object({ timeMs: z.number().int().nonnegative().max(8640000000000000), bid: z.number().finite().positive(), ask: z.number().finite().positive(),
     profitCurrencyToAccount: z.number().finite().positive(), leverage: z.number().finite().min(1),
     longFinancingPerLot: z.number().finite(), shortFinancingPerLot: z.number().finite(),
-  }).strict()).min(2),
+  }).strict();
+
+export const cfdDatasetSchema = z.object({
+  version: z.literal(1), source: z.string().min(1), kind: z.enum(['BROKER_BID_ASK', 'EXTERNAL_BID_ASK', 'SCENARIO_BID_ASK', 'FIXTURE']),
+  accountCurrency: z.string().regex(/^[A-Z]{3}$/), instrument: cfdInstrumentSchema,
+  costSource: z.string().min(1),
+  quotes: z.array(cfdDatasetQuoteSchema).min(2),
 }).strict().superRefine((data, ctx) => {
   for (let i = 0; i < data.quotes.length; i++) {
     const row = data.quotes[i];

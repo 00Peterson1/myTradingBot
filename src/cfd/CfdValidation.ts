@@ -1,22 +1,23 @@
 import { z } from 'zod';
+import { inspectCfdData } from './CfdDataQuality.js';
 import type { ExperimentRegistry } from '../research/experiments/ExperimentRegistry.js';
-import { blockBootstrapMean } from '../research/statistics/bootstrap.js';
+import { blockBootstrapMean, DEFAULT_BOOTSTRAP_POLICY } from '../research/statistics/bootstrap.js';
 import { benjaminiHochbergYekutieli, deflatedSharpeRatio, probabilityOfBacktestOverfitting } from '../research/statistics/stats.js';
 import { mean, stddev } from '../features/indicators/indicators.js';
 import { backtestCfd, cfdBacktestConfigSchema, type CfdBacktestConfig, type CfdBacktestResult } from './CfdBacktest.js';
 import { cfdDatasetIdentity, type CfdDataset } from './CfdDataset.js';
 
-export const cfdValidationPolicySchema = z.object({ minDays: z.number().min(90), minTradesPerPeriod: z.number().int().min(30), maxDrawdown: z.number().positive().max(0.3), costStressMultiplier: z.number().min(1.5).max(10) }).strict();
-export const defaultCfdValidationPolicy = { minDays: 180, minTradesPerPeriod: 30, maxDrawdown: 0.2, costStressMultiplier: 2 };
-interface PeriodResult { label: string; result: CfdBacktestResult; confidenceInterval: [number, number] | null; passed: boolean }
+export const cfdValidationPolicySchema = z.object({ minDays: z.number().min(90), minTradesPerPeriod: z.number().int().min(30), maxDrawdown: z.number().positive().max(0.3), costStressMultiplier: z.number().min(1.5).max(10), bootstrapBlockLengths: z.array(z.number().int().min(2).max(100)).min(2).max(10).default([3, 5, 10]) }).strict();
+export const defaultCfdValidationPolicy = { minDays: 180, minTradesPerPeriod: 30, maxDrawdown: 0.2, costStressMultiplier: 2, bootstrapBlockLengths: [3, 5, 10] };
+interface PeriodResult { label: string; result: CfdBacktestResult; confidenceInterval: [number, number] | null; bootstrapSensitivity: { blockLength: number; interval: [number, number] | null }[]; passed: boolean }
 
 /** Predeclared lookback sensitivity study. Research evidence never directly enables trading. */
-export async function validateCfd(datasetInput: CfdDataset, configInput: CfdBacktestConfig, registry: ExperimentRegistry, policyInput = defaultCfdValidationPolicy): Promise<Record<string, unknown>> {
+export async function validateCfd(datasetInput: CfdDataset, configInput: CfdBacktestConfig, registry: ExperimentRegistry, policyInput: z.input<typeof cfdValidationPolicySchema> = defaultCfdValidationPolicy): Promise<Record<string, unknown>> {
   const { dataset, days } = cfdDatasetIdentity(datasetInput), config = cfdBacktestConfigSchema.parse(configInput), policy = cfdValidationPolicySchema.parse(policyInput);
   const lookbacks = [...new Set([Math.max(3, config.lookback - 5), config.lookback, Math.min(10000, config.lookback + 5)])];
   const candidates = lookbacks.map(lookback => ({ ...config, lookback }));
   const identities = candidates.map(candidate => registry.registerHypothesis({ product: 'CFD', symbol: dataset.instrument.symbol, config: candidate, policy }));
-  const trials = registry.countProductHypotheses('CFD');
+  const trials = registry.countProductHypotheses('CFD', dataset.instrument.symbol);
   const attempt = registry.begin(dataset, { product: 'CFD', symbol: dataset.instrument.symbol, candidates, policy, trials,
     selection: 'All lookback neighbors pass; DSR + BY <= 0.05; aligned CSCV PBO <= 0.5; cost stress; sealed final 20%' }, 'VALIDATION_STUDY');
   const evaluate = async (label: string, start: number, end: number, candidate: CfdBacktestConfig, stress = false): Promise<PeriodResult> => {
@@ -29,15 +30,19 @@ export async function validateCfd(datasetInput: CfdDataset, configInput: CfdBack
     const changed = stress ? { ...candidate, commissionPerLotPerSide: candidate.commissionPerLotPerSide * policy.costStressMultiplier,
       slippageTicks: Math.ceil(Math.max(1, candidate.slippageTicks) * policy.costStressMultiplier),
       risk: { ...candidate.risk, commissionPerLotRoundTrip: candidate.risk.commissionPerLotRoundTrip * policy.costStressMultiplier } } : candidate;
-    const result = await backtestCfd(subset, changed), confidenceInterval = blockBootstrapMean([result.tradeNet]);
-    return { label, result, confidenceInterval, passed: result.trades >= policy.minTradesPerPeriod && result.netProfit > 0 && result.maxDrawdown <= policy.maxDrawdown && confidenceInterval !== null && confidenceInterval[0] > 0 };
+    const result = await backtestCfd(subset, changed);
+    const bootstrapSensitivity = policy.bootstrapBlockLengths.map(blockLength => ({ blockLength, interval: blockBootstrapMean([result.tradeNet], { ...DEFAULT_BOOTSTRAP_POLICY, blockLength, minObservations: policy.minTradesPerPeriod }) }));
+    const confidenceInterval: [number, number] | null = bootstrapSensitivity.every(row => row.interval !== null)
+      ? [Math.min(...bootstrapSensitivity.map(row => row.interval?.[0] ?? -Infinity)), Math.max(...bootstrapSensitivity.map(row => row.interval?.[1] ?? Infinity))] : null;
+    return { label, result, confidenceInterval, bootstrapSensitivity, passed: result.trades >= policy.minTradesPerPeriod && result.netProfit > 0 && result.maxDrawdown <= policy.maxDrawdown && confidenceInterval !== null && confidenceInterval[0] > 0 };
   };
   try {
+    const quality = inspectCfdData(dataset, config.maxGapMs);
     let verdict = 'INSUFFICIENT_EVIDENCE';
     const development: { hypothesisId: string; config: CfdBacktestConfig; periods: PeriodResult[] }[] = [];
     let final: PeriodResult | null = null, stress: PeriodResult | null = null, selectedId: string | null = null;
     let adjustedPValues: number[] = [], pbo: number | null = null;
-    if (days >= policy.minDays && dataset.quotes.length >= 5 * (Math.max(...lookbacks) + policy.minTradesPerPeriod) && dataset.kind !== 'FIXTURE') {
+    if (days >= policy.minDays && dataset.quotes.length >= 5 * (Math.max(...lookbacks) + policy.minTradesPerPeriod) && (dataset.kind === 'BROKER_BID_ASK' || dataset.kind === 'EXTERNAL_BID_ASK') && quality.activeUtcDays >= Math.ceil(policy.minDays * 0.35)) {
       const n = dataset.quotes.length, cuts = [0, Math.floor(n * 0.3), Math.floor(n * 0.55), Math.floor(n * 0.8), n];
       for (let candidateIndex = 0; candidateIndex < candidates.length; candidateIndex++) {
         const candidate = candidates[candidateIndex], hypothesisId = identities[candidateIndex];
@@ -77,8 +82,8 @@ export async function validateCfd(datasetInput: CfdDataset, configInput: CfdBack
         } else verdict = 'REJECTED';
       } else if (completeSearch && pbo !== null && development.every(candidate => candidate.periods.every(period => period.result.trades >= policy.minTradesPerPeriod))) verdict = 'NO_EDGE_FOUND';
     }
-    const outcome = { ...attempt, symbol: dataset.instrument.symbol, verdict, days, development, stress, final, selectedId, adjustedPValues, pbo, recordedHypotheses: trials,
-      demoEligible: false, liveEligible: false, limitations: ['Recorded CFD search must be completely represented; unrecorded searches are not observable', 'DSR/CSCV assumptions and bootstrap block length require dependence review; PBO uses aligned prefix divisible by four', 'Source and cost metadata are declarations; independent broker verification remains required', 'No statistical result guarantees profitability'] };
+    const outcome = { ...attempt, symbol: dataset.instrument.symbol, verdict, days, quality, development, stress, final, selectedId, adjustedPValues, pbo, recordedHypotheses: trials, recordedAllSymbolHypotheses: registry.countProductHypotheses('CFD'), inferenceScope: 'PER_SYMBOL_ONLY_NO_CROSS_SYMBOL_SELECTION',
+      demoEligible: false, liveEligible: false, limitations: ['Recorded CFD search for this symbol (including declarations without a symbol) must be completely represented; unrecorded searches are not observable', 'Bootstrap requires support across predeclared block lengths; DSR/CSCV assumptions are not proof of independence. PBO uses aligned prefix divisible by four', 'Source and cost metadata are declarations; independent broker verification remains required', 'No statistical result guarantees profitability'] };
     registry.finish(attempt.attemptId, 'COMPLETED', outcome);
     return outcome;
   } catch (error) { registry.finish(attempt.attemptId, 'FAILED', { error: error instanceof Error ? error.message : 'CFD validation failed' }); throw error; }

@@ -13,7 +13,9 @@ vi.mock('ws', async () => {
         2100: { type: 2101, payload: {} },
         2149: { type: 2150, payload: { ctidTraderAccount: [{ ctidTraderAccountId: '123', isLive: state.live }] } },
         2102: { type: 2103, payload: { ctidTraderAccountId: state.mismatch ? '456' : '123' } },
-        2114: { type: 2115, payload: { ctidTraderAccountId: '123', symbol: [{ symbolId: '1' }] } },
+        2114: { type: 2115, payload: { ctidTraderAccountId: '123', symbol: [{ symbolId: '1', symbolName: 'US SP 500', symbolCategoryId: '10', enabled: true }] } },
+        2160: { type: 2161, payload: { ctidTraderAccountId: '123', symbolCategory: [{ id: '10', assetClassId: '20', name: 'US Indices' }] } },
+        2153: { type: 2154, payload: { ctidTraderAccountId: '123', assetClass: [{ id: '20', name: 'Indices' }] } },
         2124: { type: 2125, payload: { ctidTraderAccountId: '123', position: [], order: [] } },
       };
       const response = responses[request.payloadType];
@@ -35,6 +37,17 @@ describe('cTrader demo read-only authentication', () => {
       await connection.connect();
       expect(await connection.inspect()).toEqual({ symbolCount: 1, positionCount: 0, pendingOrderCount: 0 });
       expect(state.requests).toEqual([2100, 2149, 2102, 2114, 2124]);
+    } finally { connection.close(); }
+  });
+  it('discovers provider names, IDs and categories using only read-only requests', async () => {
+    const connection = new CTraderDemoConnection(config);
+    try {
+      await connection.connect();
+      const catalogue = await connection.catalogue();
+      expect(catalogue.accountId).toBe('123');
+      expect(catalogue.symbols[0]?.symbolName).toBe('US SP 500');
+      expect(catalogue.symbols[0]?.symbolId).toBe('1');
+      expect(state.requests).toEqual([2100, 2149, 2102, 2114, 2160, 2153]);
     } finally { connection.close(); }
   });
   it('refuses live account selection before account authorization', async () => {

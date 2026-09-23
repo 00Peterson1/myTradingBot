@@ -75,11 +75,12 @@ export class ExperimentRegistry {
   }
 
   /** Count all recorded declarations in a product search, including failed/unfinished trials. */
-  countProductHypotheses(product: 'CFD' | 'OPTIONS'): number {
+  countProductHypotheses(product: 'CFD' | 'OPTIONS', symbol?: string): number {
     const rows = this.db.prepare('SELECT content FROM research_hypotheses').all() as { content: string }[];
     return rows.filter(row => {
       const declaration: unknown = JSON.parse(row.content);
-      return typeof declaration === 'object' && declaration !== null && 'product' in declaration && declaration.product === product;
+      return typeof declaration === 'object' && declaration !== null && 'product' in declaration && declaration.product === product &&
+        (symbol === undefined || !('symbol' in declaration) || typeof declaration.symbol !== 'string' || declaration.symbol === symbol);
     }).length;
   }
 

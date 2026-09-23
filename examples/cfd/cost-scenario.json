@@ -1,0 +1,6 @@
+{
+  "description": "Conservative research scenario, not Deriv terms. Both directions pay hypothetical 10% annual financing. Effective leverage 30. Commission and slippage separately declared in replay config.",
+  "leverage": 30,
+  "annualLongFinancingFraction": 0.1,
+  "annualShortFinancingFraction": 0.1
+}

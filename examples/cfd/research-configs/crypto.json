@@ -1,0 +1,22 @@
+{
+  "family": "BREAKOUT",
+  "lookback": 120,
+  "threshold": 0.003,
+  "stopFraction": 0.01,
+  "rewardRisk": 2,
+  "maxHoldingQuotes": 180,
+  "maxGapMs": 120000,
+  "initialBalance": 10000,
+  "commissionPerLotPerSide": 3.5,
+  "slippageTicks": 2,
+  "stopOutMarginRatio": 0.5,
+  "risk": {
+    "maxRiskFraction": 0.01,
+    "maxMarginFraction": 0.5,
+    "maxSpreadFraction": 0.01,
+    "maxQuoteAgeMs": 120000,
+    "commissionPerLotRoundTrip": 7,
+    "maxPositions": 1,
+    "maxDailyLossFraction": 0.05
+  }
+}

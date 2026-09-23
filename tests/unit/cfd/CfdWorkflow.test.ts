@@ -86,6 +86,8 @@ describe('CFD research and recovery workflow', () => {
       expect(result.recordedHypotheses).toBe(3);
       expect(result.final).toBeNull();
       expect(result.development).toHaveLength(3);
+      const development = result.development as { periods: { bootstrapSensitivity: { blockLength: number }[] }[] }[];
+      expect(development[0]?.periods[0]?.bootstrapSensitivity.map(row => row.blockLength)).toEqual([3, 5, 10]);
       expect(db.prepare('SELECT * FROM research_holdout_claims').all()).toHaveLength(0);
     } finally { db.close(); }
   });

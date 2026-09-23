@@ -1,3 +1,23 @@
+## CFD download integrity and resume checkpoint — 2026-09-23
+
+Fixed a retry integrity flaw: failed cached-file checks previously lost the expected hash, so a later retry could accept modified bytes. Failures, unvisited hours and replacement downloads now retain/enforce the original archive hash. Progress checkpoints are persisted every 25 processed hours. Network retries respect the scheduling deadline, defer long numeric Retry-After values, and stop retrying permanent HTTP errors. Empty quote exports and daily windows outside the requested range are rejected.
+
+Verification: **15 Python tests passed, 2 optional ML tests skipped**; Python compilation and whitespace checks passed. The complete CLI revalidated the cached one-hour sample and exported its original **8,550 quotes**. No TypeScript implementation changed in this checkpoint; the previous 257-test result remains the latest full TypeScript run. The sandbox failed before starting commands with a bubblewrap mountinfo error; authorized checks/edits ran outside it. No account configuration or cTrader integration changed and no trades were submitted.
+
+Resumed the six-month EUR/USD acquisition with two workers and a 120-second scheduling budget. Result: **48 available, 63 empty, 4 failed, 4,229 pending hours**, with no complete CSV published. Provider failures still prevent completion; the latest [acquisition evidence](CFD_HISTORY_ACQUISITION_2026-09-23.json) records exact reasons and coverage. Partial files remain resumable. This is not sufficient strategy evidence or completion of the long-history requirement.
+
+## CFD acquisition and per-symbol research checkpoint — 2026-09-22
+
+Verification: **257 TypeScript tests passed across 41 files**; source/test typechecks, lint, build and whitespace checks passed. Python: **9 passed, 2 optional ML tests skipped**. No broker orders were submitted and cTrader credentials/integration were left untouched.
+
+Implemented a bounded/resumable Dukascopy hourly archive downloader with explicit scale, UTC coverage, original files/hashes, cache-integrity checks, exclusive acquisition ownership and visible missing/failed/pending hours. Added strict CSV import, data-quality diagnostics, explicitly hypothetical cost scenarios, six category-specific starting hypotheses, and an exhaustive 43-symbol audit/validation plan including the S&P 500. Validation keeps prior trials within each symbol, retains unknown-scope legacy trials conservatively, tests bootstrap block lengths 3/5/10, and applies an additional batch BY correction across the full declared universe. Fixture and assumed-cost data cannot produce eligible strategies.
+
+Observed data verification: downloaded/exported **8,550 EUR/USD bid/ask observations** for 2025-01-06 12:00–13:00 UTC. Exploratory replay completed with zero trades under the predeclared configuration; validation returned **INSUFFICIENT_EVIDENCE**. This is a pipeline check, not a performance result.
+
+The attempted six-month full-session and separately declared daily-window archives remain incomplete because of provider timeouts/HTTP 503 and bounded runtime. Original files and resumable manifests are retained locally; no incomplete CSV was published. See [acquisition evidence](CFD_HISTORY_ACQUISITION_2026-09-22.json) and [all-symbol readiness](CFD_RESEARCH_READINESS_2026-09-22.json). The latter correctly reports 43 blocked symbols until verified histories/contract costs are supplied. Starting configurations are hypothetical, not validated symbol strategies.
+
+**Completion boundary:** offline acquisition/import/audit/validation tooling is implemented and tested. It is not truthful to certify that only the API remains: completed representative history and passing per-symbol evidence remain unestablished. The cTrader integration work must also supply authoritative catalogue/contract mappings, account-currency costs and daily-risk baselines, physical disconnect/reconciliation verification, and prospective demo evidence. Live trading remains disabled. Commands and source/coverage limitations are in [CFD_WORKFLOW.md](CFD_WORKFLOW.md).
+
 ## CFD offline execution/research checkpoint — 2026-09-22
 
 Verification: the full suite passed **246 tests across 40 files**. A subsequent asynchronous risk-clock regression and the affected CFD workflow passed **17 tests**. Source/test typechecks, lint and build passed; migration 8 applied with database integrity passing. Both fixture CLI commands completed; validation returned **INSUFFICIENT_EVIDENCE**, with demo/live eligibility false. Risk approval now rechecks account, quote and decision freshness after broker estimates. No broker orders were submitted.

@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-23",
+  "status": "INCOMPLETE_RESUME_REQUIRED",
+  "specification": {
+    "provider": "Dukascopy",
+    "symbol": "EURUSD",
+    "start": "2025-01-01T00:00:00+00:00",
+    "endExclusive": "2025-07-01T00:00:00+00:00",
+    "priceScale": 100000.0,
+    "snapshotMs": 60000,
+    "utcHour": null
+  },
+  "statuses": {
+    "AVAILABLE": 48,
+    "EMPTY": 63,
+    "UNAVAILABLE": 0,
+    "FAILED": 4,
+    "PENDING": 4229
+  },
+  "failureReasons": {
+    "<urlopen error timed out>": 1,
+    "<urlopen error _ssl.c:1063: The handshake operation timed out>": 1,
+    "The read operation timed out": 2
+  },
+  "manifest": "data/history/dukascopy/EURUSD-2025H1/manifest.json",
+  "verifiedAvailableTicks": 173410,
+  "newCompleteCsvPublished": false,
+  "demoEligible": false,
+  "liveEligible": false
+}

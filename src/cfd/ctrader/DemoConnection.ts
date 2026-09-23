@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import WebSocket from 'ws';
 import { z } from 'zod';
+import { cTraderCatalogueSchema, type CTraderCatalogue } from './Catalogue.js';
 
 export const ctraderConfigSchema = z.object({
   clientId: z.string().min(1), clientSecret: z.string().min(1), accessToken: z.string().min(1),
@@ -62,11 +63,23 @@ export class CTraderDemoConnection {
     return { symbolCount: parsedSymbols.symbol.length, positionCount: parsedState.position.length, pendingOrderCount: parsedState.order.length };
   }
 
+  async catalogue(): Promise<CTraderCatalogue> {
+    if (!this.authenticated) throw new Error('cTrader demo account is not authenticated');
+    const payload = { ctidTraderAccountId: this.config.accountId };
+    const symbols = await this.request(2114, 2115, { ...payload, includeArchivedSymbols: true });
+    const categories = await this.request(2160, 2161, payload);
+    const classes = await this.request(2153, 2154, payload);
+    for (const response of [symbols, categories, classes]) if (idSchema.parse(response.ctidTraderAccountId) !== this.config.accountId) throw new Error('cTrader catalogue account mismatch');
+    return cTraderCatalogueSchema.parse({ version: 1, provider: 'CTRADER', environment: 'DEMO', accountId: this.config.accountId,
+      capturedAt: new Date().toISOString(), symbols: symbols.symbol ?? [], categories: categories.symbolCategory ?? [],
+      assetClasses: classes.assetClass ?? [], archivedSymbols: symbols.archivedSymbol ?? [] });
+  }
+
   private request(type: number, expected: number, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     const socket = this.socket;
     if (socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error('cTrader connection is closed'));
     // Explicit allowlist prevents this diagnostic connection from submitting any trade.
-    if (![2100, 2149, 2102, 2114, 2124].includes(type)) return Promise.reject(new Error('Unsupported diagnostic request'));
+    if (![2100, 2149, 2102, 2114, 2124, 2160, 2153].includes(type)) return Promise.reject(new Error('Unsupported diagnostic request'));
     const id = randomUUID();
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => { this.pending.delete(id); reject(new Error('cTrader request timed out')); }, 10000);

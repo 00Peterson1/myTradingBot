@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "source": "Dukascopy EURUSD historical quotes; use acquisition manifest for exact coverage and sampling resolution. Research identifier frxEURUSD does not establish a cTrader execution mapping.",
+  "kind": "EXTERNAL_BID_ASK",
+  "accountCurrency": "USD",
+  "costSource": "Scenario input only. Contract size/volume/tick assumptions are conventional EURUSD research assumptions, not confirmed Deriv CFD specifications.",
+  "instrument": {
+    "symbol": "frxEURUSD",
+    "category": "forex",
+    "contractSize": 100000,
+    "volumeMin": 0.01,
+    "volumeMax": 10,
+    "volumeStep": 0.01,
+    "priceTick": 1e-05,
+    "minStopDistance": 0,
+    "profitCurrency": "USD"
+  }
+}
