@@ -1,3 +1,7 @@
+## CFD universe correction — 2026-09-23
+
+CFD batch research now requires a cTrader account catalogue and exact broker symbol IDs/names. The active 43-symbol Options-derived plan was removed; it is not CFD coverage. Symbol/category/asset-class discovery is read-only, preserves every entry, and leaves unclassified, disabled, archived and paused-synthetic symbols visible. Account credentials remain unconfigured, so the actual CFD universe is pending rather than fabricated. See the latest [milestone checkpoint](MILESTONE_REVIEW.md).
+
 ## CFD implementation update — 2026-09-22
 
 See [CFD_WORKFLOW.md](CFD_WORKFLOW.md) for the current implementation. Offline components now include cumulative order/partial-fill reconciliation, broker-triggered position closure evidence, a risk-checked demo/paper execution controller, bid/ask replay with dated financing/leverage, per-symbol sensitivity/DSR/BY/PBO/holdout research, and a demo round-trip verification harness. None has been verified against the actual broker; cTrader approval, the concrete provider adapter, longer verified bid/ask data and actual demo evidence remain outstanding. Earlier missing-component descriptions below are historical where superseded by this update.

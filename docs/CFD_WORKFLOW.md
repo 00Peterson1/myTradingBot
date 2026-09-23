@@ -86,7 +86,21 @@ npm run cfd:backtest -- --data /tmp/eurusd-scenario.json --config examples/cfd/e
 
 This generates `SCENARIO_BID_ASK`, which always fails validation eligibility even when prices are observed and history is long. The supplied example assumes effective leverage 30, 10% annual carrying charges in both directions, 3.5 account-currency commission per lot per side and two ticks of slippage. These are deliberately declared research assumptions, **not verified Deriv terms**. The scenario charges elapsed calendar days at the first observed quote of the new UTC day; it is not the broker swap/triple-roll calendar. Cross-currency scenarios require observed conversions and are rejected by this convenience preparer.
 
-The plan lists all 43 known real-market research identifiers, including `OTC_SPC` (S&P 500), and six category-specific starting templates. These are predeclared hypotheses, not proven strategies. Instrument mappings, lot sizes and costs must be independently supplied for each CFD. The Options catalogue does not enumerate every cTrader stock/commodity contract. Paths resolve relative to the plan. Audits never run strategies or consume holdouts; `--validate` registers every prepared candidate before evaluating any symbol. Duplicate symbols and mismatched dataset identities fail. Fixture, assumed-cost, short-span and discontinuous inputs remain visible blockers.
+The CFD plan now uses **only the cTrader account catalogue**. The former 43-symbol Options-derived plan has been removed from the active workflow. `examples/cfd/real-market-plan.json` is an explicit pending-catalogue placeholder with no symbols until an account snapshot is obtained. It must not be populated by guessing broker IDs, stripping `frx` prefixes or substituting `OTC_SPC` for a CFD name.
+
+```bash
+# After Open API approval and authorization; reads metadata only, no trades:
+npm run cfd:markets -- --refresh --out data/cfd-account-plan.json
+# Alternatively, process a previously exported cTrader catalogue snapshot:
+npm run cfd:markets -- --catalogue catalogue.json --out data/cfd-account-plan.json
+npm run cfd:research -- --plan data/cfd-account-plan.json --out /tmp/cfd-readiness.json
+```
+
+`cfd:markets` queries the account's symbol list (including archived symbols), categories and asset classes. Every entry is retained with its original broker ID/name. Six real-market classifications route to starting research templates; unknown metadata remains REVIEW_REQUIRED, disabled/archived symbols remain visible, and synthetics stay paused. No instrument is invented to fill an absent market category. A catalogue is not a complete contract specification or execution authorization; full sizing/cost metadata remains part of broker integration.
+
+Plan schema version 2 embeds the source snapshot and checks every broker ID, name, classification and status against it. Missing or substituted entries and version-1 Options plans are refused. Account ID/environment are part of catalogue identity. Imported JSON is a declared snapshot, not independent proof of broker origin; refresh obtains it through the authenticated read-only connection. Paths resolve relative to the plan. Audits consume no holdouts, and missing datasets remain explicit per-symbol blockers. An unavailable catalogue reports CTRADER_CATALOGUE_PENDING and exits 2 rather than reporting an empty universe as complete.
+
+The protocol is based on the official [cTrader symbol/category/asset-class messages](https://raw.githubusercontent.com/spotware/openapi-proto-messages/main/OpenApiMessages.proto) and [symbol identity model](https://raw.githubusercontent.com/spotware/openapi-proto-messages/main/OpenApiModelMessages.proto). Provider IDs are server-specific; public marketing names are not executable account identifiers.
 
 Research eligibility, broker execution verification and profitability are separate. The new commands complete acquisition/import/audit plumbing; they do not manufacture a passing result or make an incomplete archive sufficient.
 

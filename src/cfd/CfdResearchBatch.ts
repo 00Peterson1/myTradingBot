@@ -25,7 +25,7 @@ export const cfdResearchPlanSchema = z.object({ version: z.literal(2), universeS
   if (expected.length !== plan.symbols.length) ctx.addIssue({ code: 'custom', message: 'Plan must represent every cTrader catalogue entry' });
   for (const row of expected) {
     const entry = plan.symbols.find(item => item.brokerSymbolId === row.brokerSymbolId);
-    if (!entry || entry.symbol !== row.symbol || entry.category !== row.category || entry.catalogueStatus !== row.catalogueStatus) ctx.addIssue({ code: 'custom', message: 'Plan differs from cTrader catalogue identity or classification' });
+    if (entry?.symbol !== row.symbol || entry.category !== row.category || entry.catalogueStatus !== row.catalogueStatus) ctx.addIssue({ code: 'custom', message: 'Plan differs from cTrader catalogue identity or classification' });
   }
 });
 export type CfdResearchPlan = z.infer<typeof cfdResearchPlanSchema>;

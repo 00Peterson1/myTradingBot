@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   try {
     const report = await researchCfdBatch(JSON.parse(readFileSync(values.plan, 'utf8')) as unknown, dirname(resolve(values.plan)), registry, values.validate ?? false);
     await writeNewJson(values.out, report);
-    print(JSON.stringify({ output: values.out, symbols: report.symbols.length, statuses: report.symbols.reduce<Record<string, number>>((counts, row) => { counts[row.status] = (counts[row.status] ?? 0) + 1; return counts; }, {}), demoEligible: false, liveEligible: false }, null, 2));
+    print(JSON.stringify({ output: values.out, symbols: report.symbols.length, catalogueId: report.catalogueId, blockers: report.blockers, statuses: report.symbols.reduce<Record<string, number>>((counts, row) => { counts[row.status] = (counts[row.status] ?? 0) + 1; return counts; }, {}), demoEligible: false, liveEligible: false }, null, 2));
     if (!report.catalogueId || report.symbols.length === 0 || report.symbols.some(row => row.reasons.length || row.status === 'INSUFFICIENT_EVIDENCE')) process.exitCode = 2;
   } finally { closeDb(); }
 }

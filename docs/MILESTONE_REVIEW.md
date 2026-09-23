@@ -1,3 +1,11 @@
+## CFD catalogue separation — 2026-09-23
+
+Verification: **263 TypeScript tests passed across 42 files**; source/test typechecks, lint and build passed. The redacted, non-network configuration check confirmed all four required cTrader configuration values are absent. Discovery was tested against provider-shaped fixtures, not represented as a real account response.
+
+Replaced the active Options-derived CFD plan with schema version 2, requiring an embedded cTrader account catalogue. Added `cfd:markets` for authenticated **read-only** symbol/category/asset-class discovery or processing a previously exported snapshot. Broker symbol IDs and names are preserved without Options aliases; every active, disabled, archived, unclassified and paused-synthetic entry remains visible. Six real categories receive starting research configuration paths. Plans cannot silently omit entries or substitute Options names.
+
+The cTrader application remains pending approval, so **no actual account catalogue was downloaded and no real CFD symbol count is claimed**. The checked-in plan is explicitly pending, not an invented symbol list. The new readiness report supersedes the old 43-symbol CFD report: [CFD_RESEARCH_READINESS_2026-09-23.json](CFD_RESEARCH_READINESS_2026-09-23.json). Historical Options coverage reports remain Options-only evidence. Credentials were not changed and no orders were submitted.
+
 ## CFD download integrity and resume checkpoint — 2026-09-23
 
 Fixed a retry integrity flaw: failed cached-file checks previously lost the expected hash, so a later retry could accept modified bytes. Failures, unvisited hours and replacement downloads now retain/enforce the original archive hash. Progress checkpoints are persisted every 25 processed hours. Network retries respect the scheduling deadline, defer long numeric Retry-After values, and stop retrying permanent HTTP errors. Empty quote exports and daily windows outside the requested range are rejected.

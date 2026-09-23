@@ -1,0 +1,17 @@
+{
+  "planId": "70f68b43c3328103015d3f8bcda548d61179f02c39c0c99d5b80e748ba3798a0",
+  "universeSource": "CTRADER_ACCOUNT_CATALOGUE",
+  "catalogueId": null,
+  "accountId": null,
+  "mode": "AUDIT",
+  "symbols": [],
+  "complete": false,
+  "demoEligible": false,
+  "liveEligible": false,
+  "blockers": [
+    "CTRADER_CATALOGUE_PENDING",
+    "CTRADER_ADAPTER_AND_BROKER_DEMO_VERIFICATION_PENDING",
+    "SOURCE_COST_AND_CONTRACT_VERIFICATION_REQUIRED",
+    "RESEARCH_REPORTS_DO_NOT_AUTHORIZE_TRADING"
+  ]
+}
