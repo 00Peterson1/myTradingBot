@@ -16,14 +16,14 @@ describe('cTrader protocol and durable dispatch boundary', () => {
   });
   it('splits saturated pages without dropping equal timestamps', async () => {
     const calls: number[][] = [];
-    const result = await completeHistory(async (from, to) => {
+    const result = await completeHistory((from, to) => {
       calls.push([from, to]);
-      return from !== to ? { hasMore: true, deal: [{ dealId: 999 }] } : { hasMore: false, deal: [{ dealId: from + 1 }, { dealId: from + 101 }] };
+      return Promise.resolve(from !== to ? { hasMore: true, deal: [{ dealId: 999 }] } : { hasMore: false, deal: [{ dealId: from + 1 }, { dealId: from + 101 }] });
     }, 'deal', 'dealId', 0, 1);
     expect(result.map(row => row.dealId)).toEqual([1, 101, 2, 102]);
     expect(calls).toEqual([[0, 1], [0, 0], [1, 1]]);
-    await expect(completeHistory(async () => ({ hasMore: true }), 'deal', 'dealId', 0, 0)).rejects.toThrow('Saturated');
-    await expect(completeHistory(async () => ({}), 'deal', 'dealId', 0, 1)).rejects.toThrow('completeness');
+    await expect(completeHistory(() => Promise.resolve({ hasMore: true }), 'deal', 'dealId', 0, 0)).rejects.toThrow('Saturated');
+    await expect(completeHistory(() => Promise.resolve({}), 'deal', 'dealId', 0, 1)).rejects.toThrow('completeness');
   });
   it('refuses changed client IDs and survives adapter reconstruction without permitting a resend', () => {
     const db = new Database(':memory:');
@@ -36,7 +36,7 @@ describe('cTrader protocol and durable dispatch boundary', () => {
       expect(() => restarted.reserve({ ...request, volumeLots: 0.02 }, '101', 100)).toThrow('reused');
       restarted.bind(request.clientOrderId, '44');
       expect(first.find(request.clientOrderId)?.broker_order_id).toBe('44');
-      expect(() => first.bind(request.clientOrderId, '45')).toThrow('mismatch');
+      expect(() => { first.bind(request.clientOrderId, '45'); }).toThrow('mismatch');
     } finally { db.close(); }
   });
 });

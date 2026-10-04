@@ -78,7 +78,7 @@ describe('actual cTrader demo adapter with protocol fixtures', () => {
     expect(await broker.submit(order)).toMatchObject({ status: 'PARTIAL', fill: { filledLots: 0.01 } });
     const evidence = await broker.orderEvidence({ kind: 'OPEN', order });
     expect(evidence?.state).toBe('CANCELLED');
-    state.deals[0]!.symbolId = 999;
+    const deal = state.deals[0]; if (!deal) throw new Error('Missing fixture deal'); deal.symbolId = 999;
     await expect(broker.orderEvidence({ kind: 'OPEN', order })).rejects.toThrow('identity');
   });
 });

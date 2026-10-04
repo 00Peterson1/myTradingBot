@@ -1,6 +1,7 @@
 import { handleHelp } from './help.js';
 handleHelp('cfd:execution', 'Inspect actual CFD account/contracts with --symbol BTCUSD. --verify-demo performs ONE protected minimum-volume demo round trip with physical reconnect. --max-loss 1 bounds planned loss in account currency (maximum 5); gaps can exceed stops. --reconcile recovers durable intents without placing orders. --out receipt.json is required for demo verification. Never uses live accounts.');
 import 'dotenv/config';
+import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -18,13 +19,14 @@ import { getDb, closeDb } from '../data/database/sqlite.js';
 import { print } from '../monitoring/print.js';
 
 async function main(): Promise<void> {
-  const { values } = parseArgs({ options: { symbol: { type: 'string' }, 'verify-demo': { type: 'boolean' }, reconcile: { type: 'boolean' }, 'max-loss': { type: 'string', default: '1' }, out: { type: 'string' } }, strict: true });
+  const { values } = parseArgs({ options: { symbol: { type: 'string' }, 'verify-demo': { type: 'boolean' }, reconcile: { type: 'boolean' }, 'close-position': { type: 'string' }, 'max-loss': { type: 'string', default: '1' }, out: { type: 'string' } }, strict: true });
   const verify = values['verify-demo'] ?? false, maxLoss = Number(values['max-loss']);
   if (!Number.isFinite(maxLoss) || maxLoss <= 0 || maxLoss > 5) throw new Error('Planned demo loss limit must be greater than zero and at most 5 account-currency units');
   if (verify && (!values.out || existsSync(values.out))) throw new Error('Demo verification requires --out pointing to a new receipt file');
+  if ((verify && values['close-position']) || (values.reconcile && values['close-position'])) throw new Error('Choose only one operation');
   if (verify && values.reconcile) throw new Error('Reconcile and verify must be separate invocations');
   const config = ctraderConfigSchema.parse({ clientId: process.env.CTRADER_CLIENT_ID, clientSecret: process.env.CTRADER_CLIENT_SECRET, accessToken: process.env.CTRADER_ACCESS_TOKEN, accountId: process.env.CTRADER_DEMO_ACCOUNT_ID });
-  const connection = new CTraderDemoConnection(config, { allowDemoOrders: verify });
+  const connection = new CTraderDemoConnection(config, { allowDemoOrders: verify || Boolean(values['close-position']) });
   const db = getDb(), ledger = new CfdLedger(db, { provider: 'CTRADER', id: config.accountId, mode: 'DEMO' });
   const broker = new CTraderDemoBroker(connection, db, ledger);
   let controller: CfdExecutionController | undefined;
@@ -37,7 +39,7 @@ async function main(): Promise<void> {
     // This authorization is restricted to one operator-requested connectivity test, not a strategy permit.
     const hypothesisId = `DEMO_CONNECTIVITY_ONLY:${randomUUID()}`;
     controller = new CfdExecutionController(broker, ledger, policy, snapshot.account.equity, { demoAccountId: config.accountId, now: Date.now,
-      authorizeHypothesis: order => {
+      authorizeHypothesis: (order): Promise<void> => {
         if (!verify || order.hypothesisId !== hypothesisId) return Promise.reject(new Error('No validated CFD strategy permit'));
         return Promise.resolve();
       } });
@@ -46,6 +48,16 @@ async function main(): Promise<void> {
     if (values.reconcile) {
       const result = await controller.reconcile(); print(JSON.stringify({ accountId: config.accountId, ...result, liveEligible: false }));
       if (result.unresolved) process.exitCode = 2;
+      return;
+    }
+    if (values['close-position']) {
+      await controller.reconcile();
+      const current = await broker.snapshot(), position = current.positions.find(row => row.id === values['close-position']);
+      if (!position) throw new Error('Requested position is not open');
+      const closed = await controller.close(position.id, position.volumeLots);
+      const reconciled = await controller.reconcile();
+      print(JSON.stringify({ closed, reconciled, accountId: config.accountId, liveEligible: false }));
+      if (reconciled.unresolved || reconciled.positions) process.exitCode = 2;
       return;
     }
     if (!values.symbol) throw new Error('--symbol must be an exact CFD catalogue name');
@@ -63,9 +75,10 @@ async function main(): Promise<void> {
     const registry = new ExperimentRegistry(db, captureResearchCode(fileURLToPath(new URL('../../', import.meta.url))));
     const result = await verifyCfdDemo(broker, controller, order, { accountId: config.accountId, maxVolumeLots: instrument.volumeMin,
       reconnect: async () => { connection.close(); await connection.connect(); await broker.initialize(); await broker.quote(order.symbol); } }, registry);
-    await writeNewJson(values.out!, result);
+    if (!values.out) throw new Error('Missing receipt path');
+    await writeNewJson(values.out, result);
     print(JSON.stringify({ status: result.status, receipt: values.out, accountId: config.accountId, liveEligible: false }));
     if (result.status !== 'ROUND_TRIP_CONFIRMED') process.exitCode = 2;
   } finally { unsubscribe?.(); controller?.dispose(); broker.dispose(); connection.close(); closeDb(); }
 }
-main().catch(() => { print('CFD execution check failed. No automatic retry: inspect the local ledger and run cfd:execution --reconcile before another verification. Credentials and raw broker errors are suppressed.'); process.exitCode = 1; });
+main().catch((error: unknown) => { print(error instanceof z.ZodError ? 'Invalid configuration, risk limits or broker metadata' : error instanceof Error ? error.message : 'CFD check failed'); print('CFD execution check failed. No automatic retry: inspect the local ledger and run cfd:execution --reconcile before another verification. Credentials and raw broker errors are suppressed.'); process.exitCode = 1; });
