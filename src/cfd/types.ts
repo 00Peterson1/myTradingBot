@@ -5,7 +5,7 @@ const nonnegative = z.number().finite().nonnegative();
 export const cfdInstrumentSchema = z.object({
   symbol: z.string().min(1), category: z.enum(['forex', 'metals', 'commodities', 'crypto', 'stock_indices', 'stocks']),
   contractSize: positive, volumeMin: positive, volumeMax: positive, volumeStep: positive,
-  priceTick: positive, minStopDistance: nonnegative, profitCurrency: z.string().min(3),
+  priceTick: positive, minStopDistance: nonnegative, minStopDistanceFraction: nonnegative.max(1).optional(), profitCurrency: z.string().min(3),
 }).strict().refine(row => row.volumeMin <= row.volumeMax, 'Invalid volume limits');
 export const cfdQuoteSchema = z.object({ symbol: z.string().min(1), bid: positive, ask: positive, timeMs: z.number().int().nonnegative() })
   .strict().refine(row => row.ask >= row.bid, 'Crossed bid/ask quote');
@@ -36,6 +36,7 @@ export interface CfdBroker {
   quote(symbol: string): Promise<CfdQuote>;
   estimateMargin(order: CfdOrder, entryPrice: number): Promise<number>;
   estimateProfit(order: CfdOrder, entryPrice: number, exitPrice: number): Promise<number>;
+  estimateCommission?(order: CfdOrder, entryPrice: number, exitPrice: number): Promise<number>;
   submit(order: CfdOrder): Promise<CfdOrderResult>;
   close(positionId: string, volumeLots: number, clientOrderId: string): Promise<CfdOrderResult>;
 }

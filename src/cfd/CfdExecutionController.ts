@@ -129,7 +129,9 @@ export class CfdExecutionController {
       const order: CfdOrder = { ...request.order, symbol: position.symbol, side: position.side, volumeLots: position.volumeLots, stopLoss: position.stopLoss };
       const loss = await this.broker.estimateProfit(order, position.currentPrice, position.stopLoss);
       if (!Number.isFinite(loss)) throw new Error('Invalid open-position risk estimate');
-      reservedRisk += Math.max(0, -loss) + position.volumeLots * this.policy.commissionPerLotRoundTrip;
+      const commission = await this.broker.estimateCommission?.(order, position.currentPrice, position.stopLoss) ?? 0;
+      if (!Number.isFinite(commission) || commission < 0) throw new Error('Invalid broker commission estimate');
+      reservedRisk += Math.max(0, -loss) + Math.max(commission, position.volumeLots * this.policy.commissionPerLotRoundTrip);
     }
     await approveCfdOrder(this.broker, request.order, snapshot.account, this.policy, { positions: snapshot.positions.length, reservedMargin: 0, reservedRisk, dailyStartEquity: this.ledger.dailyBaseline(snapshot.account.timeMs, this.dailyStartEquity) }, this.options.now);
     this.ledger.acquireRunner(this.owner);

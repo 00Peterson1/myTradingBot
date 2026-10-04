@@ -27,10 +27,12 @@ const categories: Record<string, CatalogueCategory> = {
   crypto: 'crypto', cryptocurrency: 'crypto', cryptocurrencies: 'crypto',
   indices: 'stock_indices', 'stock indices': 'stock_indices', 'stock index': 'stock_indices', 'equity indices': 'stock_indices',
   stocks: 'stocks', equities: 'stocks', shares: 'stocks', etfs: 'stocks',
+  'equities eu': 'stocks', 'equities us': 'stocks', 'equities adx': 'stocks', 'etfs us': 'stocks',
+  'soft commodities': 'commodities',
 };
 function classify(categoryName: string, assetClass: string): CatalogueCategory {
   const leaf = categoryName.toLowerCase().trim(), parent = assetClass.toLowerCase().trim();
-  if (/\b(?:synthetic|synthetics|derived|volatility|boom|crash|jump|step|dex|range break)\b/i.test(`${leaf} ${parent}`)) return 'synthetic';
+  if (/\b(?:synthetic|synthetics|derived|tactical|volatility|boom|crash|jump|step|dex|range break)\b/i.test(`${leaf} ${parent}`)) return 'synthetic';
   return categories[leaf] ?? categories[parent] ?? 'unknown';
 }
 export interface CatalogueResearchEntry {

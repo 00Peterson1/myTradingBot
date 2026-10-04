@@ -18,10 +18,10 @@ export function validateCfdOrder(orderInput: CfdOrder, instrumentInput: CfdInstr
   for (const price of [order.stopLoss, order.takeProfit]) if (price !== null && Math.abs(price / instrument.priceTick - Math.round(price / instrument.priceTick)) > 1e-6) throw new Error('CFD exit price violates tick size');
   const mark = order.side === 'LONG' ? quote.bid : quote.ask;
   const distance = order.side === 'LONG' ? mark - order.stopLoss : order.stopLoss - mark;
-  if (distance <= 0 || distance < instrument.minStopDistance) throw new Error('Invalid CFD stop loss distance');
+  if (distance <= 0 || distance < Math.max(instrument.minStopDistance, mark * (instrument.minStopDistanceFraction ?? 0))) throw new Error('Invalid CFD stop loss distance');
   if (order.takeProfit !== null) {
     const distance = order.side === 'LONG' ? order.takeProfit - quote.ask : quote.bid - order.takeProfit;
-    if (distance <= 0 || distance < instrument.minStopDistance) throw new Error('Invalid CFD take profit distance');
+    if (distance <= 0 || distance < Math.max(instrument.minStopDistance, mark * (instrument.minStopDistanceFraction ?? 0))) throw new Error('Invalid CFD take profit distance');
   }
 }
 
@@ -46,9 +46,10 @@ export async function approveCfdOrder(broker: CfdBroker, order: CfdOrder, accoun
   const entry = (order.side === 'LONG' ? quote.ask : quote.bid) +
     (order.side === 'LONG' ? 1 : -1) * order.maxSlippagePoints * instrument.priceTick;
   if (entry <= 0) throw new Error('Invalid CFD slippage bound');
-  const [margin, profitAtStop] = await Promise.all([broker.estimateMargin(order, entry), broker.estimateProfit(order, entry, order.stopLoss)]);
+  const [margin, profitAtStop, brokerCommission] = await Promise.all([broker.estimateMargin(order, entry), broker.estimateProfit(order, entry, order.stopLoss), broker.estimateCommission?.(order, entry, order.stopLoss) ?? 0]);
+  if (!Number.isFinite(brokerCommission) || brokerCommission < 0) throw new Error('Invalid broker commission estimate');
   validateCfdOrder(order, instrument, quote, checkFreshness(), policy.maxQuoteAgeMs);
-  const plannedLoss = -profitAtStop + order.volumeLots * policy.commissionPerLotRoundTrip;
+  const plannedLoss = -profitAtStop + Math.max(brokerCommission, order.volumeLots * policy.commissionPerLotRoundTrip);
   if (!Number.isFinite(plannedLoss) || profitAtStop >= 0 || plannedLoss <= 0 || plannedLoss + exposure.reservedRisk > account.equity * policy.maxRiskFraction) throw new Error('CFD planned stop loss exceeds risk budget');
   if (!Number.isFinite(margin) || margin <= 0 || margin + exposure.reservedMargin > account.freeMargin || account.margin + margin + exposure.reservedMargin > account.equity * policy.maxMarginFraction) throw new Error('CFD margin budget exceeded');
   return { order: cfdOrderSchema.parse(order), estimatedMargin: margin, plannedLoss, quote };
