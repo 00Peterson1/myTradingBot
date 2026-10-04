@@ -1,3 +1,11 @@
+## Actual cTrader demo connection and catalogue — 2026-10-04
+
+Application credentials and the access token authenticated successfully. The configured API account ID 48688460 identifies demo trader login 2552246. The previously discussed demo login 2566142 is a separate authorized account with API ID 48802296. Saved selection was preserved; no live account was authenticated and no orders were submitted. Demo inspection reported no open positions or pending orders.
+
+Fixed the cTrader JSON wire representation of account IDs: identities remain strings internally, but outbound account IDs use safely representable integers. A regression mock rejects string-valued IDs. Four connection tests, source/test typechecks, lint and build passed. The refresh token's renewal behavior was not tested.
+
+The real account catalogue was saved to `data/cfd-account-plan-2026-10-04.json`: **384 current and 46 archived symbols**. A separate audit was saved to `data/cfd-readiness-2026-10-04.json`. 113 entries received starting research configuration paths; other entries remain disabled, archived, synthetic-paused or classification-review cases. All remain blocked from research/trading eligibility pending their required inputs. This proves read-only connectivity and catalogue retrieval, not order execution, profitable strategies, full contract metadata, or complete category classification. Earlier statements that credentials/catalogue are unavailable are now historical.
+
 ## CFD catalogue separation — 2026-09-23
 
 Verification: **263 TypeScript tests passed across 42 files**; source/test typechecks, lint and build passed. The redacted, non-network configuration check confirmed all four required cTrader configuration values are absent. Discovery was tested against provider-shaped fixtures, not represented as a real account response.

@@ -1,0 +1,5818 @@
+{
+  "planId": "f50a776379c41db1d1073d85ff1fd9ceec5858738c9536c51b3cc329284d3c8c",
+  "universeSource": "CTRADER_ACCOUNT_CATALOGUE",
+  "catalogueId": "ebe1d8434fb6d8e1316a0c2e74b63bf035952d68257378ed197d1134009f2162",
+  "accountId": "48688460",
+  "mode": "AUDIT",
+  "symbols": [
+    {
+      "symbol": "Vol over Crash 550",
+      "brokerSymbolId": "2567",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Skew Step Index 5 Up",
+      "brokerSymbolId": "2569",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDJPY",
+      "brokerSymbolId": "11",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDCAD",
+      "brokerSymbolId": "18",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Gold RSI Rebound Index",
+      "brokerSymbolId": "2581",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDJPY RSI Rebound Index",
+      "brokerSymbolId": "2594",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Trek Up Index",
+      "brokerSymbolId": "2606",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BTCUSD RSI Pullback Index",
+      "brokerSymbolId": "2608",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VolSwitch Low Vol Index",
+      "brokerSymbolId": "2616",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Exponential Growth Index 1",
+      "brokerSymbolId": "2621",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Spot Up - Volatility Up Index",
+      "brokerSymbolId": "2623",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VIXUSD",
+      "brokerSymbolId": "2625",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD BB Rebound Index",
+      "brokerSymbolId": "2627",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash Boom Flip 150 Index",
+      "brokerSymbolId": "2641",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XAGEUR",
+      "brokerSymbolId": "92",
+      "category": "metals",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XAUEUR",
+      "brokerSymbolId": "93",
+      "category": "metals",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ADCB.AD",
+      "brokerSymbolId": "2655",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XPDUSD",
+      "brokerSymbolId": "95",
+      "category": "metals",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Snap 50 Index",
+      "brokerSymbolId": "2666",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CL_BRENT",
+      "brokerSymbolId": "2273",
+      "category": "commodities",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XCUUSD",
+      "brokerSymbolId": "2278",
+      "category": "metals",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ADS",
+      "brokerSymbolId": "2291",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AAL",
+      "brokerSymbolId": "2304",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AGG.US",
+      "brokerSymbolId": "2351",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ADAUSD",
+      "brokerSymbolId": "2382",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDUSD DFX 10 Index",
+      "brokerSymbolId": "2418",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Gold Basket",
+      "brokerSymbolId": "2423",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Step Index",
+      "brokerSymbolId": "2448",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Range Break 100 Index",
+      "brokerSymbolId": "2449",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Jump 10 Index",
+      "brokerSymbolId": "2451",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DEX 900 DOWN Index",
+      "brokerSymbolId": "2461",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Drift Switch Index 10",
+      "brokerSymbolId": "2464",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDSGD",
+      "brokerSymbolId": "2472",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 15 (1s) Index",
+      "brokerSymbolId": "2502",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 600 Index",
+      "brokerSymbolId": "2507",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Australia 200",
+      "brokerSymbolId": "2510",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Germany 40",
+      "brokerSymbolId": "2512",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Japan 225",
+      "brokerSymbolId": "2515",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "UK 100",
+      "brokerSymbolId": "2516",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "US Tech 100",
+      "brokerSymbolId": "2518",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NGAS",
+      "brokerSymbolId": "2533",
+      "category": "commodities",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Multi Step 3 Index",
+      "brokerSymbolId": "2534",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CoffeeRobu",
+      "brokerSymbolId": "2558",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDUSD",
+      "brokerSymbolId": "5",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Multi Step 2 Index",
+      "brokerSymbolId": "2565",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Vol over Boom 550",
+      "brokerSymbolId": "2568",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Skew Step Index 5 Down",
+      "brokerSymbolId": "2574",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Gold RSI Pullback Index",
+      "brokerSymbolId": "2582",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDCHF",
+      "brokerSymbolId": "23",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDJPY RSI Pullback Index",
+      "brokerSymbolId": "2595",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XAUUSD",
+      "brokerSymbolId": "41",
+      "category": "metals",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XAGUSD",
+      "brokerSymbolId": "42",
+      "category": "metals",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Trek Down Index",
+      "brokerSymbolId": "2607",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BTCUSD RSI Rebound Index",
+      "brokerSymbolId": "2609",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VolSwitch Medium Vol Index",
+      "brokerSymbolId": "2617",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Exponential Growth Index 2",
+      "brokerSymbolId": "2622",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Spot Up - Volatility Down Index",
+      "brokerSymbolId": "2624",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DXYUSD",
+      "brokerSymbolId": "2626",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD BB Trend Up Index",
+      "brokerSymbolId": "2629",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash Boom Flip 300 Index",
+      "brokerSymbolId": "2642",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ADIB.AD",
+      "brokerSymbolId": "2656",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XPTUSD",
+      "brokerSymbolId": "97",
+      "category": "metals",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AIR",
+      "brokerSymbolId": "2292",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "INTC",
+      "brokerSymbolId": "2305",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ARKK.US",
+      "brokerSymbolId": "2352",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ALGUSD",
+      "brokerSymbolId": "2383",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD DFX 10 Index",
+      "brokerSymbolId": "2419",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USD Basket",
+      "brokerSymbolId": "2424",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Range Break 200 Index",
+      "brokerSymbolId": "2450",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Jump 25 Index",
+      "brokerSymbolId": "2452",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DEX 900 UP Index",
+      "brokerSymbolId": "2462",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Drift Switch Index 20",
+      "brokerSymbolId": "2469",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURHKD",
+      "brokerSymbolId": "2473",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 30 (1s) Index",
+      "brokerSymbolId": "2503",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 600 Index",
+      "brokerSymbolId": "2505",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Wall Street 30",
+      "brokerSymbolId": "2509",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Europe 50",
+      "brokerSymbolId": "2511",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Hong Kong 50",
+      "brokerSymbolId": "2514",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "US Oil",
+      "brokerSymbolId": "2528",
+      "category": "commodities",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Step Index 300",
+      "brokerSymbolId": "2530",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CoffeeArab",
+      "brokerSymbolId": "2559",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Cocoa",
+      "brokerSymbolId": "2560",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Multi Step 4 Index",
+      "brokerSymbolId": "2566",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Vol over Crash 400",
+      "brokerSymbolId": "2570",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURAUD",
+      "brokerSymbolId": "14",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Skew Step Index 4 Up",
+      "brokerSymbolId": "2575",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDNZD",
+      "brokerSymbolId": "20",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Gold RSI Trend Up Index",
+      "brokerSymbolId": "2583",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDJPY RSI Trend Up Index",
+      "brokerSymbolId": "2596",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BTCUSD RSI Trend Up Index",
+      "brokerSymbolId": "2610",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VolSwitch High Vol Index",
+      "brokerSymbolId": "2618",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash Boom Flip 500 Index",
+      "brokerSymbolId": "2643",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ADNOCDRILL.AD",
+      "brokerSymbolId": "2657",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AIRF",
+      "brokerSymbolId": "2293",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "JNJ",
+      "brokerSymbolId": "2306",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DIA.US",
+      "brokerSymbolId": "2353",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AVAUSD",
+      "brokerSymbolId": "2384",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPUSD DFX 10 Index",
+      "brokerSymbolId": "2420",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EUR Basket",
+      "brokerSymbolId": "2425",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Jump 50 Index",
+      "brokerSymbolId": "2453",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DEX 1500 DOWN Index",
+      "brokerSymbolId": "2465",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Drift Switch Index 30",
+      "brokerSymbolId": "2470",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURMXN",
+      "brokerSymbolId": "2475",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 90 (1s) Index",
+      "brokerSymbolId": "2504",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 900 Index",
+      "brokerSymbolId": "2508",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "France 40",
+      "brokerSymbolId": "2513",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "US SP 500",
+      "brokerSymbolId": "2517",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "China H Shares",
+      "brokerSymbolId": "2525",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "UK Brent Oil",
+      "brokerSymbolId": "2529",
+      "category": "commodities",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Step Index 400",
+      "brokerSymbolId": "2531",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Sugar",
+      "brokerSymbolId": "2561",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Step Index 200",
+      "brokerSymbolId": "2563",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Vol over Boom 400",
+      "brokerSymbolId": "2571",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Skew Step Index 4 Down",
+      "brokerSymbolId": "2576",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURCAD",
+      "brokerSymbolId": "17",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Gold RSI Trend Down Index",
+      "brokerSymbolId": "2584",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CADCHF",
+      "brokerSymbolId": "27",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDJPY RSI Trend Down Index",
+      "brokerSymbolId": "2597",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BTCUSD RSI Trend Down Index",
+      "brokerSymbolId": "2611",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash Boom Flip 1000 Index",
+      "brokerSymbolId": "2644",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ADNOCLS.AD",
+      "brokerSymbolId": "2658",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "WTI_OIL",
+      "brokerSymbolId": "2274",
+      "category": "commodities",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BAY",
+      "brokerSymbolId": "2294",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "JPM",
+      "brokerSymbolId": "2307",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EEM.US",
+      "brokerSymbolId": "2354",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BATUSD",
+      "brokerSymbolId": "2385",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDCHF DFX 10 Index",
+      "brokerSymbolId": "2421",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBP Basket",
+      "brokerSymbolId": "2426",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 10 Index",
+      "brokerSymbolId": "2428",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Jump 75 Index",
+      "brokerSymbolId": "2454",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DEX 1500 UP Index",
+      "brokerSymbolId": "2466",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURSGD",
+      "brokerSymbolId": "2476",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 900 Index",
+      "brokerSymbolId": "2506",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "US Mid Cap 400",
+      "brokerSymbolId": "2522",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Netherlands 25",
+      "brokerSymbolId": "2526",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Cotton",
+      "brokerSymbolId": "2562",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Step Index 500",
+      "brokerSymbolId": "2564",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURCHF",
+      "brokerSymbolId": "10",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Vol over Crash 750",
+      "brokerSymbolId": "2572",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CADJPY",
+      "brokerSymbolId": "15",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Silver RSI Rebound Index",
+      "brokerSymbolId": "2577",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD RSI Rebound Index",
+      "brokerSymbolId": "2598",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ETHUSD RSI Pullback Index",
+      "brokerSymbolId": "2612",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ADPORTS.AD",
+      "brokerSymbolId": "2659",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BMW",
+      "brokerSymbolId": "2295",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "KO",
+      "brokerSymbolId": "2308",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EFA.US",
+      "brokerSymbolId": "2355",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BCHUSD",
+      "brokerSymbolId": "2386",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDJPY DFX 10 Index",
+      "brokerSymbolId": "2422",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUD Basket",
+      "brokerSymbolId": "2427",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 10 (1s) Index",
+      "brokerSymbolId": "2429",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 500 Index",
+      "brokerSymbolId": "2442",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Jump 100 Index",
+      "brokerSymbolId": "2455",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DEX 600 DOWN Index",
+      "brokerSymbolId": "2467",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURZAR",
+      "brokerSymbolId": "2477",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "US Small Cap 2000",
+      "brokerSymbolId": "2521",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Swiss 20",
+      "brokerSymbolId": "2527",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURGBP",
+      "brokerSymbolId": "9",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CHFJPY",
+      "brokerSymbolId": "13",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Vol over Boom 750",
+      "brokerSymbolId": "2573",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Silver RSI Pullback Index",
+      "brokerSymbolId": "2578",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD RSI Pullback Index",
+      "brokerSymbolId": "2599",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ETHUSD RSI Rebound Index",
+      "brokerSymbolId": "2613",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ALDAR.AD",
+      "brokerSymbolId": "2660",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CONG",
+      "brokerSymbolId": "2297",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MA",
+      "brokerSymbolId": "2309",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ERX.US",
+      "brokerSymbolId": "2356",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BNBUSD",
+      "brokerSymbolId": "2387",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 25 Index",
+      "brokerSymbolId": "2430",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 500 Index",
+      "brokerSymbolId": "2443",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDUSD DFX 20 Index",
+      "brokerSymbolId": "2456",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DEX 600 UP Index",
+      "brokerSymbolId": "2468",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPSGD",
+      "brokerSymbolId": "2478",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Spain 35",
+      "brokerSymbolId": "2532",
+      "category": "stock_indices",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURJPY",
+      "brokerSymbolId": "3",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Silver RSI Trend Up Index",
+      "brokerSymbolId": "2579",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURNOK",
+      "brokerSymbolId": "33",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD RSI Trend Up Index",
+      "brokerSymbolId": "2600",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ETHUSD RSI Trend Up Index",
+      "brokerSymbolId": "2614",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EAND.AD",
+      "brokerSymbolId": "2661",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DBK",
+      "brokerSymbolId": "2298",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MCD",
+      "brokerSymbolId": "2310",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GDX.US",
+      "brokerSymbolId": "2357",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BTCETH",
+      "brokerSymbolId": "2388",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 25 (1s) Index",
+      "brokerSymbolId": "2431",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 1000 Index",
+      "brokerSymbolId": "2444",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD DFX 20 Index",
+      "brokerSymbolId": "2457",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "HKDJPY",
+      "brokerSymbolId": "2479",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD",
+      "brokerSymbolId": "1",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Silver RSI Trend Down Index",
+      "brokerSymbolId": "2580",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURNZD",
+      "brokerSymbolId": "26",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD RSI Trend Down Index",
+      "brokerSymbolId": "2601",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ETHUSD RSI Trend Down Index",
+      "brokerSymbolId": "2615",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ESHRAQ.AD",
+      "brokerSymbolId": "2662",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "LHAG",
+      "brokerSymbolId": "2299",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MRNA",
+      "brokerSymbolId": "2311",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GLD.US",
+      "brokerSymbolId": "2358",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BTCLTC",
+      "brokerSymbolId": "2389",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 50 Index",
+      "brokerSymbolId": "2432",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 1000 Index",
+      "brokerSymbolId": "2445",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPUSD DFX 20 Index",
+      "brokerSymbolId": "2458",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NZDCHF",
+      "brokerSymbolId": "2480",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPAUD",
+      "brokerSymbolId": "16",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPUSD RSI Rebound Index",
+      "brokerSymbolId": "2602",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURPLN",
+      "brokerSymbolId": "51",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "FAB.AD",
+      "brokerSymbolId": "2663",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "PSHG",
+      "brokerSymbolId": "2302",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MSFT",
+      "brokerSymbolId": "2312",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "HYG.US",
+      "brokerSymbolId": "2359",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DOGUSD",
+      "brokerSymbolId": "2390",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 50 (1s) Index",
+      "brokerSymbolId": "2433",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 300 Index",
+      "brokerSymbolId": "2446",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDCHF DFX 20 Index",
+      "brokerSymbolId": "2459",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NZDSGD",
+      "brokerSymbolId": "2481",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPJPY",
+      "brokerSymbolId": "7",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURSEK",
+      "brokerSymbolId": "31",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPUSD RSI Pullback Index",
+      "brokerSymbolId": "2603",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NMDC.AD",
+      "brokerSymbolId": "2664",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "PUMG",
+      "brokerSymbolId": "2303",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NFLX",
+      "brokerSymbolId": "2313",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "IEMG.US",
+      "brokerSymbolId": "2360",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DOTUSD",
+      "brokerSymbolId": "2391",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 75 Index",
+      "brokerSymbolId": "2434",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 300 Index",
+      "brokerSymbolId": "2447",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDJPY DFX 20 Index",
+      "brokerSymbolId": "2460",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SGDJPY",
+      "brokerSymbolId": "2482",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPUSD",
+      "brokerSymbolId": "2",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPCAD",
+      "brokerSymbolId": "19",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPUSD RSI Trend Up Index",
+      "brokerSymbolId": "2604",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 150 Index",
+      "brokerSymbolId": "2619",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "IBM",
+      "brokerSymbolId": "2314",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "IJR.US",
+      "brokerSymbolId": "2361",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DSHUSD",
+      "brokerSymbolId": "2392",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 75 (1s) Index",
+      "brokerSymbolId": "2435",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDHKD",
+      "brokerSymbolId": "2483",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDCAD",
+      "brokerSymbolId": "8",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPCHF",
+      "brokerSymbolId": "40",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPUSD RSI Trend Down Index",
+      "brokerSymbolId": "2605",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 150 Index",
+      "brokerSymbolId": "2620",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NKE",
+      "brokerSymbolId": "2315",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "IVV.US",
+      "brokerSymbolId": "2362",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ETCUSD",
+      "brokerSymbolId": "2394",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 100 Index",
+      "brokerSymbolId": "2436",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDSGD",
+      "brokerSymbolId": "2485",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDCHF",
+      "brokerSymbolId": "6",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPNOK",
+      "brokerSymbolId": "37",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 99 Index",
+      "brokerSymbolId": "2634",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "PEP",
+      "brokerSymbolId": "2316",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "IVW.US",
+      "brokerSymbolId": "2363",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "FILUSD",
+      "brokerSymbolId": "2395",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 100 (1s) Index",
+      "brokerSymbolId": "2437",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDTHB",
+      "brokerSymbolId": "2486",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDJPY",
+      "brokerSymbolId": "4",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPNZD",
+      "brokerSymbolId": "25",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 100 Index",
+      "brokerSymbolId": "2635",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "PFE",
+      "brokerSymbolId": "2317",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "IWM.US",
+      "brokerSymbolId": "2364",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "IOTUSD",
+      "brokerSymbolId": "2396",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 150 (1s) Index",
+      "brokerSymbolId": "2438",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CHFSGD",
+      "brokerSymbolId": "2488",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPSEK",
+      "brokerSymbolId": "61",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 200 Index",
+      "brokerSymbolId": "2636",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "PG",
+      "brokerSymbolId": "2318",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "LQD.US",
+      "brokerSymbolId": "2365",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "LNKUSD",
+      "brokerSymbolId": "2397",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 250 (1s) Index",
+      "brokerSymbolId": "2440",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURCZK",
+      "brokerSymbolId": "2489",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NZDCAD",
+      "brokerSymbolId": "30",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 5 Index",
+      "brokerSymbolId": "2632",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 99 Index",
+      "brokerSymbolId": "2637",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "PYPL",
+      "brokerSymbolId": "2319",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "QID.US",
+      "brokerSymbolId": "2366",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "LTCUSD",
+      "brokerSymbolId": "2398",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURHUF",
+      "brokerSymbolId": "2490",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NZDJPY",
+      "brokerSymbolId": "21",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 5 (1s) Index",
+      "brokerSymbolId": "2633",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 100 Index",
+      "brokerSymbolId": "2638",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SONY",
+      "brokerSymbolId": "2320",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SDS.US",
+      "brokerSymbolId": "2367",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NEOUSD",
+      "brokerSymbolId": "2401",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURTRY",
+      "brokerSymbolId": "2491",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NZDUSD",
+      "brokerSymbolId": "12",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 200 Index",
+      "brokerSymbolId": "2639",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 90 Index",
+      "brokerSymbolId": "2647",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "TEVA",
+      "brokerSymbolId": "2321",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SLV.US",
+      "brokerSymbolId": "2368",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SOLUSD",
+      "brokerSymbolId": "2403",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPPLN",
+      "brokerSymbolId": "2493",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDCNH",
+      "brokerSymbolId": "60",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Boom 50 Index",
+      "brokerSymbolId": "2645",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 30 Index",
+      "brokerSymbolId": "2648",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "TSLA",
+      "brokerSymbolId": "2322",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SPXS.US",
+      "brokerSymbolId": "2369",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "TRXUSD",
+      "brokerSymbolId": "2404",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPTRY",
+      "brokerSymbolId": "2494",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDMXN",
+      "brokerSymbolId": "24",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Crash 50 Index",
+      "brokerSymbolId": "2646",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 15 Index",
+      "brokerSymbolId": "2649",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "UBER",
+      "brokerSymbolId": "2323",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SPY.US",
+      "brokerSymbolId": "2370",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "UNIUSD",
+      "brokerSymbolId": "2405",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "HKDCNH",
+      "brokerSymbolId": "2495",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDNOK",
+      "brokerSymbolId": "22",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "High Frequency Vol 100 Index",
+      "brokerSymbolId": "2650",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "V",
+      "brokerSymbolId": "2324",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "TBT.US",
+      "brokerSymbolId": "2371",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XLMUSD",
+      "brokerSymbolId": "2406",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "TRYJPY",
+      "brokerSymbolId": "2496",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDPLN",
+      "brokerSymbolId": "35",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "High Frequency Vol 75 Index",
+      "brokerSymbolId": "2651",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NVDA",
+      "brokerSymbolId": "2325",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "TQQQ.US",
+      "brokerSymbolId": "2372",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XMRUSD",
+      "brokerSymbolId": "2407",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDCZK",
+      "brokerSymbolId": "2497",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDSEK",
+      "brokerSymbolId": "29",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "High Frequency Vol 50 Index",
+      "brokerSymbolId": "2652",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "WMT",
+      "brokerSymbolId": "2326",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "UNG.US",
+      "brokerSymbolId": "2373",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XRPUSD",
+      "brokerSymbolId": "2408",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDDKK",
+      "brokerSymbolId": "2498",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDZAR",
+      "brokerSymbolId": "49",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "High Frequency Vol 25 Index",
+      "brokerSymbolId": "2653",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BTCUSD",
+      "brokerSymbolId": "101",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "HPQ",
+      "brokerSymbolId": "2327",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VEA.US",
+      "brokerSymbolId": "2374",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDRUB",
+      "brokerSymbolId": "2500",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "High Frequency Vol 10 Index",
+      "brokerSymbolId": "2654",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GS",
+      "brokerSymbolId": "2328",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VNQ.US",
+      "brokerSymbolId": "2375",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XTZUSD",
+      "brokerSymbolId": "2409",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDTRY",
+      "brokerSymbolId": "2501",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ETHUSD",
+      "brokerSymbolId": "102",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDAED",
+      "brokerSymbolId": "2665",
+      "category": "forex",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AAPL",
+      "brokerSymbolId": "2329",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VOO.US",
+      "brokerSymbolId": "2376",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ZECUSD",
+      "brokerSymbolId": "2272",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ABNB",
+      "brokerSymbolId": "2330",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VTI.US",
+      "brokerSymbolId": "2377",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NERUSD",
+      "brokerSymbolId": "2585",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AIG",
+      "brokerSymbolId": "2331",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "VWO.US",
+      "brokerSymbolId": "2378",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "TONUSD",
+      "brokerSymbolId": "2586",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AMD",
+      "brokerSymbolId": "2332",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XLE.US",
+      "brokerSymbolId": "2379",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AAVUSD",
+      "brokerSymbolId": "2588",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AMZN",
+      "brokerSymbolId": "2333",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XLF.US",
+      "brokerSymbolId": "2380",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "APEUSD",
+      "brokerSymbolId": "2589",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BA",
+      "brokerSymbolId": "2334",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XLK.US",
+      "brokerSymbolId": "2381",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "APTUSD",
+      "brokerSymbolId": "2590",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BABA",
+      "brokerSymbolId": "2335",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "COMUSD",
+      "brokerSymbolId": "2591",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BAC",
+      "brokerSymbolId": "2336",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "IMXUSD",
+      "brokerSymbolId": "2592",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BIIB",
+      "brokerSymbolId": "2337",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SANUSD",
+      "brokerSymbolId": "2593",
+      "category": "crypto",
+      "status": "BLOCKED",
+      "reasons": [
+        "MISSING_BID_ASK_HISTORY"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "HD",
+      "brokerSymbolId": "2338",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "C",
+      "brokerSymbolId": "2339",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CSCO",
+      "brokerSymbolId": "2340",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DAL",
+      "brokerSymbolId": "2341",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DIS",
+      "brokerSymbolId": "2342",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EBAY",
+      "brokerSymbolId": "2343",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "FDX",
+      "brokerSymbolId": "2345",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "FOX",
+      "brokerSymbolId": "2346",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GM",
+      "brokerSymbolId": "2347",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GOOG",
+      "brokerSymbolId": "2348",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CRM",
+      "brokerSymbolId": "2349",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ZM",
+      "brokerSymbolId": "2350",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "META",
+      "brokerSymbolId": "2471",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GME",
+      "brokerSymbolId": "2535",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AMC",
+      "brokerSymbolId": "2536",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BB",
+      "brokerSymbolId": "2537",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BYND",
+      "brokerSymbolId": "2538",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "PLTR",
+      "brokerSymbolId": "2541",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SPCE",
+      "brokerSymbolId": "2542",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MSTR",
+      "brokerSymbolId": "2543",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MU",
+      "brokerSymbolId": "2546",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "COIN",
+      "brokerSymbolId": "2552",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "RIVN",
+      "brokerSymbolId": "2554",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SMCI",
+      "brokerSymbolId": "2553",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NOK",
+      "brokerSymbolId": "2539",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SPCX",
+      "brokerSymbolId": "2640",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_REVIEW_REQUIRED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Snap 80 Index",
+      "brokerSymbolId": "2667",
+      "category": "synthetic",
+      "status": "BLOCKED",
+      "reasons": [
+        "SYNTHETIC_RESEARCH_PAUSED",
+        "CATALOGUE_DISABLED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDHUF",
+      "brokerSymbolId": "2499",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD BB Pullback Index",
+      "brokerSymbolId": "2628",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD BB Trend Down Index",
+      "brokerSymbolId": "2630",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURUSD BB Standard Index",
+      "brokerSymbolId": "2631",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 200 (1s) Index",
+      "brokerSymbolId": "2439",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Volatility 300 (1s) Index",
+      "brokerSymbolId": "2441",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "US_100",
+      "brokerSymbolId": "2255",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "India 50",
+      "brokerSymbolId": "2519",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "China 50",
+      "brokerSymbolId": "2520",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EOSUSD",
+      "brokerSymbolId": "2393",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Taiwan Index",
+      "brokerSymbolId": "2523",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "FETUSD",
+      "brokerSymbolId": "2587",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "Singapore 20",
+      "brokerSymbolId": "2524",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "US_30",
+      "brokerSymbolId": "2271",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MKRUSD",
+      "brokerSymbolId": "2399",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MTCUSD",
+      "brokerSymbolId": "2400",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "OMGUSD",
+      "brokerSymbolId": "2402",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XALUSD",
+      "brokerSymbolId": "2277",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XNIUSD",
+      "brokerSymbolId": "2279",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XPBUSD",
+      "brokerSymbolId": "2280",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "FB",
+      "brokerSymbolId": "2344",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "XZNUSD",
+      "brokerSymbolId": "2281",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "UK_100",
+      "brokerSymbolId": "2282",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EURILS",
+      "brokerSymbolId": "2474",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "US_500",
+      "brokerSymbolId": "2283",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "DAX_40",
+      "brokerSymbolId": "2284",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "BBBY",
+      "brokerSymbolId": "2540",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "ESP_35",
+      "brokerSymbolId": "2285",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "EUR_50",
+      "brokerSymbolId": "2286",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "FRA_40",
+      "brokerSymbolId": "2287",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NED_25",
+      "brokerSymbolId": "2288",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SAVE",
+      "brokerSymbolId": "2544",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "JP_225",
+      "brokerSymbolId": "2289",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "LYFT",
+      "brokerSymbolId": "2545",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUS_200",
+      "brokerSymbolId": "2290",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NKLA",
+      "brokerSymbolId": "2547",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "USDILS",
+      "brokerSymbolId": "2484",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "CVNA",
+      "brokerSymbolId": "2548",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SOFI",
+      "brokerSymbolId": "2549",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "RDDT",
+      "brokerSymbolId": "2550",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "AUDPLN",
+      "brokerSymbolId": "2487",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "FFIE",
+      "brokerSymbolId": "2551",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "SOUN",
+      "brokerSymbolId": "2555",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "GBPDKK",
+      "brokerSymbolId": "2492",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "MARA",
+      "brokerSymbolId": "2556",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    },
+    {
+      "symbol": "NOKIA_EU",
+      "brokerSymbolId": "2557",
+      "category": "unknown",
+      "status": "BLOCKED",
+      "reasons": [
+        "CFD_CATEGORY_REVIEW_REQUIRED",
+        "CATALOGUE_ARCHIVED"
+      ],
+      "quality": null,
+      "validation": null,
+      "batchAdjustedPValue": 1,
+      "researchSupported": false
+    }
+  ],
+  "complete": false,
+  "demoEligible": false,
+  "liveEligible": false,
+  "blockers": [
+    "CTRADER_ADAPTER_AND_BROKER_DEMO_VERIFICATION_PENDING",
+    "SOURCE_COST_AND_CONTRACT_VERIFICATION_REQUIRED",
+    "RESEARCH_REPORTS_DO_NOT_AUTHORIZE_TRADING"
+  ]
+}

@@ -7,8 +7,9 @@ vi.mock('ws', async () => {
     readyState = 1;
     constructor() { super(); queueMicrotask(() => { this.emit('open'); }); }
     send(raw: string, callback?: (error?: Error) => void): void {
-      const request = JSON.parse(raw) as { payloadType: number; clientMsgId: string };
+      const request = JSON.parse(raw) as { payloadType: number; clientMsgId: string; payload: Record<string, unknown> };
       state.requests.push(request.payloadType);
+      if ('ctidTraderAccountId' in request.payload && typeof request.payload.ctidTraderAccountId !== 'number') throw new Error('cTrader JSON requires a numeric account ID');
       const responses: Record<number, { type: number; payload: unknown }> = {
         2100: { type: 2101, payload: {} },
         2149: { type: 2150, payload: { ctidTraderAccount: [{ ctidTraderAccountId: '123', isLive: state.live }] } },

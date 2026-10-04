@@ -80,11 +80,19 @@ export class CTraderDemoConnection {
     if (socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error('cTrader connection is closed'));
     // Explicit allowlist prevents this diagnostic connection from submitting any trade.
     if (![2100, 2149, 2102, 2114, 2124, 2160, 2153].includes(type)) return Promise.reject(new Error('Unsupported diagnostic request'));
+    // The cTrader JSON endpoint requires a numeric account ID on the wire.
+    // Keep identity strings internally, and reject values JS cannot represent exactly.
+    const wirePayload = { ...payload };
+    if ('ctidTraderAccountId' in wirePayload) {
+      const accountId = Number(wirePayload.ctidTraderAccountId);
+      if (!Number.isSafeInteger(accountId) || accountId <= 0) return Promise.reject(new Error('cTrader JSON account ID cannot be represented safely'));
+      wirePayload.ctidTraderAccountId = accountId;
+    }
     const id = randomUUID();
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => { this.pending.delete(id); reject(new Error('cTrader request timed out')); }, 10000);
       this.pending.set(id, { expected, resolve, reject, timer });
-      socket.send(JSON.stringify({ clientMsgId: id, payloadType: type, payload }), error => {
+      socket.send(JSON.stringify({ clientMsgId: id, payloadType: type, payload: wirePayload }), error => {
         if (error) this.fail();
       });
     });
