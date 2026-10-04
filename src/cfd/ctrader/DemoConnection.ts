@@ -13,13 +13,37 @@ const idSchema = z.union([z.string().regex(/^[1-9]\d*$/), z.number().int().posit
 const accountsSchema = z.object({ ctidTraderAccount: z.array(z.object({ ctidTraderAccountId: idSchema, isLive: z.boolean() })).default([]) });
 const authSchema = z.object({ ctidTraderAccountId: idSchema });
 
-/** Read-only demo bootstrap. No order payload is accepted by this connection. */
+/** Demo-only session. Diagnostic instances reject all order payloads by default. */
 export class CTraderDemoConnection {
   private socket: WebSocket | undefined;
   private heartbeat: ReturnType<typeof setInterval> | undefined;
   private readonly pending = new Map<string, { expected: number; resolve: (value: Record<string, unknown>) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private authenticated = false;
-  constructor(private readonly config: CTraderConfig) { ctraderConfigSchema.parse(config); }
+  private readonly listeners = new Set<(type: number, payload: Record<string, unknown>) => void>();
+  private readonly disconnectListeners = new Set<() => void>();
+  private nextRequestAt = 0;
+  constructor(private readonly config: CTraderConfig, private readonly options: { allowDemoOrders?: boolean } = {}) { ctraderConfigSchema.parse(config); }
+  get accountId(): string { return this.config.accountId; }
+  onEvent(listener: (type: number, payload: Record<string, unknown>) => void): () => void {
+    this.listeners.add(listener); return () => { this.listeners.delete(listener); };
+  }
+  onDisconnect(listener: () => void): () => void {
+    this.disconnectListeners.add(listener); return () => { this.disconnectListeners.delete(listener); };
+  }
+  /** Fixed request/response pairs prevent callers from bypassing the diagnostic allowlist. */
+  async read(type: number, payload: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+    const responses: Record<number, number> = { 2112: 2113, 2114: 2115, 2116: 2117, 2118: 2119,
+      2121: 2122, 2124: 2125, 2127: 2128, 2129: 2130, 2133: 2134, 2139: 2140,
+      2145: 2146, 2153: 2154, 2160: 2161, 2175: 2176, 2177: 2178, 2179: 2180,
+      2181: 2182, 2183: 2184, 2187: 2188 };
+    const expected = responses[type];
+    if (!this.authenticated || expected === undefined) throw new Error('Unsupported or unauthenticated cTrader read');
+    return this.request(type, expected, { ...payload, ctidTraderAccountId: this.config.accountId });
+  }
+  async trade(type: 2106 | 2111, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    if (!this.authenticated || !this.options.allowDemoOrders) throw new Error('cTrader demo order capability is disabled');
+    return this.request(type, 2126, { ...payload, ctidTraderAccountId: this.config.accountId });
+  }
 
   async connect(): Promise<void> {
     if (this.socket) throw new Error('cTrader connection already started');
@@ -75,11 +99,14 @@ export class CTraderDemoConnection {
       assetClasses: classes.assetClass ?? [], archivedSymbols: symbols.archivedSymbol ?? [] });
   }
 
-  private request(type: number, expected: number, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+  private async request(type: number, expected: number, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const wait = Math.max(0, this.nextRequestAt - Date.now());
+    this.nextRequestAt = Date.now() + wait + 220;
+    if (wait) await new Promise(resolve => setTimeout(resolve, wait));
     const socket = this.socket;
     if (socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error('cTrader connection is closed'));
     // Explicit allowlist prevents this diagnostic connection from submitting any trade.
-    if (![2100, 2149, 2102, 2114, 2124, 2160, 2153].includes(type)) return Promise.reject(new Error('Unsupported diagnostic request'));
+    if ([2106, 2111].includes(type) && !this.options.allowDemoOrders) throw new Error('Demo order capability is disabled');
     // The cTrader JSON endpoint requires a numeric account ID on the wire.
     // Keep identity strings internally, and reject values JS cannot represent exactly.
     const wirePayload = { ...payload };
@@ -102,6 +129,9 @@ export class CTraderDemoConnection {
     try { frame = frameSchema.parse(JSON.parse(raw) as unknown); }
     catch { this.close(); return; }
     if ([2147, 2148, 2164].includes(frame.payloadType)) { this.close(); return; }
+    if ('ctidTraderAccountId' in frame.payload && String(frame.payload.ctidTraderAccountId) !== this.config.accountId) { this.close(); return; }
+    try { for (const listener of this.listeners) listener(frame.payloadType, frame.payload); }
+    catch { this.close(); return; }
     if (!frame.clientMsgId) return;
     const pending = this.pending.get(frame.clientMsgId);
     if (!pending) return;
@@ -111,7 +141,9 @@ export class CTraderDemoConnection {
     else pending.resolve(frame.payload);
   }
   private fail(): void {
+    const wasAuthenticated = this.authenticated;
     this.authenticated = false;
+    if (wasAuthenticated) for (const listener of this.disconnectListeners) listener();
     if (this.heartbeat) clearInterval(this.heartbeat);
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new Error('cTrader connection interrupted')); }
     this.pending.clear();
