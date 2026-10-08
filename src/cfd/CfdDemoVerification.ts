@@ -9,7 +9,7 @@ export async function verifyCfdDemo(broker: ReconcilingCfdBroker, controller: Cf
   const order = cfdOrderSchema.parse(orderInput);
   const before = await broker.snapshot();
   if (!limits.accountId || !Number.isFinite(limits.maxVolumeLots) || limits.maxVolumeLots <= 0 || order.volumeLots > limits.maxVolumeLots) throw new Error('Demo verification volume limit exceeded');
-  if (before.account.mode !== 'DEMO' || before.account.id !== limits.accountId || before.positions.length) throw new Error('Verification requires the designated demo account with no existing positions');
+  if (before.account.mode !== 'DEMO' || before.account.id !== limits.accountId || before.positions.some(position => controller.ownsPosition(position.id))) throw new Error('Verification requires the designated demo account with no existing bot-owned positions');
   const attempt = registry.begin({ before, order }, { product: 'CFD', purpose: 'DEMO_EXECUTION_VERIFICATION', limits: { accountId: limits.accountId, maxVolumeLots: limits.maxVolumeLots }, physicalReconnect: Boolean(limits.reconnect) }, 'VALIDATION_STUDY');
   try {
     const ready = await controller.reconcile();
@@ -18,7 +18,7 @@ export async function verifyCfdDemo(broker: ReconcilingCfdBroker, controller: Cf
     if (opened.status !== 'FILLED') throw new Error('Demo open did not produce a confirmed full fill; reconcile before any replacement');
     const during = await broker.snapshot();
     const position = during.positions.find(row => row.id === opened.fill.positionId);
-    if (during.account.id !== limits.accountId || during.account.mode !== 'DEMO' || during.positions.length !== 1 || position?.symbol !== order.symbol || position.side !== order.side || Math.abs(position.volumeLots - order.volumeLots) > 1e-8 || position.stopLoss === null) throw new Error('Broker position/protection did not match the demo order');
+    if (during.account.id !== limits.accountId || during.account.mode !== 'DEMO' || during.positions.filter(row => controller.ownsPosition(row.id)).length !== 1 || position?.symbol !== order.symbol || position.side !== order.side || Math.abs(position.volumeLots - order.volumeLots) > 1e-8 || position.stopLoss === null) throw new Error('Broker position/protection did not match the demo order');
     // Simulate application losing readiness, then require broker reconciliation before closing.
     controller.disconnected();
     if (limits.reconnect) await limits.reconnect();
@@ -27,9 +27,9 @@ export async function verifyCfdDemo(broker: ReconcilingCfdBroker, controller: Cf
     const closed = await controller.close(position.id, position.volumeLots);
     if (closed.status !== 'FILLED') throw new Error('Demo close outcome uncertain; reconciliation required');
     const after = await broker.snapshot();
-    if (after.account.mode !== 'DEMO' || after.account.id !== limits.accountId || after.positions.length || Math.abs(after.account.margin) > 1e-8) throw new Error('Demo account did not return to a flat position state');
+    if (after.account.mode !== 'DEMO' || after.account.id !== limits.accountId || after.positions.some(row => controller.ownsPosition(row.id)) || after.positions.some(row => row.id === position.id)) throw new Error('Demo bot did not return to a flat position state');
     const result = { ...attempt, status: 'ROUND_TRIP_CONFIRMED', provider: before.account.provider, accountId: limits.accountId,
-      opened, closed, before, during, after, liveEligible: false,
+      opened, closed, before, during, after, riskScope: 'BOT_STOP_RISK_WITH_SHARED_ACCOUNT_EQUITY_AND_MARGIN', externalPositionsAfter: after.positions.filter(row => !controller.ownsPosition(row.id)).length, liveEligible: false,
       limitations: [...(limits.reconnect ? ['Physical reconnect tested after a confirmed fill; mid-fill disconnects require separate fault tests'] : ['Readiness reset is not a physical network-disconnect test']), 'One round trip does not validate profitability, all symbols, or live readiness', 'Adapter identity, broker statements and real disconnect scenarios require independent verification'] };
     registry.finish(attempt.attemptId, 'COMPLETED', result);
     return result;

@@ -1,3 +1,15 @@
+## Execution recovery and validation audit — 2026-10-08
+
+Resumed the interrupted CFD integration. Authenticated broker order history confirmed both sides of the October 4 BTCUSD demo test: opening order **45450104**, closing order **45450223**, position **142685327**, volume **0.01 lots**, entry **85321.011**, exit **85286.874**. Price-based PnL is approximately **-$0.34137** before any other account adjustments; recorded deal commission is zero. The closing UNKNOWN intent was reconciled to FILLED. There are now **zero unresolved bot intents**. The original failed harness receipt remains unchanged; these recovered fills do not establish that the complete round-trip/reconnect harness passed.
+
+The current account contains an unrelated **10-lot XAUUSD short**, position **143532857**, outside this bot's ledger. It was left untouched. The controller rejects foreign exposure, so further account-wide verification remains blocked. No new orders were submitted during this continuation.
+
+Fixed stale socket close/error/message events invalidating a newly connected session; queued requests cannot cross socket sessions. Diagnostic instances retain disabled order capability, and read responses require the selected account identity. Accepted orders retry temporarily unavailable details with a bounded read-only loop; submission is never retried. Added regression tests for these boundaries. Direct CFD validation now exposes data-span, observation-count, continuity, cost and incomplete-search blockers before evaluating candidates or consuming a holdout. Updated the optional broker-method mock typing and synchronized current workflow/guide status.
+
+Refreshed actual CFD catalogue: **430 entries, 201 real-market research candidates**. Saved `data/cfd-account-plan-2026-10-08.json` and ran the exhaustive validation-readiness audit in `data/cfd-readiness-2026-10-08.json`. All entries remain blocked: eligible real markets lack required historical inputs; disabled, archived and paused synthetic entries remain explicitly represented. No strategy was promoted or shown profitable.
+
+Verification: **274 tests passed across 44 files**, source and test TypeScript checks and build passed. Lint passed with two existing fixture return-type warnings and no errors. The sandbox initially blocked CLI subprocess tests with EPERM; the authorized rerun passed. Strategy validation and the full physical-reconnect demo workflow remain incomplete; live trading remains blocked.
+
 ## Actual cTrader demo connection and catalogue — 2026-10-04
 
 Application credentials and the access token authenticated successfully. The configured API account ID 48688460 identifies demo trader login 2552246. The previously discussed demo login 2566142 is a separate authorized account with API ID 48802296. Saved selection was preserved; no live account was authenticated and no orders were submitted. Demo inspection reported no open positions or pending orders.

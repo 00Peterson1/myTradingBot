@@ -89,5 +89,5 @@ export async function researchCfdBatch(planInput: unknown, baseDirectory: string
   });
   return { planId: contentHash(plan), universeSource: plan.universeSource, catalogueId: plan.catalogue ? catalogueIdentity(plan.catalogue) : null, accountId: plan.catalogue?.accountId ?? null, mode: evaluate ? 'VALIDATE' : 'AUDIT', symbols: rows,
     complete: rows.length > 0 && rows.every(row => row.validation !== null), demoEligible: false, liveEligible: false,
-    blockers: [...(!plan.catalogue ? ['CTRADER_CATALOGUE_PENDING'] : []), 'CTRADER_ADAPTER_AND_BROKER_DEMO_VERIFICATION_PENDING', 'SOURCE_COST_AND_CONTRACT_VERIFICATION_REQUIRED', 'RESEARCH_REPORTS_DO_NOT_AUTHORIZE_TRADING'] };
+    blockers: [...(!plan.catalogue ? ['CTRADER_CATALOGUE_PENDING'] : []), 'BROKER_DEMO_WORKFLOW_VERIFICATION_REQUIRED', 'SOURCE_COST_AND_CONTRACT_VERIFICATION_REQUIRED', 'RESEARCH_REPORTS_DO_NOT_AUTHORIZE_TRADING'] };
 }

@@ -38,7 +38,7 @@ async function main(): Promise<void> {
       maxSpreadFraction: 0.01, maxQuoteAgeMs: 15000, commissionPerLotRoundTrip: 0, maxPositions: 1, maxDailyLossFraction: 0.02 };
     // This authorization is restricted to one operator-requested connectivity test, not a strategy permit.
     const hypothesisId = `DEMO_CONNECTIVITY_ONLY:${randomUUID()}`;
-    controller = new CfdExecutionController(broker, ledger, policy, snapshot.account.equity, { demoAccountId: config.accountId, now: Date.now,
+    controller = new CfdExecutionController(broker, ledger, policy, snapshot.account.equity, { demoAccountId: config.accountId, externalPositions: 'COEXIST', now: Date.now,
       authorizeHypothesis: (order): Promise<void> => {
         if (!verify || order.hypothesisId !== hypothesisId) return Promise.reject(new Error('No validated CFD strategy permit'));
         return Promise.resolve();
@@ -57,7 +57,7 @@ async function main(): Promise<void> {
       const closed = await controller.close(position.id, position.volumeLots);
       const reconciled = await controller.reconcile();
       print(JSON.stringify({ closed, reconciled, accountId: config.accountId, liveEligible: false }));
-      if (reconciled.unresolved || reconciled.positions) process.exitCode = 2;
+      if (reconciled.unresolved || (await broker.snapshot()).positions.some(row => activeController.ownsPosition(row.id))) process.exitCode = 2;
       return;
     }
     if (!values.symbol) throw new Error('--symbol must be an exact CFD catalogue name');

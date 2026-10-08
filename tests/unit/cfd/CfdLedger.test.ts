@@ -10,7 +10,7 @@ import type { CfdBroker, CfdOrder } from '../../../src/cfd/types.js';
 const identity = { provider: 'PAPER', id: 'fixture', mode: 'PAPER' } as const;
 const order = (): CfdOrder => ({ product: 'CFD', clientOrderId: randomUUID(), hypothesisId: 'fixture', symbol: 'EURUSD', side: 'LONG', volumeLots: 0.1, stopLoss: 1, takeProfit: null, maxSlippagePoints: 1, createdAtMs: 1000 });
 const fill = { orderId: 'broker-order', positionId: 'position', filledLots: 0.1, price: 1.1, commission: 0.3, timeMs: 1000 };
-type FixtureBroker = { [K in keyof CfdBroker]: Mock<CfdBroker[K]> };
+type FixtureBroker = { [K in keyof CfdBroker]: Mock<NonNullable<CfdBroker[K]>> };
 function fixtureBroker(): FixtureBroker {
   return { snapshot: vi.fn().mockResolvedValue({ account: { ...identity, currency: 'USD', balance: 10000, equity: 10000, margin: 0, freeMargin: 10000, tradeAllowed: true, hedging: true, timeMs: 1000 }, positions: [] }),
     instrument: vi.fn(), quote: vi.fn(), estimateMargin: vi.fn(), estimateProfit: vi.fn(), submit: vi.fn().mockResolvedValue({ status: 'FILLED', fill }), close: vi.fn().mockResolvedValue({ status: 'FILLED', fill }) };

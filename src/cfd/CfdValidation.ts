@@ -38,11 +38,20 @@ export async function validateCfd(datasetInput: CfdDataset, configInput: CfdBack
   };
   try {
     const quality = inspectCfdData(dataset, config.maxGapMs);
+    const blockers: string[] = [];
+    if (dataset.kind === 'FIXTURE') blockers.push('FIXTURE_IS_NOT_MARKET_EVIDENCE');
+    if (dataset.kind === 'SCENARIO_BID_ASK') blockers.push('ASSUMED_COSTS_REQUIRE_VERIFICATION');
+    if (days < policy.minDays) blockers.push('INSUFFICIENT_HISTORY_SPAN');
+    if (quality.activeUtcDays < Math.ceil(policy.minDays * 0.35)) blockers.push('INSUFFICIENT_OBSERVED_DAYS');
+    if (dataset.quotes.length < 5 * (Math.max(...lookbacks) + policy.minTradesPerPeriod)) blockers.push('INSUFFICIENT_QUOTE_COUNT');
+    if (quality.longestContinuousQuotes <= Math.max(...lookbacks)) blockers.push('INSUFFICIENT_CONTINUOUS_QUOTES');
+    if (config.risk.commissionPerLotRoundTrip < 2 * config.commissionPerLotPerSide) blockers.push('RISK_UNDERSTATES_COMMISSION');
+    if (trials !== candidates.length) blockers.push('RECORDED_SEARCH_NOT_FULLY_REPRESENTED');
     let verdict = 'INSUFFICIENT_EVIDENCE';
     const development: { hypothesisId: string; config: CfdBacktestConfig; periods: PeriodResult[] }[] = [];
     let final: PeriodResult | null = null, stress: PeriodResult | null = null, selectedId: string | null = null;
     let adjustedPValues: number[] = [], pbo: number | null = null;
-    if (days >= policy.minDays && dataset.quotes.length >= 5 * (Math.max(...lookbacks) + policy.minTradesPerPeriod) && (dataset.kind === 'BROKER_BID_ASK' || dataset.kind === 'EXTERNAL_BID_ASK') && quality.activeUtcDays >= Math.ceil(policy.minDays * 0.35)) {
+    if (blockers.length === 0) {
       const n = dataset.quotes.length, cuts = [0, Math.floor(n * 0.3), Math.floor(n * 0.55), Math.floor(n * 0.8), n];
       for (let candidateIndex = 0; candidateIndex < candidates.length; candidateIndex++) {
         const candidate = candidates[candidateIndex], hypothesisId = identities[candidateIndex];
@@ -82,7 +91,7 @@ export async function validateCfd(datasetInput: CfdDataset, configInput: CfdBack
         } else verdict = 'REJECTED';
       } else if (completeSearch && pbo !== null && development.every(candidate => candidate.periods.every(period => period.result.trades >= policy.minTradesPerPeriod))) verdict = 'NO_EDGE_FOUND';
     }
-    const outcome = { ...attempt, symbol: dataset.instrument.symbol, verdict, days, quality, development, stress, final, selectedId, adjustedPValues, pbo, recordedHypotheses: trials, recordedAllSymbolHypotheses: registry.countProductHypotheses('CFD'), inferenceScope: 'PER_SYMBOL_ONLY_NO_CROSS_SYMBOL_SELECTION',
+    const outcome = { ...attempt, symbol: dataset.instrument.symbol, verdict, blockers, days, quality, development, stress, final, selectedId, adjustedPValues, pbo, recordedHypotheses: trials, recordedAllSymbolHypotheses: registry.countProductHypotheses('CFD'), inferenceScope: 'PER_SYMBOL_ONLY_NO_CROSS_SYMBOL_SELECTION',
       demoEligible: false, liveEligible: false, limitations: ['Recorded CFD search for this symbol (including declarations without a symbol) must be completely represented; unrecorded searches are not observable', 'Bootstrap requires support across predeclared block lengths; DSR/CSCV assumptions are not proof of independence. PBO uses aligned prefix divisible by four', 'Source and cost metadata are declarations; independent broker verification remains required', 'No statistical result guarantees profitability'] };
     registry.finish(attempt.attemptId, 'COMPLETED', outcome);
     return outcome;

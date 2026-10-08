@@ -1,3 +1,7 @@
+## Current checkpoint — 2026-10-08
+
+The cTrader demo adapter is implemented and the earlier BTCUSD test's opening and closing fills have been reconciled against broker history. The complete demo verification harness has not passed; foreign account exposure currently blocks another run. Refreshed catalogue: 430 entries, 201 real-market research candidates. Every entry remains in the audit, including disabled and paused synthetic instruments. No per-symbol strategy has passed the required data/cost and validation gates. Direct validation now reports explicit insufficiency reasons and refuses discontinuous or understated-cost inputs before evaluating candidates or consuming holdouts. Earlier approval/adapter-pending statements below describe historical checkpoints, not current connectivity. See [CFD workflow](CFD_WORKFLOW.md).
+
 ## CFD universe correction — 2026-09-23
 
 CFD batch research now requires a cTrader account catalogue and exact broker symbol IDs/names. The active 43-symbol Options-derived plan was removed; it is not CFD coverage. Symbol/category/asset-class discovery is read-only, preserves every entry, and leaves unclassified, disabled, archived and paused-synthetic symbols visible. Account credentials remain unconfigured, so the actual CFD universe is pending rather than fabricated. See the latest [milestone checkpoint](MILESTONE_REVIEW.md).

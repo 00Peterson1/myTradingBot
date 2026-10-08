@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import Database from 'better-sqlite3';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { verifyCfdDemo } from '../../../src/cfd/CfdDemoVerification.js';
 import { CfdLedger } from '../../../src/cfd/CfdLedger.js';
 import { contentHash, ExperimentRegistry } from '../../../src/research/experiments/ExperimentRegistry.js';
@@ -67,11 +67,24 @@ describe('CFD research and recovery workflow', () => {
     expect(snapshot.account.balance).toBeCloseTo(9972);
     expect(paper.fills.at(-1)?.reason).toBe('SIMULATED_STOP_OUT');
   });
+  it('reports missing cost and continuity evidence before consuming a holdout', async () => {
+    const db = new Database(':memory:');
+    try {
+      const sparse = { ...dataset, kind: 'BROKER_BID_ASK' as const,
+        quotes: dataset.quotes.map((row, i) => ({ ...row, timeMs: i * 86400000 })) };
+      const understated = { ...config, commissionPerLotPerSide: 10, risk: { ...config.risk, commissionPerLotRoundTrip: 0 } };
+      const result = await validateCfd(sparse, understated, new ExperimentRegistry(db, { fixture: 'validation blockers' }));
+      expect(result.verdict).toBe('INSUFFICIENT_EVIDENCE');
+      expect(result.blockers).toEqual(expect.arrayContaining(['INSUFFICIENT_CONTINUOUS_QUOTES', 'RISK_UNDERSTATES_COMMISSION']));
+      expect(db.prepare('SELECT count(*) AS n FROM research_holdout_claims').get()).toEqual({ n: 0 });
+    } finally { db.close(); }
+  });
   it('records fixture validation as insufficient and never promotes it', async () => {
     const db = new Database(':memory:');
     try {
       const result = await validateCfd(dataset, config, new ExperimentRegistry(db, { fixture: 'test' }));
       expect(result.verdict).toBe('INSUFFICIENT_EVIDENCE');
+      expect(result.blockers).toContain('FIXTURE_IS_NOT_MARKET_EVIDENCE');
       expect(result.demoEligible).toBe(false);
       expect(db.prepare('SELECT * FROM research_holdout_claims').all()).toHaveLength(0);
       expect(db.prepare('SELECT * FROM experiment_outcomes').all()).toHaveLength(1);
@@ -81,7 +94,7 @@ describe('CFD research and recovery workflow', () => {
     const db = new Database(':memory:');
     try {
       const longData = { ...dataset, kind: 'EXTERNAL_BID_ASK' as const, source: 'Unit-test declaration only, not real market data', quotes: dataset.quotes.map((row, index) => ({ ...row, timeMs: 1700000000000 + index * 86400000 })) };
-      const result = await validateCfd(longData, config, new ExperimentRegistry(db, { fixture: 'long gap gate' }));
+      const result = await validateCfd(longData, { ...config, maxGapMs: 86400001 }, new ExperimentRegistry(db, { fixture: 'declared daily sampling' }));
       expect(result.verdict).toBe('INSUFFICIENT_EVIDENCE');
       expect(result.recordedHypotheses).toBe(3);
       expect(result.final).toBeNull();
@@ -111,6 +124,37 @@ describe('CFD research and recovery workflow', () => {
       expect(result.provider).toBe('FIXTURE');
       expect(result.liveEligible).toBe(false);
       expect((await broker.snapshot()).positions).toHaveLength(0);
+    } finally { db.close(); }
+  });
+  it('completes a demo round trip beside an unprotected manual trade and never closes that trade', async () => {
+    const db = new Database(':memory:');
+    try {
+      const paper = new PaperCfdBroker({ initialBalance: 10000, currency: 'USD', leverage: 100, commissionPerLotPerSide: 3, slippageTicks: 1, stopOutMarginRatio: 0.5 }, [dataset.instrument]);
+      paper.advance({ symbol: 'EURUSD', bid: 1.1, ask: 1.1002, timeMs: 1000 });
+      const original = paper.snapshot.bind(paper);
+      const manual = { id: 'phone-position', symbol: 'EURUSD', side: 'SHORT' as const, volumeLots: 1, entryPrice: 1.1,
+        currentPrice: 1.1002, stopLoss: null, takeProfit: null, unrealizedPnl: -20, financing: 0, clientOrderId: null };
+      let externalMargin = 100;
+      const closeSpy = vi.spyOn(paper, 'close');
+      const broker: ReconcilingCfdBroker = Object.assign(paper, { orderEvidence: (): Promise<CfdEvidence | null> => Promise.resolve(null) });
+      broker.snapshot = async (): ReturnType<ReconcilingCfdBroker['snapshot']> => {
+        const state = await original();
+        return { account: { ...state.account, provider: 'FIXTURE', id: 'shared', mode: 'DEMO', margin: state.account.margin + externalMargin,
+          freeMargin: state.account.freeMargin - externalMargin }, positions: [...state.positions, manual] };
+      };
+      const ledger = new CfdLedger(db, { provider: 'FIXTURE', id: 'shared', mode: 'DEMO' });
+      const controller = new CfdExecutionController(broker, ledger, { ...config.risk, maxPositions: 1, maxRiskFraction: 0.02 }, 10000,
+        { demoAccountId: 'shared', externalPositions: 'COEXIST', now: (): number => 1000, authorizeHypothesis: (): Promise<void> => Promise.resolve() });
+      const result = await verifyCfdDemo(broker, controller, order(), { accountId: 'shared', maxVolumeLots: 0.1 }, new ExperimentRegistry(db, { fixture: 'shared account' }));
+      expect(result.status).toBe('ROUND_TRIP_CONFIRMED');
+      expect(result.externalPositionsAfter).toBe(1);
+      expect((await broker.snapshot()).positions).toEqual([manual]);
+      expect(await controller.close(manual.id, 1)).toMatchObject({ status: 'REJECTED', reason: 'Preflight rejected before broker submission' });
+      expect(closeSpy).toHaveBeenCalledTimes(1);
+      externalMargin = 9999;
+      expect(await controller.open(order())).toMatchObject({ status: 'REJECTED', reason: 'Preflight rejected before broker submission' });
+      expect((await broker.snapshot()).positions).toEqual([manual]);
+      controller.dispose();
     } finally { db.close(); }
   });
   it('requires broker exit history when a stop removes a position from the snapshot', async () => {

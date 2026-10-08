@@ -223,12 +223,20 @@ export class CTraderDemoBroker implements ReconcilingCfdBroker {
   }
   private async dispatch(type: 2106 | 2111, payload: Wire, request: CfdRequest): Promise<CfdOrderResult> {
     try {
-      const event = await this.connection.trade(type, payload);
-      const id = request.kind === 'OPEN' ? request.order.clientOrderId : request.clientOrderId;
-      if (event.order) this.journal.bind(id, identifier(object(event.order).orderId));
+      try {
+        const event = await this.connection.trade(type, payload);
+        const id = request.kind === 'OPEN' ? request.order.clientOrderId : request.clientOrderId;
+        if (event.order) this.journal.bind(id, identifier(object(event.order).orderId));
+      } catch {
+        // A missing transport acknowledgement is not an execution verdict.
+        // Recover by client/order identity from broker history, without sending again.
+      }
       // ACCEPTED is not FILLED. Fetch cumulative authoritative details until terminal or bounded timeout.
       for (let attempt = 0; attempt < 12; attempt++) {
-        const evidence = await this.orderEvidence(request);
+        let evidence: CfdEvidence | null = null;
+        // Broker details can lag the acceptance event. Retry reads only, never the order.
+        try { evidence = await this.orderEvidence(request); }
+        catch { if (attempt === 11) break; }
         if (evidence) {
           const resolved = reconcileCfdEvidence(request, this.ledger.accountKey, evidence);
           if (resolved.terminal) return resolved.result;

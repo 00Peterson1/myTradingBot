@@ -18,7 +18,7 @@ async function fixture() {
   vi.spyOn(connection, 'catalogue').mockResolvedValue({ version: 1, provider: 'CTRADER', environment: 'DEMO', accountId: '123', capturedAt: new Date().toISOString(),
     symbols: [{ symbolId: '101', symbolName: 'BTCUSD', enabled: true, baseAssetId: '31', quoteAssetId: '15', symbolCategoryId: '1' }],
     categories: [{ id: '1', assetClassId: '1', name: 'Cryptos' }], assetClasses: [{ id: '1', name: 'Cryptocurrencies' }], archivedSymbols: [] });
-  const state = { brokerOrder: null as Wire | null, deals: [] as Wire[], positions: [] as Wire[], loseAck: false, partial: false, calls: [] as number[] };
+  const state = { brokerOrder: null as Wire | null, deals: [] as Wire[], positions: [] as Wire[], loseAck: false, partial: false, detailFailures: 0, calls: [] as number[] };
   const read = vi.spyOn(connection, 'read').mockImplementation((type, payload) => {
     state.calls.push(type);
     if (type === 2112) return Promise.resolve({ asset: [{ assetId: 15, name: 'USD' }, { assetId: 31, name: 'BTC' }] });
@@ -29,6 +29,7 @@ async function fixture() {
     if (type === 2187) return Promise.resolve({ moneyDigits: 2, positionUnrealizedPnL: state.positions.map(row => ({ positionId: row.positionId, netUnrealizedPnL: -5, grossUnrealizedPnL: -5 })) });
     if (type === 2127) { event(2131, { symbolId: 101, bid: 7000000000, ask: 7000100000, timestamp: Date.now() }); return Promise.resolve({}); }
     if (type === 2139) return Promise.resolve({ moneyDigits: 2, margin: [{ volume: (payload?.volume as number[])[0], buyMargin: 700, sellMargin: 701 }] });
+    if (type === 2181 && state.detailFailures-- > 0) return Promise.reject(new Error('Details temporarily unavailable'));
     if (type === 2181) return Promise.resolve({ order: state.brokerOrder, deal: state.deals });
     if (type === 2175) return Promise.resolve({ hasMore: false, order: state.brokerOrder ? [state.brokerOrder] : [] });
     throw new Error(`Unexpected fixture read ${String(type)}`);
@@ -66,9 +67,17 @@ describe('actual cTrader demo adapter with protocol fixtures', () => {
     await broker.submit(order);
     expect(trade).toHaveBeenCalledTimes(1);
   });
+  it('retries unavailable deal details without resubmitting an accepted order', async () => {
+    const { broker, ledger, order, trade, state } = await fixture();
+    state.detailFailures = 2;
+    ledger.begin({ kind: 'OPEN', order });
+    expect((await broker.submit(order)).status).toBe('FILLED');
+    expect(trade).toHaveBeenCalledTimes(1);
+    expect(state.calls.filter(type => type === 2181)).toHaveLength(3);
+  });
   it('recovers a lost opening acknowledgement using client identity, without resending', async () => {
     const { broker, ledger, order, trade, state } = await fixture(); state.loseAck = true; ledger.begin({ kind: 'OPEN', order });
-    expect((await broker.submit(order)).status).toBe('UNKNOWN');
+    expect((await broker.submit(order)).status).toBe('FILLED');
     const evidence = await broker.orderEvidence({ kind: 'OPEN', order });
     expect(evidence).toMatchObject({ state: 'FILLED', completeDealHistory: true, brokerOrderId: '44' });
     expect(trade).toHaveBeenCalledTimes(1);

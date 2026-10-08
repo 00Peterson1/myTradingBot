@@ -27,7 +27,7 @@ export class CfdExecutionController {
   }
   constructor(private readonly broker: ReconcilingCfdBroker, private readonly ledger: CfdLedger,
     policy: CfdRiskPolicy, private readonly dailyStartEquity: number,
-    private readonly options: { demoAccountId?: string; authorizeHypothesis: (order: CfdOrder) => Promise<void>; now: () => number }) {
+    private readonly options: { demoAccountId?: string; externalPositions?: 'COEXIST'; authorizeHypothesis: (order: CfdOrder) => Promise<void>; now: () => number }) {
     this.policy = cfdRiskPolicySchema.parse(policy);
     if (!Number.isFinite(dailyStartEquity) || dailyStartEquity <= 0) throw new Error('A persisted or broker-verified daily equity baseline is required');
     this.service = new CfdSubmissionService(broker, ledger, { ...(options.demoAccountId ? { demoAccountId: options.demoAccountId } : {}), preflight: (request, snapshot): Promise<void> => this.preflight(request, snapshot) });
@@ -80,6 +80,9 @@ export class CfdExecutionController {
       return this.service.dispatch({ kind: 'CLOSE', positionId, volumeLots, clientOrderId });
     });
   }
+  ownsPosition(positionId: string): boolean {
+    return !this.ledger.positionClosed(positionId) && (this.ownedVolumes().get(positionId) ?? 0) > 1e-8;
+  }
   private ownedVolumes(): Map<string, number> {
     const volumes = new Map<string, number>();
     for (const intent of this.ledger.intents()) {
@@ -105,6 +108,7 @@ export class CfdExecutionController {
     for (const position of positions) {
       if (this.ledger.positionClosed(position.id)) throw new Error('Closed CFD position reappeared');
       const order = knownPositions.get(position.id);
+      if (!order && this.options.externalPositions === 'COEXIST') continue;
       if (position.symbol !== order?.symbol || position.side !== order.side || position.volumeLots > order.volumeLots + 1e-8) throw new Error('Foreign or mismatched CFD position');
       if (!allowRiskReduction && (position.stopLoss === null || (position.side === 'LONG' ? position.stopLoss < order.stopLoss - 1e-8 : position.stopLoss > order.stopLoss + 1e-8))) throw new Error('Unprotected CFD position or widened stop loss');
     }
@@ -113,6 +117,7 @@ export class CfdExecutionController {
     if (!this.ready) throw new Error('CFD connection has not been reconciled');
     this.checkSnapshot(snapshot, request.kind === 'CLOSE');
     if (request.kind === 'CLOSE') {
+      if (!this.ownsPosition(request.positionId)) throw new Error('Cannot close a position not owned by this bot');
       const position = snapshot.positions.find(row => row.id === request.positionId);
       if (!position || request.volumeLots > position.volumeLots) throw new Error('Invalid close position or volume');
       const instrument = await this.broker.instrument(position.symbol);
@@ -124,7 +129,10 @@ export class CfdExecutionController {
     if (Math.floor(snapshot.account.timeMs / 86400000) !== this.baselineDay) throw new Error('New UTC day requires a verified daily equity baseline and new controller');
     await this.options.authorizeHypothesis(request.order);
     let reservedRisk = 0;
-    for (const position of snapshot.positions) {
+    const riskPositions = this.options.externalPositions === 'COEXIST' ? snapshot.positions.filter(position => this.ownsPosition(position.id)) : snapshot.positions;
+    // Stop-risk and position-count limits govern this bot. Account equity, margin and daily loss remain shared.
+    // Manual positions without stops have unbounded planned risk; do not fabricate a stop-loss estimate for them.
+    for (const position of riskPositions) {
       if (position.stopLoss === null) throw new Error('Missing position protection');
       const order: CfdOrder = { ...request.order, symbol: position.symbol, side: position.side, volumeLots: position.volumeLots, stopLoss: position.stopLoss };
       const loss = await this.broker.estimateProfit(order, position.currentPrice, position.stopLoss);
@@ -133,7 +141,7 @@ export class CfdExecutionController {
       if (!Number.isFinite(commission) || commission < 0) throw new Error('Invalid broker commission estimate');
       reservedRisk += Math.max(0, -loss) + Math.max(commission, position.volumeLots * this.policy.commissionPerLotRoundTrip);
     }
-    await approveCfdOrder(this.broker, request.order, snapshot.account, this.policy, { positions: snapshot.positions.length, reservedMargin: 0, reservedRisk, dailyStartEquity: this.ledger.dailyBaseline(snapshot.account.timeMs, this.dailyStartEquity) }, this.options.now);
+    await approveCfdOrder(this.broker, request.order, snapshot.account, this.policy, { positions: riskPositions.length, reservedMargin: 0, reservedRisk, dailyStartEquity: this.ledger.dailyBaseline(snapshot.account.timeMs, this.dailyStartEquity) }, this.options.now);
     this.ledger.acquireRunner(this.owner);
     if (!this.isReady()) throw new Error('CFD disconnected during preflight');
   }

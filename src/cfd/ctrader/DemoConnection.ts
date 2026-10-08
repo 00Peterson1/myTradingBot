@@ -38,10 +38,12 @@ export class CTraderDemoConnection {
       2181: 2182, 2183: 2184, 2187: 2188 };
     const expected = responses[type];
     if (!this.authenticated || expected === undefined) throw new Error('Unsupported or unauthenticated cTrader read');
-    return this.request(type, expected, { ...payload, ctidTraderAccountId: this.config.accountId });
+    const response = await this.request(type, expected, { ...payload, ctidTraderAccountId: this.config.accountId });
+    if (idSchema.parse(response.ctidTraderAccountId) !== this.config.accountId) throw new Error('cTrader response account mismatch');
+    return response;
   }
   async trade(type: 2106 | 2111, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    if (!this.authenticated || !this.options.allowDemoOrders) throw new Error('cTrader demo order capability is disabled');
+    if (![2106, 2111].includes(type) || !this.authenticated || !this.options.allowDemoOrders) throw new Error('cTrader demo order capability is disabled');
     return this.request(type, 2126, { ...payload, ctidTraderAccountId: this.config.accountId });
   }
 
@@ -49,9 +51,9 @@ export class CTraderDemoConnection {
     if (this.socket) throw new Error('cTrader connection already started');
     const socket = new WebSocket('wss://demo.ctraderapi.com:5036', { handshakeTimeout: 10000 });
     this.socket = socket;
-    socket.on('message', data => { this.receive((Array.isArray(data) ? Buffer.concat(data) : data instanceof ArrayBuffer ? Buffer.from(data) : data).toString('utf8')); });
-    socket.on('close', () => { this.fail(); });
-    socket.on('error', () => { this.fail(); });
+    socket.on('message', data => { if (this.socket !== socket) return; this.receive((Array.isArray(data) ? Buffer.concat(data) : data instanceof ArrayBuffer ? Buffer.from(data) : data).toString('utf8')); });
+    socket.on('close', () => { if (this.socket === socket) this.fail(); });
+    socket.on('error', () => { if (this.socket === socket) this.fail(); });
     try {
       await new Promise<void>((resolve, reject) => {
         socket.once('open', resolve);
@@ -100,12 +102,14 @@ export class CTraderDemoConnection {
   }
 
   private async request(type: number, expected: number, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const originalSocket = this.socket;
     const wait = Math.max(0, this.nextRequestAt - Date.now());
     this.nextRequestAt = Date.now() + wait + 220;
     if (wait) await new Promise(resolve => setTimeout(resolve, wait));
     const socket = this.socket;
-    if (socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error('cTrader connection is closed'));
-    // Explicit allowlist prevents this diagnostic connection from submitting any trade.
+    if (socket !== originalSocket || socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error('cTrader connection is closed'));
+    if (![2100, 2149, 2102].includes(type) && !this.authenticated) throw new Error('cTrader session requires authentication');
+    // Diagnostic connections cannot submit orders.
     if ([2106, 2111].includes(type) && !this.options.allowDemoOrders) throw new Error('Demo order capability is disabled');
     // The cTrader JSON endpoint requires a numeric account ID on the wire.
     // Keep identity strings internally, and reject values JS cannot represent exactly.

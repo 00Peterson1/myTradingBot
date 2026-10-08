@@ -1,0 +1,7 @@
+{
+  "experimentId": "43a8372535b404a3a61b2dd9cbeb989d6f6bdd05d178e9d0eae94134d0bd2da4",
+  "attemptId": "4b7ba83a-6a8e-4eaf-b2f0-d818a393e22c",
+  "status": "FAILED_REVIEW_ACCOUNT_AND_RECONCILE",
+  "reason": "Demo open did not produce a confirmed full fill; reconcile before any replacement",
+  "liveEligible": false
+}
