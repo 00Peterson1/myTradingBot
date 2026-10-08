@@ -40,7 +40,13 @@ export class CTraderDemoBroker implements ReconcilingCfdBroker {
       if (type === 2120) this.specs.clear();
       if (type === 2126 && payload.order) {
         const order = object(payload.order);
-        if (typeof order.clientOrderId === 'string' && this.journal.find(order.clientOrderId)) this.journal.bind(order.clientOrderId, identifier(order.orderId));
+        // cTrader can inherit the opening client ID on protective/closing orders.
+        // Those are different broker orders, not new acknowledgements of the open.
+        if (order.closingOrder !== true && enumIs(order.orderType, 5, 'MARKET_RANGE') && typeof order.clientOrderId === 'string') {
+          const prior = this.journal.find(order.clientOrderId);
+          const brokerId = identifier(order.orderId);
+          if (prior && (!prior.broker_order_id || prior.broker_order_id === brokerId)) this.journal.bind(order.clientOrderId, brokerId);
+        }
       }
     });
     this.removeDisconnect = connection.onDisconnect(() => { this.spots.clear(); this.subscriptions.clear(); this.specs.clear(); });
@@ -222,6 +228,7 @@ export class CTraderDemoBroker implements ReconcilingCfdBroker {
     return this.dispatch(2111, { positionId: integer(positionId), volume }, request);
   }
   private async dispatch(type: 2106 | 2111, payload: Wire, request: CfdRequest): Promise<CfdOrderResult> {
+    let diagnostic = 'No terminal broker evidence';
     try {
       try {
         const event = await this.connection.trade(type, payload);
@@ -236,7 +243,7 @@ export class CTraderDemoBroker implements ReconcilingCfdBroker {
         let evidence: CfdEvidence | null = null;
         // Broker details can lag the acceptance event. Retry reads only, never the order.
         try { evidence = await this.orderEvidence(request); }
-        catch { if (attempt === 11) break; }
+        catch (error) { diagnostic = error instanceof z.ZodError ? 'Incomplete broker evidence' : error instanceof Error ? error.message : 'Broker evidence unavailable'; if (attempt === 11) break; }
         if (evidence) {
           const resolved = reconcileCfdEvidence(request, this.ledger.accountKey, evidence);
           if (resolved.terminal) return resolved.result;
@@ -244,7 +251,7 @@ export class CTraderDemoBroker implements ReconcilingCfdBroker {
         await new Promise(resolve => setTimeout(resolve, 250));
       }
     } catch { /* A post-dispatch exception cannot prove the order was rejected. */ }
-    return { status: 'UNKNOWN', reason: 'Broker outcome uncertain; reconcile the durable intent before any further order' };
+    return { status: 'UNKNOWN', reason: `Broker outcome uncertain; reconcile before any further order. ${diagnostic}` };
   }
   private async existingResult(request: CfdRequest): Promise<CfdOrderResult> {
     const evidence = await this.orderEvidence(request);
@@ -256,7 +263,7 @@ export class CTraderDemoBroker implements ReconcilingCfdBroker {
     if (intent?.request_hash !== contentHash(request)) return null;
     if (!intent.broker_order_id && request.kind === 'OPEN') {
       const history = await completeHistory((fromTimestamp, toTimestamp) => this.connection.read(2175, { fromTimestamp, toTimestamp }), 'order', 'orderId', Math.max(0, request.order.createdAtMs - 5000), Date.now());
-      const matching = history.filter(row => row.clientOrderId === clientId);
+      const matching = history.filter(row => row.clientOrderId === clientId && row.closingOrder !== true && enumIs(row.orderType, 5, 'MARKET_RANGE'));
       if (matching.length > 1) throw new Error('Multiple broker orders share a client identity');
       if (matching[0]) { this.journal.bind(clientId, identifier(matching[0].orderId)); intent = this.journal.find(clientId); }
     }

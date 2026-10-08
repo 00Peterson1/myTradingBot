@@ -10,9 +10,9 @@
 
 `CTraderDemoBroker` now connects these components to the authenticated demo account: quotes, lot/price/money units, currency conversion, broker margin and commission estimates, atomic protected market-range orders, closes and cumulative deal reconciliation. Durable dispatch markers prevent resubmission after lost acknowledgements. Close requests without an acknowledged broker order ID remain ambiguous and blocked rather than matched by time/volume guesses. `cfd:doctor` remains read-only.
 
-`npm run cfd:execution -- --symbol BTCUSD` inspects the account and contract. `--reconcile` reads broker evidence and updates the ledger without trading. `--close-position ID` closes only a controller-verified, ledger-owned position. `--symbol BTCUSD --verify-demo --max-loss 2 --out NEW_RECEIPT.json` requests one minimum-volume protected demo round trip; the cap is planned loss in account currency, not a guarantee against gaps. Verification requires an empty account. It does not authorize an automated strategy or live trading.
+`npm run cfd:execution -- --symbol BTCUSD` inspects the account and contract. `--reconcile` reads broker evidence and updates the ledger without trading. `--close-position ID` closes only a controller-verified, ledger-owned position. `--symbol BTCUSD --verify-demo --max-loss 2 --out NEW_RECEIPT.json` requests one minimum-volume protected demo round trip; the cap is planned loss in account currency, not a guarantee against gaps. Verification requires no pre-existing bot-owned positions; manual positions may remain open on the hedged account. It does not authorize an automated strategy or live trading.
 
-On October 8, broker history confirmed that the October 4 BTCUSD test opened and closed 0.01 lots (orders 45450104 and 45450223, position 142685327). Both ledger intents are now FILLED. The original harness receipt remains FAILED and is not rewritten as a successful uninterrupted workflow. A separate 10-lot XAUUSD short now blocks further execution verification because it is not owned by this ledger; it was left untouched.
+On October 8, broker history confirmed that the October 4 BTCUSD test opened and closed 0.01 lots (orders 45450104 and 45450223, position 142685327). Both ledger intents are now FILLED. The original harness receipt remains FAILED and is not rewritten as a successful uninterrupted workflow. That foreign-position block was superseded by explicit shared-account coexistence later on October 8; the manual XAUUSD position was left untouched.
 
 ## Bid/ask dataset contract
 
@@ -49,7 +49,7 @@ A positive result is labelled holdout support **pending broker verification**. M
 
 Offline tests cover account/mode guards, duplicate submissions, lost responses after acceptance, restart recovery, partial remainder cancellation, changed/duplicate deal evidence, gap/cost handling, deterministic replay and causal prefix invariance. A demo-shaped fixture tests the round-trip harness and is explicitly labelled `FIXTURE` in its report.
 
-Still required before automated trading: broker-backed daily-risk baseline handling for deposits/withdrawals; dividend/corporate-action feeds; longer verified historical data and statistical assumption review; physical disconnect/reconnect tests against the approved demo account; prospective strategy evaluation. Live trading remains disabled.
+Still required before automated trading: broker-backed daily-risk baseline handling for deposits/withdrawals; dividend/corporate-action feeds; longer verified historical data and statistical assumption review; mid-fill disconnect fault tests beyond the confirmed after-fill reconnect; prospective strategy evaluation. Live trading remains disabled.
 
 ## Historical acquisition, import and batch research
 
@@ -112,3 +112,11 @@ Research eligibility, broker execution verification and profitability are separa
 ### Resumption integrity
 
 A failed checksum check never discards the original content hash. Unvisited hours retain their expected hash while marked PENDING; redownloaded files must also match it before they enter the cache. Changed historical bytes require explicit source review, not an automatic retry that silently changes research inputs. The downloader checkpoints progress every 25 processed hours and applies the scheduling budget to retry starts/backoff as well as new hours. A request already in progress is subject to its network timeout. Numeric provider Retry-After values longer than 60 seconds defer the request to a later run. Empty exports return exit code 2; selecting a UTC window outside the requested range is a configuration error.
+
+## Shared account verification — 2026-10-08
+
+The CLI enables `externalPositions: 'COEXIST'` on a hedged demo account. Only position IDs with remaining confirmed ledger-owned volume are bot-managed. Manual positions do not consume the bot position-count or stop-risk budget, and are never closed by its controller. Account equity, margin, free margin and daily-loss limits still cover the whole account. A manual position without a stop has no bounded planned loss; this mode does not imply account-wide stop-risk is capped. Netted accounts remain unsupported; pending broker orders still require reconciliation.
+
+The full broker round trip passed with a manual 10-lot XAUUSD short present throughout: BTCUSD 0.01 lots, opening order **45727015**, closing order **45727027**, position **144343858**. A physical reconnect and reconciliation occurred between opening and closing. The XAUUSD ID, side, volume and protections were unchanged. Receipt: `data/cfd-coexist-demo-2026-10-08-confirmed.json`. Failed preceding attempts remain separate records; there are no replacement sends for an uncertain order.
+
+Fixed event correlation: cTrader protective/closing orders can inherit an opening client ID; those events must not rebind its opening order ID. Missing acknowledgements are followed by bounded authoritative history reads. Close requests lacking an acknowledged broker order ID still remain ambiguous rather than guessed. This execution test establishes no strategy profitability or live eligibility.

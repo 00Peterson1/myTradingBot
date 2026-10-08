@@ -36,10 +36,12 @@ export interface CfdResearchRow {
 
 /** Exhaustive within the declared universe. Missing inputs are visible blockers, never dropped symbols. */
 export async function researchCfdBatch(planInput: unknown, baseDirectory: string, registry: ExperimentRegistry, evaluate: boolean): Promise<{
-  planId: string; universeSource: string; catalogueId: string | null; accountId: string | null; mode: 'AUDIT' | 'VALIDATE'; symbols: CfdResearchRow[];
+  experimentId?: string; attemptId?: string; planId: string; universeSource: string; catalogueId: string | null; accountId: string | null; mode: 'AUDIT' | 'VALIDATE'; symbols: CfdResearchRow[];
   complete: boolean; demoEligible: false; liveEligible: false; blockers: string[];
 }> {
   const plan = cfdResearchPlanSchema.parse(planInput);
+  const attempt = evaluate ? registry.begin(plan, { product: 'CFD', purpose: 'CFD_BATCH_VALIDATION' }, 'VALIDATION_STUDY') : null;
+  try {
   const rows: CfdResearchRow[] = [];
   // Freeze every valid candidate before any evaluation so file order cannot hide later trials.
   const prepared: { row: CfdResearchRow; dataset: ReturnType<typeof cfdDatasetIdentity>['dataset']; config: z.infer<typeof cfdBacktestConfigSchema> }[] = [];
@@ -87,7 +89,13 @@ export async function researchCfdBatch(planInput: unknown, baseDirectory: string
     row.batchAdjustedPValue = corrected[index]?.corrected ?? 1;
     row.researchSupported = row.status === 'HOLDOUT_SUPPORTED_PENDING_BROKER_VERIFICATION' && row.batchAdjustedPValue <= 0.05;
   });
-  return { planId: contentHash(plan), universeSource: plan.universeSource, catalogueId: plan.catalogue ? catalogueIdentity(plan.catalogue) : null, accountId: plan.catalogue?.accountId ?? null, mode: evaluate ? 'VALIDATE' : 'AUDIT', symbols: rows,
-    complete: rows.length > 0 && rows.every(row => row.validation !== null), demoEligible: false, liveEligible: false,
+  const report = { ...(attempt ?? {}), planId: contentHash(plan), universeSource: plan.universeSource, catalogueId: plan.catalogue ? catalogueIdentity(plan.catalogue) : null, accountId: plan.catalogue?.accountId ?? null, mode: evaluate ? 'VALIDATE' as const : 'AUDIT' as const, symbols: rows,
+    complete: rows.length > 0 && rows.every(row => row.validation !== null), demoEligible: false as const, liveEligible: false as const,
     blockers: [...(!plan.catalogue ? ['CTRADER_CATALOGUE_PENDING'] : []), 'BROKER_DEMO_WORKFLOW_VERIFICATION_REQUIRED', 'SOURCE_COST_AND_CONTRACT_VERIFICATION_REQUIRED', 'RESEARCH_REPORTS_DO_NOT_AUTHORIZE_TRADING'] };
+  if (attempt) registry.finish(attempt.attemptId, 'COMPLETED', report);
+  return report;
+  } catch (error) {
+    if (attempt) registry.finish(attempt.attemptId, 'FAILED', { reason: 'CFD batch evaluation failed' });
+    throw error;
+  }
 }

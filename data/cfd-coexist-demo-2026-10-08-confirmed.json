@@ -1,0 +1,140 @@
+{
+  "experimentId": "61521506ee4e688bcb15f50ff4186c3655b3269176718ce1501239ce93b872f0",
+  "attemptId": "a953927c-49bd-490b-b560-5bb8eb7064af",
+  "status": "ROUND_TRIP_CONFIRMED",
+  "provider": "CTRADER",
+  "accountId": "48688460",
+  "opened": {
+    "status": "FILLED",
+    "fill": {
+      "orderId": "45727015",
+      "positionId": "144343858",
+      "filledLots": 0.01,
+      "price": 82608.779,
+      "commission": 0,
+      "timeMs": 1791456452692
+    }
+  },
+  "closed": {
+    "status": "FILLED",
+    "fill": {
+      "orderId": "45727027",
+      "positionId": "144343858",
+      "filledLots": 0.01,
+      "price": 82578.968,
+      "commission": 0,
+      "timeMs": 1791456461946
+    }
+  },
+  "before": {
+    "account": {
+      "id": "48688460",
+      "provider": "CTRADER",
+      "mode": "DEMO",
+      "currency": "USD",
+      "balance": 1000252.1,
+      "equity": 1053142.1,
+      "margin": 5211.05,
+      "freeMargin": 1047931.05,
+      "tradeAllowed": true,
+      "hedging": true,
+      "timeMs": 1791456449240
+    },
+    "positions": [
+      {
+        "id": "143532857",
+        "symbol": "XAUUSD",
+        "side": "SHORT",
+        "volumeLots": 10,
+        "entryPrice": 4168.81,
+        "currentPrice": 4116.72,
+        "stopLoss": null,
+        "takeProfit": null,
+        "unrealizedPnl": 52890,
+        "financing": 800,
+        "clientOrderId": null
+      }
+    ]
+  },
+  "during": {
+    "account": {
+      "id": "48688460",
+      "provider": "CTRADER",
+      "mode": "DEMO",
+      "currency": "USD",
+      "balance": 1000252.1,
+      "equity": 1053261.92,
+      "margin": 5212.08,
+      "freeMargin": 1048049.84,
+      "tradeAllowed": true,
+      "hedging": true,
+      "timeMs": 1791456453054
+    },
+    "positions": [
+      {
+        "id": "143532857",
+        "symbol": "XAUUSD",
+        "side": "SHORT",
+        "volumeLots": 10,
+        "entryPrice": 4168.81,
+        "currentPrice": 4116.6,
+        "stopLoss": null,
+        "takeProfit": null,
+        "unrealizedPnl": 53010,
+        "financing": 800,
+        "clientOrderId": null
+      },
+      {
+        "id": "144343858",
+        "symbol": "BTCUSD",
+        "side": "LONG",
+        "volumeLots": 0.01,
+        "entryPrice": 82608.779,
+        "currentPrice": 82590.724,
+        "stopLoss": 82507.843,
+        "takeProfit": null,
+        "unrealizedPnl": -0.18,
+        "financing": 0,
+        "clientOrderId": null
+      }
+    ]
+  },
+  "after": {
+    "account": {
+      "id": "48688460",
+      "provider": "CTRADER",
+      "mode": "DEMO",
+      "currency": "USD",
+      "balance": 1000251.8,
+      "equity": 1052551.8,
+      "margin": 5211.05,
+      "freeMargin": 1047340.75,
+      "tradeAllowed": true,
+      "hedging": true,
+      "timeMs": 1791456462258
+    },
+    "positions": [
+      {
+        "id": "143532857",
+        "symbol": "XAUUSD",
+        "side": "SHORT",
+        "volumeLots": 10,
+        "entryPrice": 4168.81,
+        "currentPrice": 4117.31,
+        "stopLoss": null,
+        "takeProfit": null,
+        "unrealizedPnl": 52300,
+        "financing": 800,
+        "clientOrderId": null
+      }
+    ]
+  },
+  "riskScope": "BOT_STOP_RISK_WITH_SHARED_ACCOUNT_EQUITY_AND_MARGIN",
+  "externalPositionsAfter": 1,
+  "liveEligible": false,
+  "limitations": [
+    "Physical reconnect tested after a confirmed fill; mid-fill disconnects require separate fault tests",
+    "One round trip does not validate profitability, all symbols, or live readiness",
+    "Adapter identity, broker statements and real disconnect scenarios require independent verification"
+  ]
+}

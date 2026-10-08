@@ -5,7 +5,7 @@ import { cTraderCatalogueSchema, type CTraderCatalogue } from './Catalogue.js';
 
 export const ctraderConfigSchema = z.object({
   clientId: z.string().min(1), clientSecret: z.string().min(1), accessToken: z.string().min(1),
-  accountId: z.string().regex(/^[1-9]\d*$/),
+  accountId: z.string().regex(/^[1-9]\d*$/), refreshToken: z.string().min(1).optional(),
 }).strict();
 export type CTraderConfig = z.infer<typeof ctraderConfigSchema>;
 const frameSchema = z.object({ payloadType: z.number().int(), clientMsgId: z.string().optional(), payload: z.record(z.unknown()).default({}) });
@@ -19,10 +19,11 @@ export class CTraderDemoConnection {
   private heartbeat: ReturnType<typeof setInterval> | undefined;
   private readonly pending = new Map<string, { expected: number; resolve: (value: Record<string, unknown>) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private authenticated = false;
+  private disconnectReason = 'not authenticated';
   private readonly listeners = new Set<(type: number, payload: Record<string, unknown>) => void>();
   private readonly disconnectListeners = new Set<() => void>();
   private nextRequestAt = 0;
-  constructor(private readonly config: CTraderConfig, private readonly options: { allowDemoOrders?: boolean } = {}) { ctraderConfigSchema.parse(config); }
+  constructor(private readonly config: CTraderConfig, private readonly options: { allowDemoOrders?: boolean; saveTokens?: (tokens: { accessToken: string; refreshToken: string; expiresIn: number }) => Promise<void> } = {}) { ctraderConfigSchema.parse(config); }
   get accountId(): string { return this.config.accountId; }
   onEvent(listener: (type: number, payload: Record<string, unknown>) => void): () => void {
     this.listeners.add(listener); return () => { this.listeners.delete(listener); };
@@ -37,7 +38,7 @@ export class CTraderDemoConnection {
       2145: 2146, 2153: 2154, 2160: 2161, 2175: 2176, 2177: 2178, 2179: 2180,
       2181: 2182, 2183: 2184, 2187: 2188 };
     const expected = responses[type];
-    if (!this.authenticated || expected === undefined) throw new Error('Unsupported or unauthenticated cTrader read');
+    if (!this.authenticated || expected === undefined) throw new Error(`Unsupported or unauthenticated cTrader read: ${this.disconnectReason}`);
     const response = await this.request(type, expected, { ...payload, ctidTraderAccountId: this.config.accountId });
     if (idSchema.parse(response.ctidTraderAccountId) !== this.config.accountId) throw new Error('cTrader response account mismatch');
     return response;
@@ -64,12 +65,22 @@ export class CTraderDemoConnection {
         if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ payloadType: 51, payload: {} }));
       }, 10000);
       await this.request(2100, 2101, { clientId: this.config.clientId, clientSecret: this.config.clientSecret });
-      const accounts = accountsSchema.parse(await this.request(2149, 2150, { accessToken: this.config.accessToken }));
+      let accountResponse: Record<string, unknown>;
+      try { accountResponse = await this.request(2149, 2150, { accessToken: this.config.accessToken }); }
+      catch {
+        if (!this.config.refreshToken || !this.options.saveTokens || socket.readyState !== WebSocket.OPEN) throw new Error('Token renewal unavailable');
+        const tokens = z.object({ accessToken: z.string().min(1), refreshToken: z.string().min(1), expiresIn: z.number().int().positive() })
+          .parse(await this.request(2173, 2174, { refreshToken: this.config.refreshToken }));
+        await this.options.saveTokens(tokens);
+        this.config.accessToken = tokens.accessToken; this.config.refreshToken = tokens.refreshToken;
+        accountResponse = await this.request(2149, 2150, { accessToken: this.config.accessToken });
+      }
+      const accounts = accountsSchema.parse(accountResponse);
       const account = accounts.ctidTraderAccount.find(item => item.ctidTraderAccountId === this.config.accountId);
       if (!account || account.isLive) throw new Error('Configured cTrader account is not an authorized demo account');
       const auth = authSchema.parse(await this.request(2102, 2103, { ctidTraderAccountId: this.config.accountId, accessToken: this.config.accessToken }));
       if (auth.ctidTraderAccountId !== this.config.accountId) throw new Error('cTrader account identity mismatch');
-      this.authenticated = true;
+      this.authenticated = true; this.disconnectReason = 'connected';
     } catch {
       this.close();
       // Broker descriptions/schema errors may contain credentials: do not propagate them.
@@ -108,7 +119,7 @@ export class CTraderDemoConnection {
     if (wait) await new Promise(resolve => setTimeout(resolve, wait));
     const socket = this.socket;
     if (socket !== originalSocket || socket?.readyState !== WebSocket.OPEN) return Promise.reject(new Error('cTrader connection is closed'));
-    if (![2100, 2149, 2102].includes(type) && !this.authenticated) throw new Error('cTrader session requires authentication');
+    if (![2100, 2149, 2102, 2173].includes(type) && !this.authenticated) throw new Error('cTrader session requires authentication');
     // Diagnostic connections cannot submit orders.
     if ([2106, 2111].includes(type) && !this.options.allowDemoOrders) throw new Error('Demo order capability is disabled');
     // The cTrader JSON endpoint requires a numeric account ID on the wire.
@@ -131,11 +142,11 @@ export class CTraderDemoConnection {
   private receive(raw: string): void {
     let frame: z.infer<typeof frameSchema>;
     try { frame = frameSchema.parse(JSON.parse(raw) as unknown); }
-    catch { this.close(); return; }
+    catch { this.disconnectReason = 'invalid frame'; this.close(); return; }
     if ([2147, 2148, 2164].includes(frame.payloadType)) { this.close(); return; }
     if ('ctidTraderAccountId' in frame.payload && String(frame.payload.ctidTraderAccountId) !== this.config.accountId) { this.close(); return; }
     try { for (const listener of this.listeners) listener(frame.payloadType, frame.payload); }
-    catch { this.close(); return; }
+    catch (error) { this.disconnectReason = `event ${String(frame.payloadType)} rejected: ${error instanceof z.ZodError ? error.issues.map(issue => issue.message).join(', ') : error instanceof Error ? error.message : 'invalid event'}`; this.close(); return; }
     if (!frame.clientMsgId) return;
     const pending = this.pending.get(frame.clientMsgId);
     if (!pending) return;

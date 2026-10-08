@@ -1,3 +1,4 @@
+import { cfdDirection } from './CfdSignal.js';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { cfdDatasetIdentity, type CfdDataset } from './CfdDataset.js';
@@ -66,12 +67,8 @@ export async function backtestCfd(input: CfdDataset, configInput: CfdBacktestCon
     equity.push({ timeMs: row.timeMs, equity: snapshot.account.equity, margin: snapshot.account.margin });
     const mid = (row.bid + row.ask) / 2;
     if (!snapshot.positions.length && mids.length >= config.lookback) {
-      const oldest = mids[0];
-      if (oldest === undefined) throw new Error('Missing causal history');
-      const mean = mids.reduce((sum, value) => sum + value, 0) / mids.length;
-      let direction = config.family === 'MOMENTUM' ? (mid - oldest) / oldest : config.family === 'MEAN_REVERSION' ? (mean - mid) / mean : mid > Math.max(...mids) * (1 + config.threshold) ? 1 : mid < Math.min(...mids) * (1 - config.threshold) ? -1 : 0;
-      if (Math.abs(direction) <= config.threshold) direction = 0;
-      if (direction) pending = { side: direction > 0 ? 'LONG' : 'SHORT', timeMs: row.timeMs };
+      const side = cfdDirection(mids, mid, config);
+      if (side) pending = { side, timeMs: row.timeMs };
     }
     mids.push(mid);
     if (mids.length > config.lookback) mids.shift();

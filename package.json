@@ -39,7 +39,9 @@
     "cfd:download": "cd python && python3 -m market_data.dukascopy",
     "cfd:prepare": "tsx src/cli/cfd-prepare.ts",
     "cfd:markets": "tsx src/cli/cfd-markets.ts",
-    "cfd:execution": "tsx src/cli/cfd-execution.ts"
+    "cfd:execution": "tsx src/cli/cfd-execution.ts",
+    "cfd:run": "tsx src/cli/cfd-run.ts",
+    "cfd:deploy": "tsx src/cli/cfd-deploy.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

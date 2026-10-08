@@ -48,3 +48,6 @@ python/checkpoints/
 
 # External historical archives (raw prices and provenance retained locally)
 data/history/
+
+# Rotating cTrader OAuth credentials (private local state)
+data/.ctrader-session.json*

@@ -35,7 +35,7 @@ async function fixture() {
     throw new Error(`Unexpected fixture read ${String(type)}`);
   });
   const trade = vi.spyOn(connection, 'trade').mockImplementation((type, payload) => {
-    state.brokerOrder = { orderId: 44, orderStatus: state.partial ? 5 : 2, clientOrderId: payload.clientOrderId,
+    state.brokerOrder = { orderId: 44, orderType: 5, orderStatus: state.partial ? 5 : 2, clientOrderId: payload.clientOrderId,
       positionId: 55, closingOrder: type === 2111, tradeData: { symbolId: 101, volume: payload.volume, tradeSide: 1 } };
     state.deals = [{ dealId: 77, orderId: 44, positionId: 55, symbolId: 101, filledVolume: state.partial ? 1 : payload.volume,
       dealStatus: 2, executionPrice: 70001, commission: -3, moneyDigits: 2, executionTimestamp: Date.now() }];
@@ -48,7 +48,7 @@ async function fixture() {
   await broker.initialize();
   const order: CfdOrder = { product: 'CFD', clientOrderId: randomUUID(), hypothesisId: 'fixture', symbol: 'BTCUSD', side: 'LONG', volumeLots: 0.02,
     stopLoss: 69950, takeProfit: null, maxSlippagePoints: 1000, createdAtMs: Date.now() };
-  return { broker, ledger, order, state, read, trade };
+  return { broker, ledger, order, state, read, trade, event };
 }
 describe('actual cTrader demo adapter with protocol fixtures', () => {
   it('uses broker volume/money/distance units and refuses order submission without a durable intent', async () => {
@@ -74,6 +74,13 @@ describe('actual cTrader demo adapter with protocol fixtures', () => {
     expect((await broker.submit(order)).status).toBe('FILLED');
     expect(trade).toHaveBeenCalledTimes(1);
     expect(state.calls.filter(type => type === 2181)).toHaveLength(3);
+  });
+  it('does not rebind an opening identity inherited by broker protective and closing orders', async () => {
+    const { broker, ledger, order, event } = await fixture();
+    ledger.begin({ kind: 'OPEN', order });
+    await broker.submit(order);
+    expect(() => { event(2126, { order: { orderId: 99, orderType: 4, closingOrder: true, clientOrderId: order.clientOrderId } }); }).not.toThrow();
+    expect((await broker.orderEvidence({ kind: 'OPEN', order }))?.brokerOrderId).toBe('44');
   });
   it('recovers a lost opening acknowledgement using client identity, without resending', async () => {
     const { broker, ledger, order, trade, state } = await fixture(); state.loseAck = true; ledger.begin({ kind: 'OPEN', order });

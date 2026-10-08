@@ -1,3 +1,15 @@
+## Shared demo account round trip confirmed — 2026-10-08
+
+Implemented explicit coexistence for the CLI on hedged accounts. Manual positions no longer fail ownership reconciliation or consume the bot's position-count/stop-risk allowance. The controller refuses to close any non-owned position. Shared account equity, free margin, used margin and daily loss still constrain new bot orders; unprotected manual trades are not falsely assigned bounded stop-risk. The harness checks that its own test position is gone, rather than requiring the entire account to be flat.
+
+Actual broker verification returned **ROUND_TRIP_CONFIRMED**: protected BTCUSD **0.01 lots**, position **144343858**, opening order **45727015** at **82608.779**, closing order **45727027** at **82578.968**. A physical reconnect and broker reconciliation occurred between the two fills. The manual XAUUSD short **143532857**, **10 lots**, remained open with unchanged volume and protection fields. Price-based test loss was approximately **$0.30**, with zero reported deal commission. Receipt: `data/cfd-coexist-demo-2026-10-08-confirmed.json`.
+
+Two earlier harness attempts exposed inherited client IDs on protective/closing broker events; their records remain failed. The second test was explicitly closed; the first test disappeared and was reconciled using complete closure evidence. Fixed event matching so these broker orders do not rebind an opening acknowledgement. Missing acknowledgements trigger only history reads, never submission retries. Added regressions for inherited IDs, manual ownership isolation, shared-margin rejection, and coexistence with an unprotected manual position.
+
+Verification: **276 tests passed across 44 files**; source/test typechecks and build passed. Lint has no errors and two existing test-fixture return-type warnings.
+
+This supersedes the foreign-position blocker in the earlier checkpoint. Per-symbol strategy evidence and live eligibility remain unestablished.
+
 ## Execution recovery and validation audit — 2026-10-08
 
 Resumed the interrupted CFD integration. Authenticated broker order history confirmed both sides of the October 4 BTCUSD demo test: opening order **45450104**, closing order **45450223**, position **142685327**, volume **0.01 lots**, entry **85321.011**, exit **85286.874**. Price-based PnL is approximately **-$0.34137** before any other account adjustments; recorded deal commission is zero. The closing UNKNOWN intent was reconciled to FILLED. There are now **zero unresolved bot intents**. The original failed harness receipt remains unchanged; these recovered fills do not establish that the complete round-trip/reconnect harness passed.
