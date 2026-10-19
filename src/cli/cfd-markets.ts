@@ -1,3 +1,4 @@
+import { withSavedCTraderTokens } from '../cfd/ctrader/TokenStore.js';
 import { handleHelp } from './help.js';
 handleHelp('cfd:markets', 'Create an account-scoped CFD research plan. --out plan.json (--refresh | --catalogue snapshot.json) [--config-dir directory]. Refresh is read-only demo discovery; never submits orders.');
 import 'dotenv/config';
@@ -16,7 +17,7 @@ async function main(): Promise<void> {
   if (values.refresh) {
     const parsed = ctraderConfigSchema.safeParse({ clientId: process.env.CTRADER_CLIENT_ID, clientSecret: process.env.CTRADER_CLIENT_SECRET, accessToken: process.env.CTRADER_ACCESS_TOKEN, accountId: process.env.CTRADER_DEMO_ACCOUNT_ID });
     if (!parsed.success) throw new Error('cTrader application credentials and demo account ID are required for account catalogue discovery; no Options fallback is available');
-    const connection = new CTraderDemoConnection(parsed.data);
+    const connection = new CTraderDemoConnection(withSavedCTraderTokens(parsed.data));
     try { await connection.connect(); catalogue = await connection.catalogue(); } finally { connection.close(); }
   } else catalogue = cTraderCatalogueSchema.parse(JSON.parse(readFileSync(values.catalogue ?? '', 'utf8')) as unknown);
   const symbols = catalogueResearchEntries(catalogue).map(row => ({ ...row,

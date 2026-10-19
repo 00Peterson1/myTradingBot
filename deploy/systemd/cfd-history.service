@@ -1,0 +1,24 @@
+[Unit]
+Description=Resume EURUSD research history acquisition
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+User=tradingbot
+Group=tradingbot
+WorkingDirectory=/opt/tradingbot/python
+ExecStart=/usr/bin/python3 -m market_data.dukascopy --symbol EURUSD --start 2025-01-01T00:00:00Z --end 2025-07-01T00:00:00Z --scale 100000 --out /opt/tradingbot/data/history/dukascopy/EURUSD-2025H1 --snapshot-ms 60000 --workers 2 --max-seconds 14400
+TimeoutStartSec=infinity
+Restart=on-failure
+RestartSec=300
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/tradingbot/data
+
+[Install]
+WantedBy=multi-user.target

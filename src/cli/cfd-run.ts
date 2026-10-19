@@ -50,7 +50,8 @@ async function main(): Promise<void> {
     function approved(accountId: string): ApprovedCfdStrategy {
       if (!values.deployment) throw new Error('Missing approved deployment');
       const bytes = readFileSync(values.deployment, 'utf8');
-      if (!cached || bytes !== deploymentBytes) { cached = loadCfdDeployment(db, JSON.parse(bytes) as unknown, accountId, codeId); deploymentBytes = bytes; }
+      if (cached && bytes !== deploymentBytes) throw new Error('Deployment changed; reconnect and rebuild controller policy');
+      if (!cached) { cached = loadCfdDeployment(db, JSON.parse(bytes) as unknown, accountId, codeId); deploymentBytes = bytes; }
       if (Date.parse(cached.deployment.expiresAt) <= Date.now() || db.prepare('SELECT 1 FROM cfd_strategy_suspensions WHERE hypothesis_id=?').get(cached.deployment.hypothesisId)) throw new Error('CFD approval expired or suspended');
       return cached;
     }
@@ -70,7 +71,7 @@ async function main(): Promise<void> {
             // Validate all evidence before opening a network connection in execution mode.
             const strategy = values['execute-demo'] ? approved(config.accountId) : undefined;
             if (strategy && strategy.deployment.pollIntervalMs !== interval) throw new Error('Runner quote interval differs from reviewed deployment');
-            connection = new CTraderDemoConnection(config, { allowDemoOrders: Boolean(strategy), saveTokens: tokens => {
+            connection = new CTraderDemoConnection(config, { allowDemoOrders: Boolean(strategy), saveTokens: (tokens): Promise<void> => {
               saveCTraderTokens(tokenPath, { accountId: config.accountId, clientId: config.clientId, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, expiresAtMs: Date.now() + tokens.expiresIn * 1000 });
               return Promise.resolve();
             } });
@@ -80,9 +81,11 @@ async function main(): Promise<void> {
             day = Math.floor(Date.now() / 86400000);
             if (strategy) {
               const snapshot = await broker.snapshot();
+              const mark = db.prepare('SELECT equity FROM cfd_runner_account_marks WHERE account_id=?').get(config.accountId) as { equity: number } | undefined;
+              previousEquity ??= mark?.equity;
               const activeBroker = broker;
               controller = new CfdExecutionController(broker, ledger, strategy.config.risk, previousEquity ?? snapshot.account.equity,
-                { demoAccountId: config.accountId, externalPositions: 'COEXIST', now: Date.now, authorizeHypothesis: async order => {
+                { demoAccountId: config.accountId, externalPositions: 'COEXIST', now: Date.now, authorizeHypothesis: async (order): Promise<void> => {
                   const current = approved(config.accountId);
                   if (stopped() || current.deployment.hypothesisId !== order.hypothesisId || current.deployment.symbol !== order.symbol || order.volumeLots > current.deployment.maxLots) throw new Error('CFD strategy approval changed or runner paused');
                   const quote = await activeBroker.quote(order.symbol), instrument = await activeBroker.instrument(order.symbol);
@@ -104,7 +107,9 @@ async function main(): Promise<void> {
             print(JSON.stringify({ state: 'OBSERVING', symbol, quoteTimeMs: quote.timeMs, output: path, ordersSubmitted: 0 }));
           } else if (runner) {
             print(JSON.stringify({ state: await runner.step(), mode: 'DEMO', liveEligible: false }));
-            previousEquity = (await broker.snapshot()).account.equity;
+            const account = (await broker.snapshot()).account;
+            previousEquity = account.equity;
+            db.prepare('INSERT INTO cfd_runner_account_marks VALUES (?,?,?) ON CONFLICT(account_id) DO UPDATE SET equity=excluded.equity,time_ms=excluded.time_ms').run(account.id, account.equity, account.timeMs);
           }
           failures = 0;
         }

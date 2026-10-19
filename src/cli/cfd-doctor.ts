@@ -1,3 +1,4 @@
+import { withSavedCTraderTokens } from '../cfd/ctrader/TokenStore.js';
 import { handleHelp } from './help.js';
 handleHelp('cfd:doctor', 'Check cTrader demo configuration. --connect verifies authorization and reads symbols/positions; never submits orders.');
 import 'dotenv/config';
@@ -13,7 +14,7 @@ async function main(): Promise<void> {
   const parsed = ctraderConfigSchema.safeParse({ clientId: process.env.CTRADER_CLIENT_ID, clientSecret: process.env.CTRADER_CLIENT_SECRET, accessToken: process.env.CTRADER_ACCESS_TOKEN, accountId: process.env.CTRADER_DEMO_ACCOUNT_ID });
   if (!parsed.success) { print('Invalid cTrader configuration; check the numeric demo account ID.'); process.exitCode = 1; return; }
   if (!process.argv.includes('--connect')) return;
-  const connection = new CTraderDemoConnection(parsed.data);
+  const connection = new CTraderDemoConnection(withSavedCTraderTokens(parsed.data));
   try { await connection.connect(); print(JSON.stringify(await connection.inspect())); }
   finally { connection.close(); }
 }

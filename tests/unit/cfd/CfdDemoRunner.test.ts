@@ -30,7 +30,7 @@ describe('continuous CFD demo runner mechanics, software fixtures only', () => {
     const strategy: ApprovedCfdStrategy = { config, dataset, deployment };
     const ledger = new CfdLedger(db, { provider: 'FIXTURE', id: '123', mode: 'DEMO' });
     const controller = new CfdExecutionController(broker, ledger, config.risk, 10000, { demoAccountId: '123', externalPositions: 'COEXIST', now: () => now, authorizeHypothesis: () => Promise.resolve() });
-    const runner = new CfdDemoRunner(db, broker, controller, ledger, () => { if (revoked) throw new Error('Revoked approval'); return strategy; }, () => paused, () => now);
+    let runner = new CfdDemoRunner(db, broker, controller, ledger, () => { if (revoked) throw new Error('Revoked approval'); return strategy; }, () => paused, () => now);
     const advance = async (bid: number): Promise<string> => { now += 1000; paper.advance({ symbol: 'EURUSD', bid, ask: bid + 0.0001, timeMs: now }); return runner.step(); };
     try {
       await advance(1.1); await advance(1.1002); await advance(1.1004);
@@ -40,9 +40,14 @@ describe('continuous CFD demo runner mechanics, software fixtures only', () => {
       expect(await advance(1.1008)).toBe('OPEN_RESULT');
       expect((await broker.snapshot()).positions).toHaveLength(1);
       await advance(1.1008);
+      // Restart must preserve the holding count and must not count the same quote twice.
+      runner = new CfdDemoRunner(db, broker, controller, ledger, () => strategy, () => paused, () => now);
+      await runner.step();
+      expect((await broker.snapshot()).positions).toHaveLength(1);
       expect(await advance(1.1008)).toBe('CLOSE_RESULT');
       expect((await broker.snapshot()).positions).toHaveLength(0);
       paused = true; expect(await runner.step()).toBe('PAUSED');
+      runner = new CfdDemoRunner(db, broker, controller, ledger, () => { if (revoked) throw new Error('Revoked approval'); return strategy; }, () => paused, () => now);
       paused = false; revoked = true; await expect(runner.step()).rejects.toThrow('Revoked');
       expect(ledger.intents()).toHaveLength(2);
     } finally { controller.dispose(); db.close(); }

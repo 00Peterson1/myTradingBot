@@ -1,0 +1,48 @@
+{
+  "action": "ONE_DEMO_OPEN_AND_HOLD",
+  "accountId": "48688460",
+  "order": {
+    "product": "CFD",
+    "clientOrderId": "6491d7c4-ae9a-4ac1-b61e-ed11b6d932f6",
+    "hypothesisId": "DEMO_CONNECTIVITY_ONLY:ed9cad62-904d-4143-9a41-b1845c320e2a",
+    "symbol": "BTCUSD",
+    "side": "LONG",
+    "volumeLots": 0.01,
+    "stopLoss": 82998.777,
+    "takeProfit": null,
+    "maxSlippagePoints": 18424,
+    "createdAtMs": 1791730866413
+  },
+  "result": {
+    "status": "FILLED",
+    "fill": {
+      "orderId": "45927501",
+      "positionId": "145764462",
+      "filledLots": 0.01,
+      "price": 83100.081,
+      "commission": 0,
+      "timeMs": 1791730869420
+    }
+  },
+  "reconciled": {
+    "unresolved": 0,
+    "positions": 1
+  },
+  "positions": [
+    {
+      "id": "145764462",
+      "symbol": "BTCUSD",
+      "side": "LONG",
+      "volumeLots": 0.01,
+      "entryPrice": 83100.081,
+      "currentPrice": 83081.657,
+      "stopLoss": 82998.777,
+      "takeProfit": null,
+      "unrealizedPnl": -0.18,
+      "financing": 0,
+      "clientOrderId": null
+    }
+  ],
+  "strategyEligible": false,
+  "liveEligible": false
+}

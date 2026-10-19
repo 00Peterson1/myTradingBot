@@ -54,6 +54,7 @@ export function loadCfdDeployment(db: Database.Database, input: unknown, account
 export function ensureCfdRunnerSchema(db: Database.Database): void {
   db.exec(`CREATE TABLE IF NOT EXISTS cfd_strategy_suspensions(hypothesis_id TEXT PRIMARY KEY, reason TEXT NOT NULL, created_ms INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS cfd_runner_events(sequence INTEGER PRIMARY KEY AUTOINCREMENT, account_id TEXT NOT NULL, kind TEXT NOT NULL, detail TEXT NOT NULL, time_ms INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS cfd_runner_account_marks(account_id TEXT PRIMARY KEY, equity REAL NOT NULL, time_ms INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS cfd_runner_positions(account_id TEXT NOT NULL, position_id TEXT NOT NULL, hypothesis_id TEXT NOT NULL, held_quotes INTEGER NOT NULL, last_quote_ms INTEGER NOT NULL, PRIMARY KEY(account_id,position_id));`);
   for (const table of ['cfd_strategy_suspensions', 'cfd_runner_events']) for (const operation of ['UPDATE', 'DELETE']) db.exec(`CREATE TRIGGER IF NOT EXISTS ${table}_no_${operation} BEFORE ${operation} ON ${table} BEGIN SELECT RAISE(ABORT,'CFD runner audit records are immutable'); END;`);
 }

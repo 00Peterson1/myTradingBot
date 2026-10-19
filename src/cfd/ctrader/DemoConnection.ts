@@ -11,6 +11,7 @@ export type CTraderConfig = z.infer<typeof ctraderConfigSchema>;
 const frameSchema = z.object({ payloadType: z.number().int(), clientMsgId: z.string().optional(), payload: z.record(z.unknown()).default({}) });
 const idSchema = z.union([z.string().regex(/^[1-9]\d*$/), z.number().int().positive().safe()]).transform(String);
 const accountsSchema = z.object({ ctidTraderAccount: z.array(z.object({ ctidTraderAccountId: idSchema, isLive: z.boolean() })).default([]) });
+class CTraderTokenRejectedError extends Error { constructor() { super('cTrader access token requires renewal'); } }
 const authSchema = z.object({ ctidTraderAccountId: idSchema });
 
 /** Demo-only session. Diagnostic instances reject all order payloads by default. */
@@ -67,7 +68,8 @@ export class CTraderDemoConnection {
       await this.request(2100, 2101, { clientId: this.config.clientId, clientSecret: this.config.clientSecret });
       let accountResponse: Record<string, unknown>;
       try { accountResponse = await this.request(2149, 2150, { accessToken: this.config.accessToken }); }
-      catch {
+      catch (error) {
+        if (!(error instanceof CTraderTokenRejectedError)) throw error;
         if (!this.config.refreshToken || !this.options.saveTokens || socket.readyState !== WebSocket.OPEN) throw new Error('Token renewal unavailable');
         const tokens = z.object({ accessToken: z.string().min(1), refreshToken: z.string().min(1), expiresIn: z.number().int().positive() })
           .parse(await this.request(2173, 2174, { refreshToken: this.config.refreshToken }));
@@ -152,7 +154,8 @@ export class CTraderDemoConnection {
     if (!pending) return;
     clearTimeout(pending.timer);
     this.pending.delete(frame.clientMsgId);
-    if (frame.payloadType !== pending.expected) pending.reject(new Error('cTrader rejected the diagnostic request'));
+    if (frame.payloadType === 2142 && ['OA_AUTH_TOKEN_EXPIRED', 'CH_ACCESS_TOKEN_INVALID'].includes(String(frame.payload.errorCode))) pending.reject(new CTraderTokenRejectedError());
+    else if (frame.payloadType !== pending.expected) pending.reject(new Error('cTrader rejected the diagnostic request'));
     else pending.resolve(frame.payload);
   }
   private fail(): void {

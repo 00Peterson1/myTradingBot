@@ -1,5 +1,6 @@
+import { withSavedCTraderTokens } from '../cfd/ctrader/TokenStore.js';
 import { handleHelp } from './help.js';
-handleHelp('cfd:execution', 'Inspect actual CFD account/contracts with --symbol BTCUSD. --verify-demo performs ONE protected minimum-volume demo round trip with physical reconnect. --max-loss 1 bounds planned loss in account currency (maximum 5); gaps can exceed stops. --reconcile recovers durable intents without placing orders. --out receipt.json is required for demo verification. Never uses live accounts.');
+handleHelp('cfd:execution', 'Inspect actual CFD account/contracts with --symbol BTCUSD. --open-demo opens ONE protected minimum-volume demo position and leaves it open (requires --out). --verify-demo performs ONE protected minimum-volume demo round trip with physical reconnect. --max-loss 1 bounds planned loss in account currency (maximum 5); gaps can exceed stops. --reconcile recovers durable intents without placing orders. --out receipt.json is required for demo verification. Never uses live accounts.');
 import 'dotenv/config';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
@@ -19,14 +20,15 @@ import { getDb, closeDb } from '../data/database/sqlite.js';
 import { print } from '../monitoring/print.js';
 
 async function main(): Promise<void> {
-  const { values } = parseArgs({ options: { symbol: { type: 'string' }, 'verify-demo': { type: 'boolean' }, reconcile: { type: 'boolean' }, 'close-position': { type: 'string' }, 'max-loss': { type: 'string', default: '1' }, out: { type: 'string' } }, strict: true });
-  const verify = values['verify-demo'] ?? false, maxLoss = Number(values['max-loss']);
+  const { values } = parseArgs({ options: { symbol: { type: 'string' }, 'verify-demo': { type: 'boolean' }, 'open-demo': { type: 'boolean' }, reconcile: { type: 'boolean' }, 'close-position': { type: 'string' }, 'max-loss': { type: 'string', default: '1' }, out: { type: 'string' } }, strict: true });
+  const open = values['open-demo'] ?? false, verify = values['verify-demo'] ?? false, maxLoss = Number(values['max-loss']);
   if (!Number.isFinite(maxLoss) || maxLoss <= 0 || maxLoss > 5) throw new Error('Planned demo loss limit must be greater than zero and at most 5 account-currency units');
-  if (verify && (!values.out || existsSync(values.out))) throw new Error('Demo verification requires --out pointing to a new receipt file');
+  if ((verify || open) && (!values.out || existsSync(values.out))) throw new Error('Demo verification requires --out pointing to a new receipt file');
+  if (open && (verify || values.reconcile || values['close-position'])) throw new Error('Choose only one operation');
   if ((verify && values['close-position']) || (values.reconcile && values['close-position'])) throw new Error('Choose only one operation');
   if (verify && values.reconcile) throw new Error('Reconcile and verify must be separate invocations');
   const config = ctraderConfigSchema.parse({ clientId: process.env.CTRADER_CLIENT_ID, clientSecret: process.env.CTRADER_CLIENT_SECRET, accessToken: process.env.CTRADER_ACCESS_TOKEN, accountId: process.env.CTRADER_DEMO_ACCOUNT_ID });
-  const connection = new CTraderDemoConnection(config, { allowDemoOrders: verify || Boolean(values['close-position']) });
+  const connection = new CTraderDemoConnection(withSavedCTraderTokens(config), { allowDemoOrders: open || verify || Boolean(values['close-position']) });
   const db = getDb(), ledger = new CfdLedger(db, { provider: 'CTRADER', id: config.accountId, mode: 'DEMO' });
   const broker = new CTraderDemoBroker(connection, db, ledger);
   let controller: CfdExecutionController | undefined;
@@ -40,7 +42,7 @@ async function main(): Promise<void> {
     const hypothesisId = `DEMO_CONNECTIVITY_ONLY:${randomUUID()}`;
     controller = new CfdExecutionController(broker, ledger, policy, snapshot.account.equity, { demoAccountId: config.accountId, externalPositions: 'COEXIST', now: Date.now,
       authorizeHypothesis: (order): Promise<void> => {
-        if (!verify || order.hypothesisId !== hypothesisId) return Promise.reject(new Error('No validated CFD strategy permit'));
+        if ((!verify && !open) || order.hypothesisId !== hypothesisId) return Promise.reject(new Error('No validated CFD strategy permit'));
         return Promise.resolve();
       } });
     const activeController = controller;
@@ -62,7 +64,7 @@ async function main(): Promise<void> {
     }
     if (!values.symbol) throw new Error('--symbol must be an exact CFD catalogue name');
     const instrument = await broker.instrument(values.symbol), quote = await broker.quote(values.symbol);
-    if (!verify) { print(JSON.stringify({ account: snapshot.account, positions: snapshot.positions, instrument, quote, unresolved: ledger.unresolved().length, strategyEligible: false, liveEligible: false }, null, 2)); return; }
+    if (!verify && !open) { print(JSON.stringify({ account: snapshot.account, positions: snapshot.positions, instrument, quote, unresolved: ledger.unresolved().length, strategyEligible: false, liveEligible: false }, null, 2)); return; }
     await controller.reconcile();
     const fresh = await broker.quote(values.symbol), tick = instrument.priceTick;
     const distance = Math.max(instrument.minStopDistance, fresh.ask * (instrument.minStopDistanceFraction ?? 0), (fresh.ask - fresh.bid) * 3, tick * 20) * 1.5;
@@ -71,7 +73,18 @@ async function main(): Promise<void> {
       maxSlippagePoints: Math.max(5, Math.ceil((fresh.ask - fresh.bid) / tick)), createdAtMs: Date.now() };
     const approval = await approveCfdOrder(broker, order, (await broker.snapshot()).account, policy, { positions: 0, reservedMargin: 0, reservedRisk: 0, dailyStartEquity: snapshot.account.equity });
     if (approval.plannedLoss > maxLoss) throw new Error('Minimum broker volume exceeds the demo planned-loss cap');
-    print(JSON.stringify({ action: 'ONE_DEMO_ROUND_TRIP', accountId: config.accountId, symbol: order.symbol, lots: order.volumeLots, plannedLoss: approval.plannedLoss, currency: snapshot.account.currency }));
+    print(JSON.stringify({ action: open ? 'ONE_DEMO_OPEN_AND_HOLD' : 'ONE_DEMO_ROUND_TRIP', accountId: config.accountId, symbol: order.symbol, lots: order.volumeLots, plannedLoss: approval.plannedLoss, currency: snapshot.account.currency }));
+    if (open) {
+      const result = await controller.open(order);
+      const reconciled = await controller.reconcile();
+      const current = await broker.snapshot();
+      const receipt = { action: 'ONE_DEMO_OPEN_AND_HOLD', accountId: config.accountId, order, result, reconciled,
+        positions: current.positions.filter(position => activeController.ownsPosition(position.id)), strategyEligible: false, liveEligible: false };
+      await writeNewJson(values.out!, receipt);
+      print(JSON.stringify(receipt, null, 2));
+      if (result.status !== 'FILLED' || reconciled.unresolved) process.exitCode = 2;
+      return;
+    }
     const registry = new ExperimentRegistry(db, captureResearchCode(fileURLToPath(new URL('../../', import.meta.url))));
     const result = await verifyCfdDemo(broker, controller, order, { accountId: config.accountId, maxVolumeLots: instrument.volumeMin,
       reconnect: async () => { connection.close(); await connection.connect(); await broker.initialize(); await broker.quote(order.symbol); } }, registry);

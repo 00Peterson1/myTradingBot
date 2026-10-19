@@ -37,11 +37,14 @@ async function main(): Promise<void> {
     if (!['HISTORICAL_COSTS', 'CONTRACT', 'QUOTE_CADENCE', 'DEMO_EXECUTION'].every(role => documents.some(doc => doc.role === role))) throw new Error('Review must cover all required evidence roles');
     const code = captureResearchCode(fileURLToPath(new URL('../../', import.meta.url))), registry = new ExperimentRegistry(db, code);
     const { expiresAt, pollIntervalMs, maxLots, maxPlannedLoss } = review.deployment;
-    const attempt = registry.begin({ documents, reviewer: review.reviewer, assessment: review.assessment }, { product: 'CFD', purpose: 'CFD_DATA_AND_EXECUTION_REVIEW',
-      datasetId, hypothesisId: review.deployment.hypothesisId, accountId: review.deployment.accountId, deploymentLimits: { expiresAt, pollIntervalMs, maxLots, maxPlannedLoss } }, 'VALIDATION_STUDY');
-    registry.finish(attempt.attemptId, 'COMPLETED', { verdict: 'APPROVED_FOR_BOUNDED_DEMO', basis: 'Explicit recorded operator review; hashes establish document integrity, not independent accuracy' });
-    const deployment = { ...review.deployment, reviewId: attempt.experimentId, reviewAttemptId: attempt.attemptId };
-    loadCfdDeployment(db, deployment, deployment.accountId, contentHash(code));
+    const deployment = db.transaction(() => {
+      const attempt = registry.begin({ documents, reviewer: review.reviewer, assessment: review.assessment }, { product: 'CFD', purpose: 'CFD_DATA_AND_EXECUTION_REVIEW',
+        datasetId, hypothesisId: review.deployment.hypothesisId, accountId: review.deployment.accountId, deploymentLimits: { expiresAt, pollIntervalMs, maxLots, maxPlannedLoss } }, 'VALIDATION_STUDY');
+      registry.finish(attempt.attemptId, 'COMPLETED', { verdict: 'APPROVED_FOR_BOUNDED_DEMO', basis: 'Explicit recorded operator review; hashes establish document integrity, not independent accuracy' });
+      const deployment = { ...review.deployment, reviewId: attempt.experimentId, reviewAttemptId: attempt.attemptId };
+      loadCfdDeployment(db, deployment, deployment.accountId, contentHash(code));
+      return deployment;
+    }).immediate();
     await writeNewJson(values.out, deployment);
     print(JSON.stringify({ output: values.out, symbol: deployment.symbol, mode: 'DEMO', expiresAt, liveEligible: false }));
   } finally { closeDb(); }

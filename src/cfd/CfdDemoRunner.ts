@@ -41,7 +41,12 @@ export class CfdDemoRunner {
       this.lastTime = quote.timeMs;
       const snapshot = await this.broker.snapshot();
       if (snapshot.account.mode !== 'DEMO' || snapshot.account.id !== deployment.accountId || snapshot.account.currency !== strategy.dataset.accountCurrency) throw new Error('Runner requires the approved demo identity/currency');
-      const owned = snapshot.positions.filter(position => this.controller.ownsPosition(position.id));
+      const remember = (): void => {
+        this.mids.push((quote.bid + quote.ask) / 2);
+        if (this.mids.length > config.lookback) this.mids.shift();
+      };
+      let resultKind = 'WARMING_UP';
+      let owned = snapshot.positions.filter(position => this.controller.ownsPosition(position.id));
       for (const position of owned) {
         const intent = this.ledger.intents().find(item => {
           const order = this.ledger.order(item);
@@ -56,11 +61,12 @@ export class CfdDemoRunner {
         this.db.prepare('INSERT INTO cfd_runner_positions VALUES (?,?,?,?,?) ON CONFLICT(account_id,position_id) DO UPDATE SET held_quotes=excluded.held_quotes,last_quote_ms=excluded.last_quote_ms').run(deployment.accountId, position.id, deployment.hypothesisId, held, quote.timeMs);
         if (held >= config.maxHoldingQuotes) {
           const result = await this.controller.close(position.id, position.volumeLots);
-          this.pending = null; this.mids = [];
-          return this.record(deployment.accountId, 'CLOSE_RESULT', result);
+          this.pending = null;
+          resultKind = this.record(deployment.accountId, 'CLOSE_RESULT', result);
+          if (result.status !== 'FILLED') { remember(); return resultKind; }
+          owned = owned.filter(row => row.id !== position.id);
         }
       }
-      let resultKind = 'WARMING_UP';
       if (this.pending && owned.length === 0) {
         const decision = this.pending; this.pending = null;
         const entry = decision.side === 'LONG' ? quote.ask : quote.bid, sign = decision.side === 'LONG' ? 1 : -1;
@@ -81,14 +87,13 @@ export class CfdDemoRunner {
         const result = await this.controller.open(order);
         if ('fill' in result) this.db.prepare('INSERT OR IGNORE INTO cfd_runner_positions VALUES (?,?,?,?,?)').run(deployment.accountId, result.fill.positionId, deployment.hypothesisId, 0, quote.timeMs);
         resultKind = this.record(deployment.accountId, 'OPEN_RESULT', result);
-        if (result.status !== 'REJECTED') { this.mids = []; return resultKind; }
+        if (result.status !== 'REJECTED') { remember(); return resultKind; }
       }
       if (owned.length === 0) {
         const side = cfdDirection(this.mids, (quote.bid + quote.ask) / 2, config);
-        if (side) { this.pending = { side, timeMs: quote.timeMs }; resultKind = 'SIGNAL_WAITING_FOR_NEXT_QUOTE'; }
+        if (side) { this.pending = { side, timeMs: quote.timeMs }; if (resultKind === 'WARMING_UP') resultKind = 'SIGNAL_WAITING_FOR_NEXT_QUOTE'; }
       }
-      this.mids.push((quote.bid + quote.ask) / 2);
-      if (this.mids.length > config.lookback) this.mids.shift();
+      remember();
       return resultKind;
     } finally { this.busy = false; }
   }

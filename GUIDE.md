@@ -1,6 +1,6 @@
 # Quantitative research workstation
 
-The intended workflow is research → backtesting → validated demo evaluation → explicitly eligible live execution. Automated runners enforce registered strategy eligibility; prospective demo evaluation for live promotion remains pending. See [the milestone review](docs/MILESTONE_REVIEW.md) for evidence and remaining work.
+The intended workflow is research → backtesting → validated demo evaluation → explicitly eligible live execution. Automated runners enforce registered strategy eligibility; prospective demo evaluation for live promotion remains pending. The CFD continuous demo commands and evidence requirements are documented in [the continuous workflow](docs/CFD_CONTINUOUS_WORKFLOW.md). See [the milestone review](docs/MILESTONE_REVIEW.md) for evidence and remaining work.
 
 | Command | Behavior |
 |---|---|

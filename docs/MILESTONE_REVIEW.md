@@ -1,3 +1,13 @@
+## Continuous CFD demo workflow — 2026-10-11
+
+Implemented the evidence-gated continuous demo runner and explicit deployment review workflow. Shared causal signals, next-observation entries, cash-risk limits, holding-period exits, durable holding counters, reconnect reconciliation, persisted account marks, stop-file pause and hypothesis suspension are covered. Manual positions retain ownership isolation while account-wide margin and loss controls remain active. Live execution is disabled.
+
+This continuation corrected signal-history retention through entries/exits, verified restart holding counters without double-counting quotes, made failed deployment eligibility roll back the review transaction, and shared private rotated-token storage across cTrader CLIs. Token renewal is limited to explicit token-rejection errors; server failures do not rotate credentials. Renewal has protocol-fixture coverage, not an actual forced broker refresh.
+
+Actual read-only demo observation completed five cycles without placing orders: `data/cfd-observed-quotes-2026-10-11.jsonl`. Local status reports **zero supported studies**, so strategy execution remains disabled. The resumed EURUSD 2025H1 archive is incomplete: 51 available, 65 empty, 7 failed and 4,221 pending hours. Neither observed quotes nor successful software tests establish profitability. No strategy was approved and no new broker trade was placed in this continuation.
+
+Verification: **286 tests passed across 47 files**; source/test typechecks and build passed. Lint has zero errors and seven test-fixture return-type warnings. See [the continuous workflow](CFD_CONTINUOUS_WORKFLOW.md) for commands, review requirements, recovery behavior and remaining limitations.
+
 ## Shared demo account round trip confirmed — 2026-10-08
 
 Implemented explicit coexistence for the CLI on hedged accounts. Manual positions no longer fail ownership reconciliation or consume the bot's position-count/stop-risk allowance. The controller refuses to close any non-owned position. Shared account equity, free margin, used margin and daily loss still constrain new bot orders; unprotected manual trades are not falsely assigned bounded stop-risk. The harness checks that its own test position is gone, rather than requiring the entire account to be flat.

@@ -1,0 +1,27 @@
+[Unit]
+Description=Validated continuous CFD demo runner
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/opt/tradingbot/data/deployment.json
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=tradingbot
+Group=tradingbot
+WorkingDirectory=/opt/tradingbot
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/env node --import tsx src/cli/cfd-run.ts --execute-demo --deployment data/deployment.json --interval-ms 1000
+Restart=on-failure
+RestartSec=30
+KillSignal=SIGINT
+TimeoutStopSec=60
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/tradingbot/data
+
+[Install]
+WantedBy=multi-user.target
